@@ -1,5 +1,6 @@
 "use client";
 import { useState, useMemo, useEffect, useRef } from "react";
+import Link from "next/link";
 import { usePanther, PANTHER_AVATARS } from "@/lib/panther";
 const _hasPrivyEnv = !!process.env.NEXT_PUBLIC_PRIVY_APP_ID && process.env.NEXT_PUBLIC_PRIVY_APP_ID !== "clz-demo-privy-app-id";
 let _usePrivy: any = null;
@@ -253,14 +254,13 @@ export default function EmergentMinimal(){
   if(!ready) return <div className="grid min-h-screen place-items-center bg-[#F8F8F7] text-[14px] text-[#6B6B6B]">Initializing Privy…</div>;
   return (
     <div className="min-h-screen bg-[#F8F8F7] text-[#0A0A0A]">
-      {!process.env.NEXT_PUBLIC_PRIVY_APP_ID && <div className="bg-[#0A0A0A] px-4 py-2 text-center text-[12px] font-medium text-white">Privy App ID missing — set <span className="font-mono">NEXT_PUBLIC_PRIVY_APP_ID</span> in <span className="font-mono">.env.local</span> for real wallet/X login. Demo login will still simulate. — <a href="https://dashboard.privy.io" target="_blank" rel="noreferrer" className="underline">dashboard.privy.io</a></div>}
       <header className="sticky top-0 z-40 border-b border-[#E8E8E8] bg-white/95 backdrop-blur">
         <div className="mx-auto flex max-w-[1600px] items-center justify-between gap-4 px-4 py-4 sm:px-6">
           <div className="flex items-center gap-3">
-            <div className="grid size-11 place-items-center rounded-2xl border border-[#0A0A0A] bg-white overflow-hidden p-0.5"><img src="/panther-icon.png" alt="CoinPanther" className="h-10 w-10 object-contain"/></div>
+            <Link href="/" className="grid size-11 place-items-center rounded-2xl border border-[#0A0A0A] bg-white overflow-hidden p-0.5 hover:bg-[#F8F8F7]"><img src="/panther-icon.png" alt="CoinPanther" className="h-10 w-10 object-contain"/></Link>
             <div>
               <div className="flex items-baseline gap-2"><span className="text-[18px] font-bold tracking-[0.14em]">COIN</span><span className="text-[18px] font-light tracking-[0.18em] text-[#6B6B6B]">PANTHER</span><span className="ml-1 hidden rounded-full border border-[#0A0A0A] px-2 py-0.5 text-[10px] font-semibold tracking-widest sm:inline-block">LIVE</span></div>
-              <div className="hidden items-center gap-2 text-[12px] tracking-wide text-[#6B6B6B] sm:flex"><span className="inline-flex items-center gap-1.5"><span className="size-1.5 rounded-full bg-[#0A0A0A]"/> Live</span><span className="text-[#0A0A0A] font-medium">{coins.length?`${coins.length} coins`:"loading…"}</span>{lastUpdated&&<span className="text-[#9A9A9A]">· {lastUpdated.toLocaleTimeString()}</span>}<a href="#about" className="rounded-full border border-[#E8E8E8] bg-white px-2 py-0.5 text-[11px] font-semibold hover:border-[#0A0A0A]">About →</a></div>
+              <div className="hidden items-center gap-2 text-[12px] tracking-wide text-[#6B6B6B] sm:flex"><span className="inline-flex items-center gap-1.5"><span className="size-1.5 rounded-full bg-[#0A0A0A]"/> Live</span><span className="text-[#0A0A0A] font-medium">{coins.length?`${coins.length} coins`:"loading…"}</span>{lastUpdated&&<span className="text-[#9A9A9A]">· {lastUpdated.toLocaleTimeString()}</span>}</div>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -282,7 +282,7 @@ export default function EmergentMinimal(){
             )}
           </div>
         </div>
-        <div className="border-t border-[#E8E8E8] bg-[#0A0A0A] text-white relative ticker-bar"><div className="ticker-track" style={{animationDuration:"300s"}}>{[...(coins.length?coins:[]),...(coins.length?coins:[])].map((c,i)=>(<button key={c.id+i} onClick={()=>setSelected(c)} onMouseEnter={()=>setTickerHover(c)} onMouseLeave={()=>setTickerHover(null)} className="ticker-item flex shrink-0 items-center gap-2 border-r border-white/15 px-4 py-2 text-[13px] hover:bg-white/10 text-left"><img src={c.image} alt={c.symbol} className="size-4 rounded-full bg-white object-cover"/><span className="font-mono text-[13px] font-semibold">${c.symbol}</span><span className={`text-[12px] ${c.change24h>=0?"text-white":"text-white/60"}`}>{c.change24h>=0?"↗":"↘"} {Math.abs(c.change24h).toFixed(1)}%</span><span className="text-white/40 hidden sm:inline">· {c.marketCap}</span><span className="ml-1 hidden rounded-full bg-white/10 px-1.5 py-0.5 text-[10px] sm:inline">{c.category}</span></button>))}</div>
+        <div className="border-t border-[#E8E8E8] bg-[#0A0A0A] text-white relative ticker-bar"><div className="ticker-track" style={{animationDuration:"300s"}}>{[...(coins.length?coins:[]),...(coins.length?coins:[])].map((c,i)=>{ const surging = c.change24h>=8 || c.trend==="Breaking"; const gainer = c.change24h>0; return (<button key={c.id+i} onClick={()=>setSelected(c)} onMouseEnter={()=>setTickerHover(c)} onMouseLeave={()=>setTickerHover(null)} className={`ticker-item flex shrink-0 items-center gap-2 border-r border-white/15 px-4 py-2 text-[13px] text-left hover:bg-white/10 ${gainer?"ticker-gain":"opacity-70"} ${surging?"ticker-surge":""}`}><img src={c.image} alt={c.symbol} className="size-4 rounded-full bg-white object-cover"/><span className="font-mono text-[13px] font-semibold">${c.symbol}</span><span className={`text-[12px] ${c.change24h>=0?"text-white":"text-white/60"}`}>{c.change24h>=0?"↗":"↘"} {Math.abs(c.change24h).toFixed(1)}%</span><span className="text-white/40 hidden sm:inline">· {c.marketCap}</span><span className={`ml-1 hidden rounded-full px-1.5 py-0.5 text-[10px] sm:inline ${surging?"bg-[#0A0A0A] text-white border border-white":"bg-white/10"}`}>{surging?"🔥 SURGING":c.category}</span></button>); })}</div>
           {tickerHover && (
             <div className="absolute left-1/2 top-full z-20 mt-1 hidden -translate-x-1/2 rounded-2xl border border-[#0A0A0A] bg-white p-3 shadow-xl sm:flex gap-3 min-w-[340px]">
               <img src={tickerHover.image} alt={tickerHover.name} className="size-10 rounded-xl border border-[#E8E8E8] bg-white object-cover"/>

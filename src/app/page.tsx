@@ -30,12 +30,12 @@ export default function HomePage() {
       <div className="relative z-10 mx-auto flex w-full max-w-[1000px] flex-1 flex-col px-6 py-8">
         {/* Top bar */}
         <header className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
+          <Link href="/" className="flex items-center gap-3">
             <span className="grid size-10 place-items-center rounded-xl border border-[#0A0A0A] bg-white/70">
               <img src="/panther-icon.png" alt="CoinPanther" className="h-7 w-7 rounded object-contain" />
             </span>
             <span className="text-[13px] font-semibold tracking-[0.32em] text-[#0A0A0A]/70">COINPANTHER</span>
-          </div>
+          </Link>
           <span className="menu-pulse flex items-center gap-2 text-[11px] font-semibold tracking-widest text-[#0A0A0A]/60">
             <span className="size-1.5 rounded-full bg-[#0A0A0A]" /> EMERGENT MATRIX · ONLINE
           </span>

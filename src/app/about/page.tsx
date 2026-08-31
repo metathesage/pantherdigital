@@ -27,19 +27,23 @@ const SOURCES = [
 const ROADMAP = [
   ["Live", "Discovery radar", "300+ real coins, emergent scoring, honeypot screening, live terminal."],
   ["Live", "Wallet reader", "Read any ETH / SOL wallet — balances, holdings, on-chain activity. No mock data."],
-  ["Live", "Start menu", "Futuristic launch experience with panther theming."],
-  ["Next", "Hunt days & gems", "Gamified discovery streaks, gem drops, and panther-themed badges."],
-  ["Next", "Profile customization", "Avatars, handles, bio, and persistent themes tied to your connected wallet."],
+  ["Live", "Start menu", "Futuristic launch experience with panther theming + official logo."],
+  ["Live", "Ticker intelligence", "Gainers glow, surging coins flagged 🔥, real 24h movers surfaced."],
+  ["Live", "Sort & filter", "Sort by emergent score, 24h/1h, volume, market cap, price, trend — plus category buckets."],
+  ["Live", "Hunt & gems", "Gamified discovery streaks, gem drops, panther-themed profile + avatars."],
+  ["Live", "Top 10 PnL", "Real 24h leaderboard linking out to gmgn.ai / fomo.app / phantom."],
   ["Next", "Watchlists & alerts", "Cross-device saved lists with price / trend alerts."],
-  ["Planned", "Multi-chain depth", "Sui, Base, and Robinhood surfaces with native pair data."],
-  ["Planned", "API & embed", "Public CoinPanther data API for builders."],
+  ["Next", "Multi-chain depth", "Sui, Base, and Robinhood surfaces with native pair data."],
+  ["Next", "AI insights", "Per-coin narrative + risk summaries generated from live signals."],
+  ["Planned", "Public API & embed", "CoinPanther data API + radar widget for builders."],
+  ["Planned", "Mobile app", "Native iOS / Android companion to the radar."],
 ];
 
 export default function WikiPage() {
   return (
     <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
       <div className="flex items-center gap-3">
-        <img src="/panther.svg" alt="CoinPanther" className="h-9 w-9 object-contain" />
+        <Link href="/"><img src="/panther-icon.png" alt="CoinPanther" className="h-9 w-9 rounded object-contain" /></Link>
         <span className="text-[12px] font-semibold tracking-[0.3em] text-[#6B6B6B]">COINPANTHER · WIKI</span>
       </div>
       <h1 className="mt-4 text-3xl font-extrabold tracking-tight sm:text-4xl">Why we dominate</h1>
