@@ -1,0 +1,17 @@
+[
+  { "term": "Oshi holomem", "definition": "Your leader card. Sits in the Oshi position, has LIFE instead of HP, and unlocks powerful Oshi Skills fueled by holo Power." },
+  { "term": "holomem", "definition": "Talent cards representing hololive members. They perform Arts, take damage, and stack when damaged (downed states)." },
+  { "term": "Buzz holomem", "definition": "Special holomem with their own buzz rules — typically limited copies per deck and unique entry conditions." },
+  { "term": "Bloom Level", "definition": "A holomem's growth stage: Debut → 1st → 2nd. Cards bloom by stacking onto each other, gaining stats and stronger effects. Spot is a special bloom position for some cards." },
+  { "term": "Baton Pass", "definition": "Retiring an active holomem to pass benefits to the next one — the game's core momentum mechanic." },
+  { "term": "Arts", "definition": "A holomem's attack ability, usually costing holo Power and sometimes colored icons (e.g. white/red) to use." },
+  { "term": "holo Power", "definition": "The resource you generate each turn (often from downed/stacked cards) used to pay for Arts, Oshi Skills and other costs." },
+  { "term": "Oshi Skill", "definition": "A repeatable leader ability paid with holo Power — usually usable once per turn ([1/Turn])." },
+  { "term": "SP Oshi Skill", "definition": "A once-per-game super version of an Oshi Skill with dramatic effects." },
+  { "term": "Life", "definition": "Your team's hit counter, shown on your Oshi card. Losing all Life loses the game. Some Oshi skills convert damage into Life changes." },
+  { "term": "Collab Effect", "definition": "Bonus effects some cards gain when a matching condition or color combination is met during a Collab state." },
+  { "term": "Archive", "definition": "The discard pile zone. Several effects retrieve or manipulate Archive cards." },
+  { "term": "Cheer", "definition": "Support card type themed on fan cheering; often provides resource or draw effects." },
+  { "term": "LIMITED", "definition": "Cards marked LIMITED have deck-building restrictions (typically 1-copy) noted in their Extra text." },
+  { "term": "Unicolor", "definition": "Deck-building mode where all cards must share a single color; many sets reward staying unicolor." }
+]
