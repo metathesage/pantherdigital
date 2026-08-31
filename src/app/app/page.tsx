@@ -211,12 +211,23 @@ export default function EmergentMinimal(){
   const [logs,setLogs]=useState<{t:string;msg:string}[]>([]); const logRef=useRef<HTMLDivElement>(null);
   useEffect(()=>{ if(!coins.length) return; const id=setInterval(()=>{ const c=coins[Math.floor(Math.random()*Math.min(20,coins.length))]; const now=new Date(); const t=now.toLocaleTimeString([],{hour12:false})+"."+String(now.getMilliseconds()).padStart(3,"0").slice(0,2); const dir=c.change24h>=0?"↗":"↘"; const msg=`[${t}] ${c.symbol.padEnd(6)} ${dir} ${c.change24h.toFixed(2)}%  price ${c.price}  vol ${c.volume}  score ${c.emergentScore}`; setLogs(p=>[{t,msg},...p].slice(0,120)); },1400); return()=>clearInterval(id); },[coins]);
   useEffect(()=>{ if(logRef.current) logRef.current.scrollTop=0; },[logs]);
+  const fetchGeckoPage = async (pageNum:number, attempt=0):Promise<GeckoCoin[]> => {
+    const url = `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=100&page=${pageNum}&sparkline=true&price_change_percentage=1h,24h,7d`;
+    const r = await fetch(url, {cache:"no-store"});
+    if(!r.ok){
+      if(r.status===429 && attempt<3){ await new Promise(res=>setTimeout(res, 700*Math.pow(2,attempt))); return fetchGeckoPage(pageNum, attempt+1); }
+      throw new Error(`CoinGecko ${r.status}`);
+    }
+    return r.json() as Promise<GeckoCoin[]>;
+  };
   const fetchCoins=async()=>{
     try{
-      setLoading(true); setErr(null);
-      const fetches=[1,2,3].map(p=> fetch(`https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=100&page=${p}&sparkline=true&price_change_percentage=1h,24h,7d`,{cache:"no-store"}).then(r=>{ if(!r.ok) throw new Error(`CoinGecko ${r.status}`); return r.json() as Promise<GeckoCoin[]>; }));
-      const pages=await Promise.all(fetches);
-      const all: GeckoCoin[] = pages.flat();
+      setErr(null);
+      if(!coins.length) setLoading(true);
+      const p1 = await fetchGeckoPage(1);
+      const p2 = await fetchGeckoPage(2);
+      const p3 = await fetchGeckoPage(3);
+      const all: GeckoCoin[] = [...p1, ...p2, ...p3];
       const mapped: Coin[] = all.map(g=>{
         const ch=chainForCoin(g); const c1=g.price_change_percentage_1h_in_currency??0; const c24=g.price_change_percentage_24h??0; const vol=g.total_volume||0; const mcap=g.market_cap||0; const volMcap=vol/(mcap||1); const raw=52 + c24*1.4 + c1*0.6 + Math.min(18,volMcap*280) - Math.max(0,(g.market_cap_rank-50)*0.08); const score=Math.max(12,Math.min(98,Math.round(raw))); const trend=trendFor(c24); const risk=riskFor(score,vol,mcap); const spark=g.sparkline_in_7d?.price?.slice(-28) || Array.from({length:14},(_,i)=> g.current_price*(1+(Math.sin(i)*0.02)));
         const category=categoryForCoin(g,ch); const description=descriptionForCoin(g,category); const top10HoldersPct=Math.max(8, Math.min(78, Math.round(18 + (100-score)*0.42 + (volMcap<0.06?18:0) + (g.market_cap_rank%5)*3)));
@@ -224,9 +235,13 @@ export default function EmergentMinimal(){
       });
       setCoins(mapped); setLastUpdated(new Date());
       setLogs(mapped.slice(0,6).map(c=>({t:new Date().toLocaleTimeString([],{hour12:false}), msg:`[init] ${c.symbol} ${c.change24h>=0?"↗":"↘"} ${c.change24h.toFixed(2)}%  ${c.price}`})));
-    }catch(e:any){ setErr(e.message||"Failed to fetch CoinGecko"); }finally{ setLoading(false); }
+    }catch(e:any){
+      // Only surface if we have no prior data — otherwise keep last-good feed and retry silently.
+      if(!coins.length) setErr(e.message||"Failed to fetch CoinGecko");
+      else setErr(null);
+    }finally{ setLoading(false); }
   };
-  useEffect(()=>{ fetchCoins(); const id=setInterval(fetchCoins,90000); return()=>clearInterval(id); },[]);
+  useEffect(()=>{ fetchCoins(); const id=setInterval(fetchCoins,120000); return()=>clearInterval(id); },[]);
   useEffect(()=>{
     if(!selected){ setDetail(null); setChartData(null); return; }
     const coin=selected; let cancelled=false;
@@ -260,7 +275,7 @@ export default function EmergentMinimal(){
             <Link href="/" className="grid size-11 place-items-center rounded-2xl border border-[#0A0A0A] bg-white overflow-hidden p-0.5 hover:bg-[#F8F8F7]"><img src="/panther-icon.png" alt="CoinPanther" className="h-10 w-10 object-contain"/></Link>
             <div>
               <div className="flex items-baseline gap-2"><span className="text-[18px] font-bold tracking-[0.14em]">COIN</span><span className="text-[18px] font-light tracking-[0.18em] text-[#6B6B6B]">PANTHER</span><span className="ml-1 hidden rounded-full border border-[#0A0A0A] px-2 py-0.5 text-[10px] font-semibold tracking-widest sm:inline-block">LIVE</span></div>
-              <div className="hidden items-center gap-2 text-[12px] tracking-wide text-[#6B6B6B] sm:flex"><span className="inline-flex items-center gap-1.5"><span className="size-1.5 rounded-full bg-[#0A0A0A]"/> Live</span><span className="text-[#0A0A0A] font-medium">{coins.length?`${coins.length} coins`:"loading…"}</span>{lastUpdated&&<span className="text-[#9A9A9A]">· {lastUpdated.toLocaleTimeString()}</span>}</div>
+              <div className="hidden items-center gap-2 text-[12px] tracking-wide text-[#6B6B6B] sm:flex"><span className="inline-flex items-center gap-1.5"><span className="size-1.5 rounded-full bg-[#0A0A0A]"/> Live</span><span className="text-[#0A0A0A] font-medium">{coins.length?`${coins.length} coins`:"loading…"}</span>{lastUpdated&&<span className="text-[#9A9A9A]">· {lastUpdated.toLocaleTimeString()}</span>}<button onClick={()=>fetchCoins()} className="ml-1 rounded-full border border-[#E8E8E8] bg-white px-2 py-0.5 text-[11px] font-semibold hover:border-[#0A0A0A]">Refresh</button></div>
             </div>
           </div>
           <div className="flex items-center gap-2">
