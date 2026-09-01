@@ -17,10 +17,13 @@ export interface PantherState {
   streak: number;       // consecutive days a hunt was logged
   lastHunt: string | null; // YYYY-MM-DD
   hunts: number;        // total hunts
+  linkedWallets: string[]; // saved wallet addresses
   setHandle: (v: string) => void;
   setBio: (v: string) => void;
   setAvatar: (v: string) => void;
   logHunt: () => void;  // records a discovery; advances streak + grants gems
+  addWallet: (addr: string) => void;
+  removeWallet: (addr: string) => void;
 }
 
 function today(): string {
@@ -42,9 +45,12 @@ export const usePanther = create<PantherState>()(
       streak: 0,
       lastHunt: null,
       hunts: 0,
+      linkedWallets: [],
       setHandle: (v) => set({ handle: v.slice(0, 24) }),
       setBio: (v) => set({ bio: v.slice(0, 140) }),
       setAvatar: (v) => set({ avatar: v }),
+      addWallet: (addr) => set((s) => ({ linkedWallets: s.linkedWallets.includes(addr) ? s.linkedWallets : [...s.linkedWallets, addr].slice(-8) })),
+      removeWallet: (addr) => set((s) => ({ linkedWallets: s.linkedWallets.filter((a) => a !== addr) })),
       logHunt: () => {
         const s = get();
         const t = today();

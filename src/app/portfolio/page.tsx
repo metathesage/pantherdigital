@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useMemo } from "react";
+import { usePanther } from "@/lib/panther";
 
 /* ----------------------------------------------------------------------------
  * Real on-chain data only. No mocked balances, prices, tokens, or P&L.
@@ -423,6 +424,7 @@ async function fetchEthereum(addr: string): Promise<{ holdings: Holding[]; txns:
 const DEMO_SOL = "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM"; // public, real, fully keyless
 
 export default function PortfolioPage() {
+  const panther = usePanther();
   const [input, setInput] = useState("");
   const [chain, setChain] = useState<"ETH" | "SOL" | null>(null);
   const [address, setAddress] = useState<string | null>(null);
@@ -432,6 +434,8 @@ export default function PortfolioPage() {
   const [txns, setTxns] = useState<Txn[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
   const [activeTab, setActiveTab] = useState<"holdings" | "activity" | "stats">("holdings");
+  const [recent, setRecent] = useState<string[]>([]);
+  useEffect(()=>{ try{ const v=JSON.parse(localStorage.getItem("cp_recent_wallets")||"[]"); if(Array.isArray(v)) setRecent(v); }catch{} },[]);
 
   useEffect(() => {
     const c = detectChain(input.trim());
@@ -448,6 +452,12 @@ export default function PortfolioPage() {
     setError(null);
     setAddress(target);
     setChain(c);
+    // persist to recent + panther linked wallets (user accounts)
+    try{
+      const next=[target,...recent.filter(a=>a!==target)].slice(0,8);
+      setRecent(next); localStorage.setItem("cp_recent_wallets", JSON.stringify(next));
+      panther.addWallet(target);
+    }catch{}
     setLoading(true);
     try {
       const result = c === "SOL" ? await fetchSolana(target) : await fetchEthereum(target);
@@ -558,7 +568,17 @@ export default function PortfolioPage() {
             <button onClick={() => connectInjected("metamask")} className="rounded-full border border-[#0A0A0A] bg-white px-4 py-2 text-xs font-semibold text-[#0A0A0A] hover:bg-[#F8F8F7]">MetaMask</button>
             <button onClick={() => connectInjected("coinbase")} className="rounded-full border border-[#0A0A0A] bg-white px-4 py-2 text-xs font-semibold text-[#0A0A0A] hover:bg-[#F8F8F7]">Coinbase Wallet</button>
             <button onClick={() => connectInjected("phantom")} className="rounded-full border border-[#0A0A0A] bg-white px-4 py-2 text-xs font-semibold text-[#0A0A0A] hover:bg-[#F8F8F7]">Phantom</button>
+            <span className="ml-auto flex items-center gap-2 text-[11px] text-[#6B6B6B]"><span className="grid size-6 place-items-center rounded-full bg-[#0A0A0A] text-white">{panther.avatar}</span> {panther.handle||"Panther"} · Lvl {panther.level} · 💎 {panther.gems}</span>
           </div>
+          {(recent.length>0 || panther.linkedWallets.length>0) && (
+            <div className="mt-3 flex flex-wrap items-center gap-1.5">
+              <span className="text-[11px] font-semibold tracking-widest text-[#6B6B6B]">HISTORY</span>
+              {Array.from(new Set([...panther.linkedWallets, ...recent])).slice(0,8).map(a=>(
+                <button key={a} onClick={()=>{setInput(a); handleScan(a);}} className="rounded-full border border-[#E8E8E8] bg-white px-3 py-1 text-[11px] font-mono hover:border-[#0A0A0A]">{short(a)}</button>
+              ))}
+              <button onClick={()=>{ setRecent([]); try{localStorage.removeItem("cp_recent_wallets");}catch{} }} className="text-[11px] text-[#9A9A9A] underline">clear</button>
+            </div>
+          )}
           {error && <div className="mt-3 rounded-xl border border-[#0A0A0A] bg-[#F8F8F7] px-3 py-2 text-[13px]">{error}</div>}
           {address && stats && (
             <div className="mt-3 flex flex-wrap gap-2 text-xs">

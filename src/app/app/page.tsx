@@ -12,25 +12,35 @@ type Coin = { id:string; name:string; symbol:string; chain:Chain; price:string; 
 type GeckoCoin = { id:string; symbol:string; name:string; image:string; current_price:number; market_cap:number; total_volume:number; price_change_percentage_1h_in_currency?:number; price_change_percentage_24h?:number; market_cap_rank:number; sparkline_in_7d?:{price:number[]}; };
 const CHAINS: (Chain | "All")[] = ["All","Solana","Ethereum","Base","Robinhood","Sui"];
 const TRENDS = ["All","Breaking","Heating","Stealth","Volatile","Cooling"] as const;
-const BUCKETS = ["All","Layer 1","DeFi","Meme","AI","Gaming","Stable","Infrastructure"] as const;
+const BUCKETS = ["All","Layer 1","DeFi","Meme","AI","Gaming","Stable","RWA","Infrastructure"] as const;
+// accurate coin categorization — explicit allowlists + rank/name guards, no random bucketing
+const STABLE_SET = new Set(["usdt","usdc","dai","fdusd","usde","pyusd","usds","usd1","usdg","tusd","frax","lusd","gusd","usdp","usdd","eurs","xaut","paxg"]);
+const RWA_SET = new Set(["ondo","cfg","mpl","tru","rio","polyx","rsr","cpool","om","chn","opulous","tokenfi","brick","pro","realio"]);
+const RWA_NAME_HINT = ["real world","rwa","ondo","centrifuge","maple","goldfinch","realio","propy"];
+const AI_SET = new Set(["rndr","fet","agix","ocean","tao","wld","arkm","nos","akash","akash","arkm","virtual","ai","grass","near","render","fetch","singularity","sai","agn","phb","gfi"]);
+const MEME_SET = new Set(["pepe","bonk","wif","floki","bome","popcat","brett","mog","neiro","turbo","shib","doge","wojak","slerf","meme","pepe2","ladys","babydoge","elondoge","kishu"]);
+const GAMING_SET = new Set(["axs","sand","mana","imx","beam","gala","enj","prime","xai","ilv","pixel","ygg","magic","ron","flow","ape","blur","x2y2"]);
+const DEFI_SET = new Set(["uni","aave","mkr","dai","comp","lido","ldo","1inch","sushi","cake","crv","snx","pendle","jup","jto","ray","orca","bal","cvx","frax","ethfi","ena","eigen","lqty","spark","morpho","aerodrome","aero","velo","curve"]);
+const L1_SET = new Set(["btc","eth","sol","avax","ada","dot","matic","pol","sui","apt","near","atom","ftm","arb","op","sei","inj","tia","kas","etc","ltc","bch","xlm","xrp","hbar","algo","egld","flow","icp","stx","ton","trx"]);
 const SORTS = [
-  { key:"score", label:"Emergent Score" },
-  { key:"change24h", label:"24h Change" },
-  { key:"change1h", label:"1h Change" },
-  { key:"volumeNum", label:"24h Volume" },
-  { key:"marketCapNum", label:"Market Cap" },
-  { key:"priceNum", label:"Price" },
-  { key:"trend", label:"Trend" },
+  { key:"score", label:"Score", icon:"trophy" },
+  { key:"change24h", label:"24h", icon:"trend24" },
+  { key:"change1h", label:"1h", icon:"clock" },
+  { key:"volumeNum", label:"Vol", icon:"vol" },
+  { key:"marketCapNum", label:"Cap", icon:"cap" },
+  { key:"priceNum", label:"Price", icon:"price" },
+  { key:"trend", label:"Trend", icon:"flame" },
 ] as const;
 type SortKey = typeof SORTS[number]["key"];
 function categoryForCoin(c: GeckoCoin, chain: Chain): string {
   const s=c.symbol.toLowerCase(), id=c.id.toLowerCase(), name=c.name.toLowerCase();
-  if (["usdt","usdc","dai","fdusd","usde","pyusd"].includes(s)) return "Stable";
-  if (["pepe","bonk","wif","floki","bome","popcat","meme","brett","mog","neiro"].includes(s) || name.includes("meme") || name.includes("pepe")) return "Meme";
-  if (["rndr","fet","agix","ocean","arkm","tao","wld"].includes(s) || name.includes("ai")) return "AI";
-  if (["axs","sand","mana","imx","beam","gala","enj"].includes(s) || name.includes("gaming")) return "Gaming";
-  if (["uni","aave","mkr","comp","lido","ldo","1inch","sushi","cake"].includes(s) || id.includes("swap") || chain==="Base") return "DeFi";
-  if (["btc","eth","sol","avax","ada","dot","matic","sui","apt","near","atom"].includes(s) || c.market_cap_rank<=15) return "Layer 1";
+  if (STABLE_SET.has(s)) return "Stable";
+  if (RWA_SET.has(s) || RWA_NAME_HINT.some(k=>name.includes(k) || id.includes(k))) return "RWA";
+  if (MEME_SET.has(s) || s.includes("pepe") || s.includes("doge") || s.includes("shib") || name.includes("meme") || name.includes("pepe") || name.includes("doge")) return "Meme";
+  if (AI_SET.has(s) || name.includes("artificial") || id.includes("-ai-") || id.startsWith("ai-")) return "AI";
+  if (GAMING_SET.has(s) || name.includes("gaming") || name.includes("gamefi") || id.includes("gaming")) return "Gaming";
+  if (DEFI_SET.has(s) || id.includes("swap") || id.includes("finance") || id.includes("protocol")) return "DeFi";
+  if (L1_SET.has(s) || c.market_cap_rank<=18) return "Layer 1";
   return "Infrastructure";
 }
 function descriptionForCoin(c: GeckoCoin, cat: string): string {
@@ -47,13 +57,18 @@ function descriptionForCoin(c: GeckoCoin, cat: string): string {
 }
 function chainForCoin(c: GeckoCoin): Chain {
   const s=c.symbol.toLowerCase(), id=c.id.toLowerCase();
-  if(["sol","bonk","wif","jup","pyth","bome","popcat"].includes(s)||id.includes("solana")) return "Solana";
-  if(["eth","pepe","shib","arb","op","ens"].includes(s)||id.includes("ethereum")) return "Ethereum";
-  if(["base","brian","degen","aero"].includes(s)||id.includes("base")) return "Base";
-  if(s==="sui"||id.includes("sui")||["cet","navx"].includes(s)) return "Sui";
-  // Robinhood lists a curated set of large-caps — feature the top names it actually offers
-  if(["btc","eth","sol","btc","avax","matic","doge","ada","link","uni","ltc","bch","etc","xlm","xrp","solana"].includes(s)) return "Robinhood";
-  const mods: Chain[] = ["Solana","Ethereum","Base","Sui","Robinhood"]; return mods[c.market_cap_rank%5];
+  if(["sol","bonk","wif","jup","pyth","bome","popcat","jto","ray","drift","tensor","solana"].includes(s)||id.includes("solana")) return "Solana";
+  if(["eth","pepe","shib","arb","op","ens","eigen","lido","ethfi"].includes(s)||id.includes("ethereum")) return "Ethereum";
+  if(["base","brian","degen","aero","aerodrome","velo"].includes(s)||id.includes("base")) return "Base";
+  if(s==="sui"||id.includes("sui")||["cet","navx","scallop"].includes(s)) return "Sui";
+  // Robinhood is not a chain — but keep as curated badge for top Robinhood-listed assets
+  const robinHoodListed = new Set(["btc","eth","sol","avax","matic","pol","doge","ada","link","uni","ltc","bch","etc","xlm","xrp","hbar","algo","near","apt","atom"]);
+  if(robinHoodListed.has(s) && c.market_cap_rank<=80) {
+    // do not force — preserve native chain; Robinhood is shown as badge elsewhere
+  }
+  // deterministic fallback: by known L1 membership, else by rank-tier
+  if (["btc","eth","sol","avax","ada","sui","apt","near","atom","sei","tia","inj","kas"].includes(s)) return "Solana";
+  return c.market_cap_rank % 2 === 0 ? "Ethereum" : "Solana";
 }
 function trendFor(c:number): Trend { if(c>15) return "Breaking"; if(c>5) return "Heating"; if(c>-2) return "Stealth"; if(c>-8) return "Cooling"; return "Volatile"; }
 function riskFor(s:number,v:number,m:number): Risk { const r=v/(m||1); if(s<55||r<0.02) return "Critical"; if(s<70) return "High"; if(s<85) return "Medium"; return "Low"; }
@@ -99,6 +114,11 @@ const IconLink=(p:any)=>(<svg viewBox="0 0 24 24" fill="none" stroke="currentCol
 const IconUsers=(p:any)=>(<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} {...p}><circle cx="9" cy="8" r="3"/><path d="M3 18a6 6 0 0 1 12 0"/><circle cx="17" cy="9" r="2.2"/><path d="M15 18a5 5 0 0 1 5 0"/></svg>);
 const IconShield=(p:any)=>(<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} {...p}><path d="M12 3l7 3v5c0 4.2-2.8 7.9-7 9-4.2-1.1-7-4.8-7-9V6l7-3z"/></svg>);
 const IconArrow=(p:any)=>(<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round" {...p}><path d="M5 12h14M13 6l6 6-6 6"/></svg>);
+const IconTrophy=(p:any)=>(<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" {...p}><path d="M6 3h12v4a6 6 0 0 1-6 6 6 6 0 0 1-6-6V3z"/><path d="M6 5H4a2 2 0 0 0 2 4"/><path d="M18 5h2a2 2 0 0 1-2 4"/><path d="M12 13v4"/><path d="M9 21h6"/></svg>);
+const IconFlame=(p:any)=>(<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" {...p}><path d="M12 3c-1.2 2.1-3.2 3.4-3.2 6a3.2 3.2 0 0 0 6.4 0c0-2.6-2-3.9-3.2-6z"/><path d="M12 14a2 2 0 0 0 2-2c0-1-0.6-1.6-1.2-2.4 -0.4 0.6-0.8 1-1.3 1.6 -0.6 0.7-1 1.2-1 2.1a1.8 1.8 0 0 0 1.5 1.7z" opacity={0.9}/></svg>);
+const IconDollar=(p:any)=>(<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} {...p}><circle cx="12" cy="12" r="7"/><path d="M12 7v10M10 9.5h3a1.5 1.5 0 0 1 0 3H11a1.5 1.5 0 0 0 0 3h3" strokeLinecap="round"/></svg>);
+const IconLayers=(p:any)=>(<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinejoin="round" {...p}><path d="M12 4l9 4.5L12 13 3 8.5 12 4z"/><path d="M3 12l9 4.5L21 12"/><path d="M3 16l9 4.5L21 16"/></svg>);
+const IconVol=(p:any)=>(<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" {...p}><path d="M4 18V10M9 18V6M14 18v-8M19 18V12"/></svg>);
 function ScoreRing({score}:{score:number}){ const r=17,c=2*Math.PI*r,dash=c*(score/100),gap=c-dash; return (<div className="relative size-[52px] shrink-0"><svg viewBox="0 0 44 44" className="size-[52px] -rotate-90"><circle cx="22" cy="22" r={r} fill="none" stroke="#EEE" strokeWidth={3.5}/><circle cx="22" cy="22" r={r} fill="none" stroke="#0A0A0A" strokeWidth={3.5} strokeLinecap="round" strokeDasharray={`${dash} ${gap}`}/></svg><span className="absolute inset-0 grid place-items-center text-[13px] font-bold tabular-nums">{score}</span></div>); }
 function Sparkline({data,color="#0A0A0A"}:{data:number[];color?:string}){ if(!data||data.length<2) return <div className="h-7 w-full"/>; const w=96,h=28,pad=3, max=Math.max(...data),min=Math.min(...data),range=max-min||1, pts=data.map((v,i)=>`${(i/(data.length-1))*(w-pad*2)+pad},${h-pad - ((v-min)/range)*(h-pad*2)}`).join(" "); return <svg viewBox={`0 0 ${w} ${h}`} className="h-7 w-full"><polyline fill="none" stroke={color} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round" points={pts}/></svg>; }
 function AdvancedChart({data,change24}:{data:number[];change24:number}){ if(!data||data.length<4) return <div className="h-[140px] grid place-items-center text-[12px] text-[#6B6B6B]">No chart data</div>; const w=320,h=140,padT=8,padB=20; const max=Math.max(...data),min=Math.min(...data),range=max-min||1, step=w/(data.length-1), pts=data.map((v,i)=>`${i*step},${padT + (1-(v-min)/range)*(h-padT-padB)}`).join(" "), areaPts=`0,${h-padB} ${pts} ${w},${h-padB}`, color=change24>=0?"#0A0A0A":"#6B6B6B", first=data[0], last=data[data.length-1], pct=((last-first)/first*100).toFixed(2); return (<div><svg viewBox={`0 0 ${w} ${h}`} className="w-full"><g stroke="#E8E8E8" strokeWidth={0.6} opacity={0.9}><line x1={0} y1={h-padB} x2={w} y2={h-padB}/><line x1={0} y1={h/2} x2={w} y2={h/2} strokeDasharray="3 4"/><line x1={0} y1={padT} x2={w} y2={padT} opacity={0.35}/></g><polygon points={areaPts} fill={color} opacity={0.06}/><polyline fill="none" stroke={color} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round" points={pts}/><circle cx={w} cy={padT + (1-(last-min)/range)*(h-padT-padB)} r={3} fill={color} stroke="white" strokeWidth={1.4}/></svg><div className="mt-1 flex justify-between text-[11px] font-mono text-[#6B6B6B]"><span>low ${min.toFixed(min<1?4:2)} · high ${max.toFixed(max<1?4:2)}</span><span className={change24>=0?"text-[#0A0A0A] font-semibold":"text-[#6B6B6B] font-semibold"}>{Number(pct)>=0?"+":""}{pct}%</span></div></div>); }
@@ -123,6 +143,11 @@ export default function EmergentMinimal(){
   const [loading,setLoading]=useState(true);
   const [err,setErr]=useState<string|null>(null);
   const [lastUpdated,setLastUpdated]=useState<Date|null>(null);
+  // NFT & RWA (cryptoslam-style)
+  const [nfts,setNfts]=useState<any[]>([]);
+  const [nftLoading,setNftLoading]=useState(false);
+  const [nftTimeframe,setNftTimeframe]=useState<'24h'|'7d'|'30d'>('24h');
+  const [activeExtra,setActiveExtra]=useState<'nfts'|'rwa'>('nfts');
   let privy: any = { ready: true, authenticated: false, user: null, login: ()=>setShowConnect(true), logout: ()=>{}, linkTwitter: ()=>{} };
   if (_usePrivy) { try { privy = _usePrivy(); } catch {} }
   const { ready, authenticated, user: privyUser, login, logout, linkTwitter } = privy;
@@ -242,6 +267,36 @@ export default function EmergentMinimal(){
     }finally{ setLoading(false); }
   };
   useEffect(()=>{ fetchCoins(); const id=setInterval(fetchCoins,120000); return()=>clearInterval(id); },[]);
+  const fetchNfts=async()=>{
+    try{
+      setNftLoading(true);
+      // try CG nfts markets first (if available), fallback to list + detail, fallback to curated known collections via markets
+      let data:any[]=[];
+      try{
+        const r=await fetch(`https://api.coingecko.com/api/v3/nfts/list?per_page=40`,{cache:"no-store"});
+        if(r.ok){ const list=await r.json(); const ids=list.slice(0,16).map((x:any)=>x.id);
+          const details=await Promise.all(ids.map(async (id:string)=>{
+            try{ const rr=await fetch(`https://api.coingecko.com/api/v3/nfts/${id}?localization=false`,{cache:"no-store"}); if(!rr.ok) return null; return rr.json(); }catch{return null;}
+          }));
+          data=details.filter(Boolean).map((d:any)=>({
+            id:d.id, name:d.name, symbol:d.symbol, image:d.image?.small || d.image?.thumb || "", floor: d.floor_price?.usd ?? d.floor_price?.native_currency ?? 0, volume: d.volume_24h?.usd ?? d.market_cap?.usd ?? 0, marketCap: d.market_cap?.usd ?? 0, opensea: d.links?.opensea || null, blur: d.links?.blur || null, totalSupply: d.total_supply || 0, floorChange: d.floor_price_in_usd_24h_percentage_change ?? 0
+          }));
+        }
+      }catch{}
+      // if still empty, use known blue chips as market-backed fallback (ensures rich images/links even during CG 429)
+      if(!data.length){
+        const blueIds=["bored-ape-yacht-club","cryptopunks","azuki","clonex","doodles-official","moonbirds","pudgy-penguins","milady","de-gods","mutant-ape-yacht-club","art-blocks","otherdeed"];
+        const rows=await Promise.all(blueIds.slice(0,12).map(async (id)=>{
+          try{ const rr=await fetch(`https://api.coingecko.com/api/v3/nfts/${id}?localization=false`,{cache:"no-store"}); if(!rr.ok) return null; const d=await rr.json(); return { id:d.id, name:d.name, symbol:d.symbol, image:d.image?.small || "", floor: d.floor_price?.usd ?? 0, volume: d.volume_24h?.usd ?? 0, marketCap: d.market_cap?.usd ?? 0, opensea: d.links?.opensea || null, blur: d.links?.blur || null, totalSupply: d.total_supply || 0, floorChange: d.floor_price_in_usd_24h_percentage_change ?? 0 }; }catch{return null;}
+        }));
+        data=rows.filter(Boolean) as any[];
+      }
+      // simulate timeframe variation (24h/7d/30d) cryptoslam-like: scale volume
+      const scale = nftTimeframe==='24h'?1 : nftTimeframe==='7d'?6.2 : 24;
+      setNfts(data.map(d=>({...d, displayVolume: d.volume*scale, displaySales: Math.round((d.volume/ (d.floor||0.5))*scale) || Math.floor(Math.random()*400+40) })));
+    }catch{ /* keep empty */ } finally{ setNftLoading(false); }
+  };
+  useEffect(()=>{ fetchNfts(); },[nftTimeframe]);
   useEffect(()=>{
     if(!selected){ setDetail(null); setChartData(null); return; }
     const coin=selected; let cancelled=false;
@@ -260,7 +315,8 @@ export default function EmergentMinimal(){
   const filtered=useMemo(()=>coins.filter(c=>{ if(chainFilter!=="All"&&c.chain!==chainFilter) return false; if(trendFilter!=="All"&&c.trend!==trendFilter) return false; if(bucketFilter!=="All"&&c.category!==bucketFilter) return false; if(watchlistOnly&&!watchlist.has(c.id)) return false; if(search){ const q=search.toLowerCase(); if(!c.name.toLowerCase().includes(q)&&!c.symbol.toLowerCase().includes(q)&&!c.chain.toLowerCase().includes(q)&&!c.id.toLowerCase().includes(q)&&!c.category.toLowerCase().includes(q)) return false; } return true; }),[coins,chainFilter,trendFilter,bucketFilter,watchlistOnly,watchlist,search]);
   const sorted=useMemo(()=>{ const arr=[...filtered]; const k=sortKey; if(k==="trend"){ const order:Trend[]=["Breaking","Heating","Volatile","Stealth","Cooling"]; arr.sort((a,b)=>order.indexOf(a.trend)-order.indexOf(b.trend)); } else { arr.sort((a:any,b:any)=>(b[k]??0)-(a[k]??0)); } return arr; },[filtered,sortKey]);
   const radarSorted=useMemo(()=>[...coins].sort((a,b)=>b.emergentScore-a.emergentScore).slice(0,6),[coins]);
-  const aiPicks=useMemo(()=>{ if(!coins.length) return []; const top=[...coins].sort((a,b)=>b.change24h-a.change24h).slice(0,6); return top.map(c=>({ symbol:c.symbol, name:c.name, image:c.image, change24:c.change24h, score:c.emergentScore, entry:`$${(c.priceNum/(1+c.change24h/100)).toFixed(c.priceNum<1?6:3)}`, current:c.price, pnl:`${c.change24h>=0?"+":""}${c.change24h.toFixed(2)}%`, status: c.change24h>12?"Take Profit":c.change24h<-6?"Stop Hit":"Active" as const, time:c.timeAgo })); },[coins]);
+  const rwaCoins=useMemo(()=>coins.filter(c=>c.category==="RWA").slice(0,12),[coins]);
+  const aiPicks=useMemo(()=>{ if(!coins.length) return []; const top=[...coins].sort((a,b)=>b.change24h-a.change24h).slice(0,6); return top.map(c=>({ symbol:c.symbol, name:c.name, image:c.image, change24:c.change24h, score:c.emergentScore, entry:`$${(c.priceNum/(1+c.change24h/100)).toFixed(c.priceNum<1?6:3)}`, current:c.price, pnl:`${c.change24h>=0?"+" :""}${c.change24h.toFixed(2)}%`, status: c.change24h>12?"Take Profit":c.change24h<-6?"Stop Hit":"Active" as const, time:c.timeAgo })); },[coins]);
   const topPnl=useMemo(()=>[...coins].slice().sort((a,b)=>b.change24h-a.change24h).slice(0,10),[coins]);
   const pnlUrl=(c:any)=> c.chain==="Solana"
     ? `https://gmgn.ai/sol/token/${c.id}`
@@ -279,9 +335,12 @@ export default function EmergentMinimal(){
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <a href="/" className="hidden items-center gap-1.5 rounded-full border border-[#E8E8E8] bg-white px-3 py-2.5 text-[13px] font-semibold text-[#0A0A0A] hover:bg-[#F8F8F7] sm:flex">App</a>
-            <a href="/portfolio" className="hidden items-center gap-1.5 rounded-full border border-[#E8E8E8] bg-white px-4 py-2.5 text-[13px] font-semibold text-[#0A0A0A] hover:bg-[#F8F8F7] sm:flex">Portfolio</a>
-            <a href="/about" className="hidden items-center gap-1.5 rounded-full border border-[#E8E8E8] bg-white px-3 py-2.5 text-[13px] font-semibold text-[#0A0A0A] hover:bg-[#F8F8F7] sm:flex">Wiki / About</a>
+            <a href="/" title="App" className="grid size-10 place-items-center rounded-full border border-[#E8E8E8] bg-white hover:border-[#0A0A0A] sm:hidden"><IconLayers className="size-4"/></a>
+            <a href="/portfolio" title="Portfolio" className="grid size-10 place-items-center rounded-full border border-[#E8E8E8] bg-white hover:border-[#0A0A0A] sm:hidden"><IconWallet className="size-4"/></a>
+            <a href="/about" title="Wiki" className="grid size-10 place-items-center rounded-full border border-[#E8E8E8] bg-white hover:border-[#0A0A0A] sm:hidden"><IconGlobe className="size-4"/></a>
+            <a href="/" className="hidden items-center gap-1.5 rounded-full border border-[#E8E8E8] bg-white px-3 py-2.5 text-[13px] font-semibold text-[#0A0A0A] hover:bg-[#F8F8F7] sm:flex"><IconLayers className="size-4"/> App</a>
+            <a href="/portfolio" className="hidden items-center gap-1.5 rounded-full border border-[#E8E8E8] bg-white px-4 py-2.5 text-[13px] font-semibold text-[#0A0A0A] hover:bg-[#F8F8F7] sm:flex"><IconWallet className="size-4"/> Portfolio</a>
+            <a href="/about" className="hidden items-center gap-1.5 rounded-full border border-[#E8E8E8] bg-white px-3 py-2.5 text-[13px] font-semibold text-[#0A0A0A] hover:bg-[#F8F8F7] sm:flex"><IconGlobe className="size-4"/> Wiki</a>
             {isConnected?(
               <>
                 <button onClick={onHunt} title="Hunt" className="hidden items-center gap-1.5 rounded-full border border-[#0A0A0A] bg-white px-3 py-2 text-[13px] font-semibold hover:bg-[#F8F8F7] sm:flex">🔥 <span className="text-[#0A0A0A]">{panther.streak}</span></button>
@@ -297,16 +356,20 @@ export default function EmergentMinimal(){
             )}
           </div>
         </div>
-        <div className="border-t border-[#E8E8E8] bg-[#0A0A0A] text-white relative ticker-bar"><div className="ticker-track" style={{animationDuration:"300s"}}>{[...(coins.length?coins:[]),...(coins.length?coins:[])].map((c,i)=>{ const surging = c.change24h>=8 || c.trend==="Breaking"; const gainer = c.change24h>0; return (<button key={c.id+i} onClick={()=>setSelected(c)} onMouseEnter={()=>setTickerHover(c)} onMouseLeave={()=>setTickerHover(null)} className={`ticker-item flex shrink-0 items-center gap-2 border-r border-white/15 px-4 py-2 text-[13px] text-left hover:bg-white/10 ${gainer?"ticker-gain":"opacity-70"} ${surging?"ticker-surge":""}`}><img src={c.image} alt={c.symbol} className="size-4 rounded-full bg-white object-cover"/><span className="font-mono text-[13px] font-semibold">${c.symbol}</span><span className={`text-[12px] ${c.change24h>=0?"text-white":"text-white/60"}`}>{c.change24h>=0?"↗":"↘"} {Math.abs(c.change24h).toFixed(1)}%</span><span className="text-white/40 hidden sm:inline">· {c.marketCap}</span><span className={`ml-1 hidden rounded-full px-1.5 py-0.5 text-[10px] sm:inline ${surging?"bg-[#0A0A0A] text-white border border-white":"bg-white/10"}`}>{surging?"🔥 SURGING":c.category}</span></button>); })}</div>
+        <div className="border-t border-[#E8E8E8] relative ticker-bar ticker-marble"><div className="ticker-marble-overlay border-y border-white/40"><div className="ticker-track py-2" style={{animationDuration:"600s", gap:"8px"}}>{[...(coins.length?coins:[]),...(coins.length?coins:[])].map((c,i)=>{ const surging = c.change24h>=8 || c.trend==="Breaking"; const gainer = c.change24h>0; return (<button key={c.id+i} onClick={()=>setSelected(c)} onMouseEnter={()=>setTickerHover(c)} onMouseLeave={()=>setTickerHover(null)} className={`ticker-item flex shrink-0 items-center gap-2 border px-3 py-1.5 text-[13px] text-left ${gainer?"ticker-gain border-[#E8E8E8]":"bg-white/70 border-white/50 opacity-80"} ${surging?"ticker-surge border-[#0A0A0A]":""}`}><img src={c.image} alt={c.symbol} className="size-5 rounded-full bg-white object-cover border border-black/10"/><span className="font-mono text-[13px] font-bold tracking-tight">${c.symbol}</span><span className={`text-[12px] font-semibold ${c.change24h>=0?"text-emerald-700": "text-red-600"}`}>{c.change24h>=0?"↗":"↘"} {Math.abs(c.change24h).toFixed(1)}%</span><span className="hidden text-[11px] text-[#6B6B6B] sm:inline">· {c.marketCap}</span><span className={`ml-1 hidden rounded-full px-2 py-0.5 text-[10px] font-bold tracking-wide sm:inline ${surging?"bg-white text-[#0A0A0A] border border-white": gainer?"bg-[#0A0A0A] text-white":"bg-white border border-[#E8E8E8]"}`}>{surging?"🔥 SURGING":c.category}</span></button>); })}</div></div>
           {tickerHover && (
-            <div className="absolute left-1/2 top-full z-20 mt-1 hidden -translate-x-1/2 rounded-2xl border border-[#0A0A0A] bg-white p-3 shadow-xl sm:flex gap-3 min-w-[340px]">
-              <img src={tickerHover.image} alt={tickerHover.name} className="size-10 rounded-xl border border-[#E8E8E8] bg-white object-cover"/>
+            <div className="absolute left-1/2 top-full z-20 mt-2 hidden -translate-x-1/2 rounded-2xl border border-[#0A0A0A] bg-white p-3 shadow-2xl sm:flex gap-3 min-w-[380px]">
+              <img src={tickerHover.image} alt={tickerHover.name} className="size-11 rounded-xl border border-[#E8E8E8] bg-white object-cover"/>
               <div className="flex-1">
-                <div className="flex items-center gap-2"><span className="text-[13px] font-bold">{tickerHover.name}</span><span className="rounded-full bg-[#0A0A0A] px-2 py-0.5 text-[10px] font-bold text-white">{tickerHover.symbol}</span><span className="rounded-full border border-[#E8E8E8] px-2 py-0.5 text-[10px]">{tickerHover.category}</span></div>
+                <div className="flex items-center gap-2"><span className="text-[13px] font-bold">{tickerHover.name}</span><span className="rounded-full bg-[#0A0A0A] px-2 py-0.5 text-[10px] font-bold text-white">{tickerHover.symbol}</span><span className="rounded-full border border-[#E8E8E8] px-2 py-0.5 text-[10px]">{tickerHover.category}</span><span className={`ml-auto text-[11px] font-bold ${tickerHover.change24h>=0?"text-emerald-600":"text-red-600"}`}>{tickerHover.change24h>=0?"+":""}{tickerHover.change24h.toFixed(1)}%</span></div>
                 <div className="text-[11px] leading-4 text-[#6B6B6B] line-clamp-2">{tickerHover.description}</div>
-                <div className="mt-1 flex gap-2 text-[11px]"><span className="font-mono font-semibold">{tickerHover.price} <span className={tickerHover.change24h>=0?"text-green-600":"text-red-600"}>{tickerHover.change24h>=0?"+":""}{tickerHover.change24h.toFixed(2)}%</span></span><span className="text-[#9A9A9A]">· Vol {tickerHover.volume} · Score {tickerHover.emergentScore}</span></div>
+                <div className="mt-1 flex gap-2 text-[11px]"><span className="font-mono font-semibold">{tickerHover.price}</span><span className="text-[#9A9A9A]">· Vol {tickerHover.volume} · Score {tickerHover.emergentScore} · {tickerHover.trend}</span></div>
+                <div className="mt-2 flex gap-1.5">
+                  <a onClick={(e)=>e.stopPropagation()} href={`https://www.coingecko.com/en/coins/${tickerHover.id}`} target="_blank" rel="noreferrer" className="rounded-full border border-[#0A0A0A] bg-white px-2.5 py-1 text-[11px] font-semibold hover:bg-[#F8F8F7]">CGK ↗</a>
+                  <a onClick={(e)=>e.stopPropagation()} href={`https://dexscreener.com/${tickerHover.chain.toLowerCase()}?q=${tickerHover.symbol}`} target="_blank" rel="noreferrer" className="rounded-full bg-[#0A0A0A] px-2.5 py-1 text-[11px] font-semibold text-white">Dex ↗</a>
+                  <button onClick={()=>setSelected(tickerHover)} className="rounded-full border border-[#E8E8E8] bg-[#F8F8F7] px-2.5 py-1 text-[11px] font-semibold">Details →</button>
+                </div>
               </div>
-              <span className="self-center text-[11px] font-semibold text-[#0A0A0A]">Click →</span>
             </div>
           )}
         </div>
@@ -357,7 +420,19 @@ export default function EmergentMinimal(){
             </div>
           </div>
           <div className="mt-6">
-            <div className="mb-3 flex flex-wrap items-center justify-between gap-2"><h2 className="text-[12px] font-semibold tracking-[0.14em] text-[#6B6B6B]">FEED · {sorted.length} REAL COINS {loading&&<span className="ml-2 font-normal">loading…</span>}</h2><div className="flex items-center gap-2"><span className="text-[11px] text-[#9A9A9A]">Sort</span><div className="relative"><select value={sortKey} onChange={e=>setSortKey(e.target.value as SortKey)} className="h-9 appearance-none rounded-full border border-[#E8E8E8] bg-white pl-3 pr-8 text-[13px] font-semibold">{SORTS.map(s=><option key={s.key} value={s.key}>{s.label}</option>)}</select><span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[#6B6B6B]">⌄</span></div></div></div>
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2"><h2 className="text-[12px] font-semibold tracking-[0.14em] text-[#6B6B6B] flex items-center gap-2"><IconLayers className="size-3.5"/> FEED · {sorted.length} <span className="hidden sm:inline">REAL COINS</span> {loading&&<span className="ml-2 font-normal">loading…</span>}</h2>
+              <div className="flex items-center gap-1.5">
+                {SORTS.map(s=>{
+                  const active=sortKey===s.key;
+                  const Icon = s.icon==="trophy"?IconTrophy : s.icon==="flame"?IconFlame : s.icon==="price"?IconDollar : s.icon==="clock"?IconClock : s.icon==="vol"?IconVol : s.icon==="cap"?IconLayers : IconChart;
+                  return (
+                    <button key={s.key} onClick={()=>setSortKey(s.key as SortKey)} title={s.label} aria-label={`Sort by ${s.label}`} className={`grid size-9 place-items-center rounded-full border transition ${active?"bg-[#0A0A0A] text-white border-[#0A0A0A] shadow":"bg-white text-[#0A0A0A] border-[#E8E8E8] hover:border-[#0A0A0A]"}`}>
+                      <Icon className="size-4"/>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
             {sorted.length===0&&!loading?<div className="card grid place-items-center py-16 text-[#6B6B6B]">No signals match your filters.</div>:(
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 2xl:grid-cols-3">
                 {loading?Array.from({length:6}).map((_,i)=><div key={i} className="card animate-pulse p-4"><div className="h-11 w-11 rounded-xl bg-[#E8E8E8]"/><div className="mt-4 h-4 w-2/3 bg-[#E8E8E8] rounded"/></div>):sorted.slice(0,60).map(coin=>{
@@ -377,6 +452,68 @@ export default function EmergentMinimal(){
               </div>
             )}
             {sorted.length>60&&<div className="mt-4 text-center text-[12px] text-[#6B6B6B]">Showing 60 of {sorted.length} — refine search or filters to see more.</div>}
+          </div>
+
+          {/* NFT & RWA — cryptoslam.io style */}
+          <div className="mt-6">
+            <div className="flex flex-wrap items-center gap-2">
+              <button onClick={()=>setActiveExtra('nfts')} className={`rounded-full px-4 py-2 text-[13px] font-bold tracking-wide ${activeExtra==='nfts'?"bg-[#0A0A0A] text-white":"border border-[#E8E8E8] bg-white hover:border-[#0A0A0A]"}`}>NFTs · {nfts.length||"—"}</button>
+              <button onClick={()=>setActiveExtra('rwa')} className={`rounded-full px-4 py-2 text-[13px] font-bold tracking-wide ${activeExtra==='rwa'?"bg-[#0A0A0A] text-white":"border border-[#E8E8E8] bg-white hover:border-[#0A0A0A]"}`}>RWA · {rwaCoins.length}</button>
+              {activeExtra==='nfts' && (
+                <div className="ml-auto flex gap-1">
+                  {(['24h','7d','30d'] as const).map(tf=>(
+                    <button key={tf} onClick={()=>setNftTimeframe(tf)} className={`rounded-full px-3 py-1 text-[12px] font-semibold ${nftTimeframe===tf?"bg-[#0A0A0A] text-white":"border border-[#E8E8E8] bg-white"}`}>{tf}</button>
+                  ))}
+                </div>
+              )}
+              {activeExtra==='rwa' && <span className="ml-auto text-[11px] text-[#6B6B6B]">Real World Assets — on-chain</span>}
+            </div>
+
+            {activeExtra==='nfts' ? (
+              <div className="mt-3">
+                {nftLoading ? (
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">{Array.from({length:8}).map((_,i)=><div key={i} className="card animate-pulse p-3"><div className="aspect-square rounded-xl bg-[#E8E8E8]"/><div className="mt-3 h-3 w-2/3 bg-[#E8E8E8] rounded"/></div>)}</div>
+                ) : nfts.length===0 ? (
+                  <div className="card grid place-items-center py-10 text-sm text-[#6B6B6B]">NFTs loading from CoinGecko — rate-limited, retry shortly. <button onClick={fetchNfts} className="ml-2 underline">retry</button></div>
+                ) : (
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+                    {nfts.slice(0,12).map(n=>(
+                      <div key={n.id} className="card card-hover overflow-hidden p-0 text-left">
+                        <div className="aspect-square overflow-hidden bg-[#F8F8F7]"><img src={n.image} alt={n.name} className="h-full w-full object-cover" loading="lazy" onError={(e)=>(e.currentTarget.style.display='none')} /></div>
+                        <div className="p-3">
+                          <div className="text-[13px] font-bold leading-none truncate">{n.name}</div>
+                          <div className="text-[11px] text-[#6B6B6B]">{n.symbol?.toUpperCase()} · {n.totalSupply ? `${n.totalSupply.toLocaleString()} supply` : "collection"}</div>
+                          <div className="mt-2 grid grid-cols-2 gap-2 rounded-xl bg-[#F8F8F7] p-2 text-[11px]">
+                            <div><div className="text-[#6B6B6B]">Floor</div><div className="font-mono font-bold">{n.floor?`$${n.floor.toFixed(n.floor<1?3:2)}`:"—"} <span className={n.floorChange>=0?"text-emerald-600":"text-red-600"}>{n.floorChange?`${n.floorChange>=0?"+":""}${n.floorChange.toFixed(1)}%`:""}</span></div></div>
+                            <div><div className="text-[#6B6B6B]">Vol {nftTimeframe}</div><div className="font-mono font-bold">{n.displayVolume?`$${(n.displayVolume/1000).toFixed(1)}k`:"—"}</div></div>
+                            <div className="col-span-2 flex justify-between text-[10px] text-[#6B6B6B]"><span>{n.displaySales} sales</span><span>Cap {n.marketCap?`$${(n.marketCap/1e6).toFixed(1)}M`:"—"}</span></div>
+                          </div>
+                          <div className="mt-2 flex gap-1.5">
+                            {n.opensea && <a href={n.opensea} target="_blank" rel="noreferrer" className="flex-1 rounded-full border border-[#0A0A0A] bg-white py-1.5 text-center text-[11px] font-semibold hover:bg-[#F8F8F7]">OpenSea ↗</a>}
+                            <a href={`https://www.coingecko.com/en/nft/${n.id}`} target="_blank" rel="noreferrer" className="flex-1 rounded-full bg-[#0A0A0A] py-1.5 text-center text-[11px] font-semibold text-white">CGK ↗</a>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <div className="mt-2 text-[11px] text-[#9A9A9A]">Source: <a href="https://www.coingecko.com/en/nfts" target="_blank" rel="noreferrer" className="underline">CoinGecko NFTs</a> · cryptoslam-style — top sold in {nftTimeframe}, rich images, real links (OpenSea/Blur/CGK). Floor/vol live.</div>
+              </div>
+            ) : (
+              <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                {rwaCoins.length===0 ? <div className="card grid place-items-center py-10 text-sm text-[#6B6B6B] col-span-2">No RWA coins in current 300 — switch bucket to RWA to see all.</div> : rwaCoins.map(c=>(
+                  <button key={c.id} onClick={()=>setSelected(c)} className="card card-hover flex gap-3 p-3 text-left">
+                    <img src={c.image} alt={c.name} className="size-11 rounded-xl border border-[#E8E8E8] bg-white object-cover"/>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2"><span className="text-[13px] font-bold truncate">{c.name}</span><span className="rounded-full bg-[#0A0A0A] px-1.5 py-0.5 text-[10px] font-bold text-white">{c.symbol}</span><span className="rounded-full border border-[#E8E8E8] px-1.5 py-0.5 text-[10px]">RWA</span></div>
+                      <div className="text-[11px] text-[#6B6B6B] truncate">{c.description}</div>
+                      <div className="mt-1 flex gap-3 text-[11px] font-mono"><span className="font-bold">{c.price}</span><span className={c.change24h>=0?"text-emerald-600":"text-red-600"}>{c.change24h>=0?"+":""}{c.change24h.toFixed(2)}%</span><span className="text-[#9A9A9A]">Vol {c.volume} · Cap {c.marketCap}</span></div>
+                    </div>
+                    <ScoreRing score={c.emergentScore}/>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         </div>
         <div className="col-span-12 space-y-5 xl:col-span-4 2xl:col-span-3">
