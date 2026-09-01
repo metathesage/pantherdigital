@@ -23,6 +23,10 @@ body { background: #FFFFFF; color: #0A0A0A; font-family: var(--font-geist-sans),
 @media (prefers-reduced-motion: reduce) { .ticker-track, .ticker-bar::after { animation: none; } }
 @keyframes pulse-dot { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.6;transform:scale(0.85)} }
 @keyframes ping { 0%{transform:scale(0.8);opacity:0.9} 100%{transform:scale(2.4);opacity:0} }
+@keyframes hallowFloat { 0%,100%{transform:translateY(0) rotate(-1deg)} 50%{transform:translateY(-4px) rotate(1deg)} }
+@keyframes hallowGlow { 0%,100%{box-shadow:0 0 12px rgba(255,107,0,0.35)} 50%{box-shadow:0 0 22px rgba(255,107,0,0.6)} }
+.hallow-float { animation: hallowFloat 3.2s ease-in-out infinite; }
+.hallow-glow { animation: hallowGlow 2.4s ease-in-out infinite; }
 *:focus-visible { outline: 2px solid #0A0A0A; outline-offset: 2px; }
 /* Home hero animations (B&W) */
 @keyframes homeFadeUp { from { opacity: 0; transform: translateY(22px); } to { opacity: 1; transform: translateY(0); } }

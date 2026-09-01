@@ -27,18 +27,19 @@ export default function HomePage() {
             <span className="text-[13px] font-semibold tracking-[0.32em] text-white/80">PANTHERDIGITAL</span>
           </Link>
           <span className="flex items-center gap-2 text-[11px] font-semibold tracking-widest text-white/55">
-            <span className="size-1.5 animate-pulse rounded-full bg-emerald-400" /> PANTHER DIGITAL · ONLINE
+            <img src="/assets/halloween/cryptohallow_sol_ghost_1024.png" alt="" className="size-5 rounded-full bg-white/10 object-cover animate-[pulse_2s_ease-in-out_infinite]"/> <span className="hidden sm:inline text-[#FF9A3D]">🦇 SPOOKY SEASON — HAUNTED MARKETS</span><span className="size-1.5 animate-pulse rounded-full bg-emerald-400" /> PANTHER DIGITAL · ONLINE
           </span>
         </header>
 
         {/* Center menu */}
         <section className="flex flex-1 flex-col items-center justify-center py-10 text-center">
-          <div className="mb-6">
+          <div className="mb-6 relative">
             <img src="/assets/logo-panther.png" alt="PantherDigital" className="h-24 w-auto object-contain drop-shadow-[0_8px_32px_rgba(0,0,0,0.6)] sm:h-28" />
+            <img src="/assets/halloween/cryptohallow_btc_pumpkin_1024.png" alt="" className="absolute -right-6 -top-2 size-10 rounded-full border-2 border-[#FF6B00] bg-white object-cover shadow-lg hidden sm:block"/>
           </div>
 
           <p className="mt-2 max-w-[480px] text-[13px] leading-6 tracking-wide text-white/70">
-            The digital panther. Sculpted mesh, real-time 3D, on-chain signals — no noise.
+            The digital panther. Sculpted mesh, real-time 3D, on-chain signals — haunted edition. 🎃👻
           </p>
 
           <nav className="mt-12 flex w-full max-w-[420px] flex-col gap-3">

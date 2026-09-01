@@ -519,11 +519,11 @@ export default function PortfolioPage() {
       <div className="sticky top-0 z-30 border-b border-[#E8E8E8] bg-white/95 backdrop-blur">
         <div className="mx-auto flex max-w-[1200px] items-center justify-between gap-4 px-4 py-3">
           <div className="flex items-center gap-3">
-            <a href="/" className="grid size-9 place-items-center rounded-xl border border-[#0A0A0A] bg-white p-1">
-            <img src="/assets/icon-wallet.png" alt="CoinPanther" className="h-7 w-7 object-contain" />
+            <a href="/" className="grid size-9 place-items-center rounded-xl border border-[#0A0A0A] bg-white p-1 overflow-hidden">
+            <img src="/assets/halloween/cryptohallow_wallet_spiderweb_1024.png" alt="CoinPanther" className="h-7 w-7 object-cover rounded-lg" />
             </a>
             <div>
-              <div className="text-[16px] font-bold tracking-widest">PORTFOLIO</div>
+              <div className="flex items-center gap-2 text-[16px] font-bold tracking-widest">PORTFOLIO <span className="rounded-full bg-[#FF6B00] px-2 py-0.5 text-[10px] font-bold tracking-widest text-white">🕸️ HAUNTED VAULT</span></div>
               <div className="text-[11px] tracking-widest text-[#6B6B6B]">REAL ON-CHAIN DATA</div>
             </div>
           </div>
@@ -534,7 +534,8 @@ export default function PortfolioPage() {
       </div>
 
       <div className="mx-auto max-w-[1200px] px-4 py-6">
-        <div className="rounded-2xl border border-[#E8E8E8] bg-white p-5">
+        <div className="rounded-2xl border border-[#E8E8E8] bg-white p-5 relative overflow-hidden">
+          <img src="/assets/halloween/cryptohallow_wallet_spiderweb_1024.png" alt="" className="pointer-events-none absolute -right-8 -top-8 size-24 opacity-[0.07] rounded-full"/>
           <div className="flex flex-wrap items-center gap-2 text-[11px] font-semibold tracking-widest text-[#6B6B6B]">
             <span className="size-2 rounded-full bg-[#0A0A0A]" /> WALLET INPUT — ETH + SOL (auto-detect)
           </div>
