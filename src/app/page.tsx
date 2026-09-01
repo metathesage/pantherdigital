@@ -1,96 +1,78 @@
 "use client";
 import Link from "next/link";
-import PantherBackground from "@/components/PantherBackground";
-
-const MENU = [
-  { label: "Launch App", href: "/app", primary: true, sub: "Enter the radar" },
-  { label: "Portfolio", href: "/portfolio", sub: "Read any ETH / SOL wallet" },
-  { label: "Wiki / About", href: "/about", sub: "Why we dominate" },
-];
+import { useEffect, useState } from "react";
 
 export default function HomePage() {
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    const t = setTimeout(() => setLoading(false), 1400);
+    return () => clearTimeout(t);
+  }, []);
   return (
-    <main className="relative flex min-h-screen flex-col overflow-hidden bg-[#050208] text-white">
-      {/* PANTHER DIGITAL — meshy 8192 + 3D GLB background */}
-      <PantherBackground />
+    <main className="relative flex min-h-screen flex-col overflow-hidden bg-black text-white">
+      {/* Black marble panther — your image */}
+      <img
+        src="/black-marble-panther.jpg"
+        alt=""
+        aria-hidden
+        className="pointer-events-none fixed inset-0 h-full w-full object-cover opacity-[0.92]"
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none fixed inset-0 bg-gradient-to-b from-black/15 via-black/35 to-black/80"
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none fixed inset-0"
+        style={{
+          background:
+            "radial-gradient(ellipse 90% 70% at 50% 42%, transparent 28%, rgba(0,0,0,0.58) 78%)",
+        }}
+      />
 
-      {/* subtle scanlines over panther */}
-      <div aria-hidden className="pointer-events-none fixed inset-0 z-0 opacity-[0.18]" style={{ backgroundImage: "repeating-linear-gradient(to bottom, rgba(255,255,255,0.04) 0px, rgba(255,255,255,0.04) 1px, transparent 1px, transparent 7px)" }} />
-
-      <div className="relative z-10 mx-auto flex w-full max-w-[1000px] flex-1 flex-col px-6 py-8">
-        {/* Top bar */}
-        <header className="flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-3">
-            <span className="grid size-10 place-items-center rounded-xl border border-white/10 bg-black/40 backdrop-blur">
-              <img src="/panther-icon.png" alt="PantherDigital" className="h-7 w-7 rounded object-contain" />
-            </span>
-            <span className="text-[13px] font-semibold tracking-[0.32em] text-white/80">PANTHERDIGITAL</span>
-          </Link>
-          <span className="flex items-center gap-2 text-[11px] font-semibold tracking-widest text-white/55">
-            <span className="size-1.5 animate-pulse rounded-full bg-emerald-400" /> PANTHER DIGITAL · ONLINE
-          </span>
-        </header>
-
-        {/* Center menu */}
-        <section className="flex flex-1 flex-col items-center justify-center py-10 text-center">
-          <div className="mb-6">
-            <img src="/assets/logo-panther.png" alt="PantherDigital" className="h-24 w-auto object-contain drop-shadow-[0_8px_32px_rgba(0,0,0,0.6)] sm:h-28" />
-          </div>
-
-          <p className="mt-2 max-w-[480px] text-[13px] leading-6 tracking-wide text-white/70">
-            The digital panther. Sculpted mesh, real-time 3D, on-chain signals — no noise.
-          </p>
-
-          <nav className="mt-12 flex w-full max-w-[420px] flex-col gap-3">
-            {MENU.map((m) =>
-              m.primary ? (
-                <Link
-                  key={m.label}
-                  href={m.href}
-                  className="group relative flex items-center justify-center gap-3 rounded-xl bg-white px-8 py-5 text-[16px] font-bold uppercase tracking-[0.18em] text-black hover:bg-zinc-100"
-                >
-                  <img src="/assets/marble-arrow-flames.png" alt="" className="h-6 w-6 object-contain opacity-90" />
-                  {m.label}
-                  <span className="transition-transform duration-200 group-hover:translate-x-1">▶</span>
-                </Link>
-              ) : (
-                <Link
-                  key={m.label}
-                  href={m.href}
-                  className="group flex items-center justify-between rounded-xl border border-white/10 bg-black/35 px-6 py-4 text-left backdrop-blur-md hover:bg-black/50 hover:border-white/15"
-                >
-                  <span className="flex items-center gap-3">
-                    <span className="text-white/40 opacity-0 transition group-hover:opacity-100">▸</span>
-                    <span className="text-[15px] font-semibold tracking-[0.14em] uppercase text-white">{m.label}</span>
-                  </span>
-                  <span className="text-[11px] tracking-wide text-white/45">{m.sub}</span>
-                </Link>
-              )
-            )}
-          </nav>
-        </section>
-
-        {/* Feature strip */}
-        <section className="mt-10 grid grid-cols-3 gap-3 text-center">
-          {[
-            { icon: "/assets/icon-analytics.png", t: "Live analytics", d: "300+ coins" },
-            { icon: "/assets/icon-tracking-eye.png", t: "X-ray radar", d: "real signals" },
-            { icon: "/assets/icon-wallet.png", t: "Wallet scan", d: "ETH / SOL" },
-          ].map((f) => (
-            <div key={f.t} className="rounded-2xl border border-white/10 bg-black/30 px-3 py-4 backdrop-blur-md">
-              <img src={f.icon} alt="" className="mx-auto h-9 w-9 object-contain opacity-90" />
-              <div className="mt-2 text-[13px] font-semibold tracking-[0.06em] text-white">{f.t}</div>
-              <div className="text-[11px] tracking-wide text-white/45">{f.d}</div>
+      {/* Loading overlay */}
+      {loading && (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-black">
+          <div className="flex flex-col items-center gap-6">
+            <div className="relative">
+              <div className="absolute inset-0 rounded-full bg-white/10 blur-xl animate-pulse" />
+              <div className="relative grid size-20 place-items-center rounded-full border border-white/20 bg-white/5 backdrop-blur">
+                <img src="/panther-icon.png" alt="" className="h-10 w-10 object-contain animate-pulse" />
+              </div>
+              <div className="absolute inset-0 rounded-full border border-white/20 animate-[spin_1.2s_linear_infinite]" style={{ borderTopColor: "transparent", borderRightColor: "transparent" }} />
             </div>
-          ))}
-        </section>
+            <div className="flex flex-col items-center gap-2">
+              <span className="text-[11px] tracking-[0.4em] text-white/60">PANTHER DIGITAL</span>
+              <div className="h-px w-24 overflow-hidden rounded bg-white/10">
+                <div className="h-full w-1/2 bg-white animate-[shimmer_0.9s_ease-in-out_infinite]" />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
-        {/* Footer */}
-        <footer className="mt-8 flex items-center justify-between text-[10px] tracking-[0.2em] text-white/35">
-          <span>v1.0 · MAINNET</span>
-          <span>© PANTHERDIGITAL — NOT FINANCIAL ADVICE</span>
-        </footer>
+      {/* Single huge CTA — nothing else */}
+      <div className="relative z-10 flex flex-1 flex-col items-center justify-center px-6 text-center">
+        <p className="text-[11px] font-semibold tracking-[0.4em] text-white/55">PANTHER DIGITAL · EMERGENT MATRIX</p>
+        <Link
+          href="/app"
+          className="group mt-6 inline-flex items-center justify-center rounded-[20px] bg-white px-10 py-7 text-[42px] font-black leading-none tracking-[-0.04em] text-black shadow-[0_20px_60px_rgba(0,0,0,0.5)] transition hover:bg-zinc-100 hover:shadow-[0_24px_70px_rgba(0,0,0,0.6)] sm:px-14 sm:py-8 sm:text-[64px] md:text-[84px]"
+          style={{ letterSpacing: "-0.05em" }}
+        >
+          <span className="relative">
+            LAUNCH APP
+            <span className="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-r from-transparent via-black/5 to-transparent opacity-0 transition group-hover:opacity-100" />
+          </span>
+          <span className="ml-4 inline-flex size-10 items-center justify-center rounded-full bg-black text-[18px] text-white transition group-hover:translate-x-1 sm:size-12 sm:text-[20px]">↗</span>
+        </Link>
+        <p className="mt-5 max-w-[520px] text-[12px] tracking-[0.18em] text-white/45">300+ COINS · REAL ON-CHAIN · NO NOISE</p>
       </div>
+
+      <footer className="relative z-10 flex items-center justify-center pb-6 text-[10px] tracking-[0.2em] text-white/30">
+        © PANTHERDIGITAL — NOT FINANCIAL ADVICE
+      </footer>
+
+      <style>{`@keyframes shimmer{0%{transform:translateX(-100%)}100%{transform:translateX(220%)}}`}</style>
     </main>
   );
 }

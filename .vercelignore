@@ -6,6 +6,8 @@ out
 *.log
 .env*
 public/panther-procedural.glb
+public/panther.glb
+public/panther-meshy-8192.jpg
 src/app/cards
 src/app/sets
 src/app/wiki
