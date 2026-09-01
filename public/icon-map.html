@@ -1,0 +1,55 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>
+body{margin:0;padding:16px;background:#0A0A0A;color:#fff;font:12px system-ui}
+.grid{display:grid;grid-template-columns:repeat(6,1fr);gap:12px}
+.card{background:#1A1A1A;border:1px solid #2A2A2A;border-radius:12px;padding:8px;text-align:center}
+.card img{width:100%;aspect-ratio:1;object-fit:contain;background:#fff;border-radius:8px}
+.card div{margin-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+h1{font-size:14px;letter-spacing:.1em;margin:0 0 12px}
+</style></head><body>
+<h1>COMPOSER ICONS · 33 — tell me which = which category/chain</h1>
+<div class="grid" id="g"></div>
+<script>
+const files = [
+"composer_2026-08-30_04-54-01-018_d6c8d3.png",
+"composer_2026-09-01_05-32-26-997_d1c36f.png",
+"composer_2026-09-01_05-32-27-183_f3b9bc.png",
+"composer_2026-09-01_05-32-27-271_7195ac.png",
+"composer_2026-09-01_05-32-27-374_c4a48b.png",
+"composer_2026-09-01_05-32-27-469_c614ec.png",
+"composer_2026-09-01_05-32-27-551_145ecb.png",
+"composer_2026-09-01_05-32-27-647_8ae320.png",
+"composer_2026-09-01_05-32-27-774_12a83d.png",
+"composer_2026-09-01_05-32-27-852_cb1ec2.png",
+"composer_2026-09-01_05-32-27-911_4db963.png",
+"composer_2026-09-01_05-32-28-043_2fe8e6.png",
+"composer_2026-09-01_05-32-28-131_4d42ee.png",
+"composer_2026-09-01_05-32-28-183_868f1d.png",
+"composer_2026-09-01_05-32-28-307_ef26f1.png",
+"composer_2026-09-01_05-32-28-390_78b99c.png",
+"composer_2026-09-01_05-32-28-478_55e984.png",
+"composer_2026-09-01_05-32-28-591_8ed0c9.png",
+"composer_2026-09-01_05-32-28-710_3962e0.png",
+"composer_2026-09-01_05-32-28-818_693491.png",
+"composer_2026-09-01_05-32-28-948_751d88.png",
+"composer_2026-09-01_05-32-29-100_7cea2c.png",
+"composer_2026-09-01_05-32-29-202_8c05fd.png",
+"composer_2026-09-01_05-32-29-315_6006d7.png",
+"composer_2026-09-01_05-32-29-401_b9a0bd.png",
+"composer_2026-09-01_05-32-29-499_cfa537.png",
+"composer_2026-09-01_05-32-29-608_08befb.png",
+"composer_2026-09-01_05-32-29-695_4d959b.png",
+"composer_2026-09-01_05-32-29-779_f2f6d9.png",
+"composer_2026-09-01_05-32-29-892_27eb3f.png",
+"composer_2026-09-01_05-32-29-980_8e063c.png",
+"composer_2026-09-01_05-32-30-100_520239.png",
+"composer_2026-09-01_05-32-30-220_b04a9f.png"
+];
+const g=document.getElementById('g');
+files.forEach(f=>{
+  const d=document.createElement('div'); d.className='card';
+  d.innerHTML=`<img src="/assets/composer-icons/${f}" alt=""><div title="${f}">${f.slice(-12)}</div>`;
+  g.appendChild(d);
+});
+</script>
+</body></html>
