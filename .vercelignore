@@ -6,3 +6,12 @@ out
 *.log
 .env*
 public/panther-procedural.glb
+src/app/cards
+src/app/sets
+src/app/wiki
+src/app/collection
+src/app/decks
+src/app/packs
+src/app/releases
+src/app/search
+src/app/fan-art

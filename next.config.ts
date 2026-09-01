@@ -6,5 +6,4 @@ const nextConfig: NextConfig = {
     root: path.resolve(import.meta.dirname),
   },
 };
-
 export default nextConfig;
