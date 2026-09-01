@@ -335,12 +335,9 @@ export default function EmergentMinimal(){
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <a href="/" title="App" className="grid size-10 place-items-center rounded-full border border-[#E8E8E8] bg-white hover:border-[#0A0A0A] sm:hidden"><IconLayers className="size-4"/></a>
-            <a href="/portfolio" title="Portfolio" className="grid size-10 place-items-center rounded-full border border-[#E8E8E8] bg-white hover:border-[#0A0A0A] sm:hidden"><IconWallet className="size-4"/></a>
-            <a href="/about" title="Wiki" className="grid size-10 place-items-center rounded-full border border-[#E8E8E8] bg-white hover:border-[#0A0A0A] sm:hidden"><IconGlobe className="size-4"/></a>
-            <a href="/" className="hidden items-center gap-1.5 rounded-full border border-[#E8E8E8] bg-white px-3 py-2.5 text-[13px] font-semibold text-[#0A0A0A] hover:bg-[#F8F8F7] sm:flex"><IconLayers className="size-4"/> App</a>
-            <a href="/portfolio" className="hidden items-center gap-1.5 rounded-full border border-[#E8E8E8] bg-white px-4 py-2.5 text-[13px] font-semibold text-[#0A0A0A] hover:bg-[#F8F8F7] sm:flex"><IconWallet className="size-4"/> Portfolio</a>
-            <a href="/about" className="hidden items-center gap-1.5 rounded-full border border-[#E8E8E8] bg-white px-3 py-2.5 text-[13px] font-semibold text-[#0A0A0A] hover:bg-[#F8F8F7] sm:flex"><IconGlobe className="size-4"/> Wiki</a>
+            <a href="/" title="App · Radar" className="grid size-10 place-items-center rounded-full border border-[#E8E8E8] bg-white hover:border-[#0A0A0A] hover:bg-[#0A0A0A] hover:text-white transition-colors"><IconLayers className="size-4"/></a>
+            <a href="/portfolio" title="Portfolio · Wallets" className="grid size-10 place-items-center rounded-full border border-[#E8E8E8] bg-white hover:border-[#0A0A0A] hover:bg-[#0A0A0A] hover:text-white transition-colors"><IconWallet className="size-4"/></a>
+            <a href="/about" title="Wiki · About" className="grid size-10 place-items-center rounded-full border border-[#E8E8E8] bg-white hover:border-[#0A0A0A] hover:bg-[#0A0A0A] hover:text-white transition-colors"><IconGlobe className="size-4"/></a>
             {isConnected?(
               <>
                 <button onClick={onHunt} title="Hunt" className="hidden items-center gap-1.5 rounded-full border border-[#0A0A0A] bg-white px-3 py-2 text-[13px] font-semibold hover:bg-[#F8F8F7] sm:flex">🔥 <span className="text-[#0A0A0A]">{panther.streak}</span></button>
