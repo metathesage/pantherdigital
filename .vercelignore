@@ -5,3 +5,4 @@ out
 .git
 *.log
 .env*
+public/panther-procedural.glb
