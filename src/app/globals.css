@@ -243,6 +243,8 @@ body { background: #FFFFFF; color: #0A0A0A; font-family: var(--font-geist-sans),
 }
 .radar-app header.sticky a,
 .radar-app header.sticky button { color: var(--cp-paper); }
+.radar-app header.sticky a[aria-current="page"] { background: var(--cp-paper); color: var(--cp-ink); }
+.radar-app header.sticky button.bg-\[\#f7f7f5\] { color: var(--cp-ink); }
 .radar-app header.sticky .icon-nav-btn { background: transparent; border-color: var(--cp-line); }
 .radar-app header.sticky .icon-nav-btn:hover { background: var(--cp-paper); color: var(--cp-ink); }
 .radar-app .ticker-bar { background: var(--cp-ink); border-color: var(--cp-line); }

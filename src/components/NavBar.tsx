@@ -10,6 +10,7 @@ const NAV_LINKS = [
   { href: "/app", label: "Radar" },
   { href: "/coins", label: "Coins" },
   { href: "/blockchains", label: "Blockchains" },
+  { href: "/nfts", label: "NFTs" },
   { href: "/portfolio", label: "Portfolio" },
   { href: "/about", label: "About" },
 ] as const;
