@@ -8,9 +8,16 @@ if (_hasPrivyEnv) { try { _usePrivy = require("@privy-io/react-auth").usePrivy; 
 type Chain = "Solana" | "Ethereum" | "Base" | "Robinhood" | "Sui";
 type Trend = "Breaking" | "Heating" | "Stealth" | "Cooling" | "Volatile";
 type Risk = "Low" | "Medium" | "High" | "Critical";
-type Coin = { id:string; name:string; symbol:string; chain:Chain; price:string; priceNum:number; change1h:number; change24h:number; marketCap:string; marketCapNum:number; volume:string; volumeNum:number; emergentScore:number; risk:Risk; trend:Trend; reason:string; spark:number[]; timeAgo:string; liquidity:string; holders:string; sentiment:number; riskScore:number; mentions:number; dexPool:string; image:string; rank:number; category:string; description:string; top10HoldersPct:number; };
+type Coin = { id:string; name:string; symbol:string; chain:Chain; price:string; priceNum:number; change1h:number; change24h:number; marketCap:string; marketCapNum:number; volume:string; volumeNum:number; emergentScore:number; risk:Risk; trend:Trend; reason:string; spark:number[]; timeAgo:string; liquidity:string; holders:string; sentiment:number; riskScore:number; mentions:number; dexPool:string; image:string; rank:number; category:string; description:string; top10HoldersPct:number; source?:"coingecko"|"pair"; pairAddress?:string; tokenAddress?:string; dexName?:string; liquidityNum?:number; txns24h?:number; fdvNum?:number; pairUrl?:string; geckoTerminalUrl?:string; socials?:{twitter?:string; telegram?:string; website?:string}; poolCreatedAt?:string; };
 type GeckoCoin = { id:string; symbol:string; name:string; image:string; current_price:number; market_cap:number; total_volume:number; price_change_percentage_1h_in_currency?:number; price_change_percentage_24h?:number; market_cap_rank:number; sparkline_in_7d?:{price:number[]}; };
 const CHAINS: (Chain | "All")[] = ["All","Solana","Ethereum","Base","Robinhood","Sui"];
+type Feed = "trending" | "new" | "boosts" | "bluechips";
+const FEEDS: { key: Feed; label: string }[] = [
+  { key: "trending", label: "Trending" },
+  { key: "new", label: "New" },
+  { key: "boosts", label: "Boosts" },
+  { key: "bluechips", label: "Blue chips" },
+];
 const TRENDS = ["All","Breaking","Heating","Stealth","Volatile","Cooling"] as const;
 const BUCKETS = ["All","Layer 1","DeFi","Meme","AI","Gaming","Stable","RWA","Infrastructure"] as const;
 // accurate coin categorization — explicit allowlists + rank/name guards, no random bucketing
@@ -75,7 +82,95 @@ function trendFor(c:number): Trend { if(c>15) return "Breaking"; if(c>5) return 
 function riskFor(s:number,v:number,m:number): Risk { const r=v/(m||1); if(s<55||r<0.02) return "Critical"; if(s<70) return "High"; if(s<85) return "Medium"; return "Low"; }
 function formatMoney(n:number){ if(n>=1e12) return `$${(n/1e12).toFixed(2)}T`; if(n>=1e9) return `$${(n/1e9).toFixed(2)}B`; if(n>=1e6) return `$${(n/1e6).toFixed(2)}M`; if(n>=1e3) return `$${(n/1e3).toFixed(0)}K`; return `$${n.toFixed(2)}`; }
 function timeAgoFor(r:number){ const m=(r*7)%120+2; return m<60?`${m}m ago`:`${Math.floor(m/60)}h ${m%60}m ago`; }
+type PairRow = { id?:string; network?:string; chainId?:string; pairAddress?:string; tokenAddress?:string; name?:string; tokenName?:string; tokenSymbol?:string; quoteSymbol?:string; dexName?:string; image?:string; priceUsd?:number; change1h?:number; change24h?:number; volume24h?:number; liquidityUsd?:number; fdvUsd?:number; marketCapUsd?:number; txns24h?:number; poolCreatedAt?:string|null; pairUrl?:string; geckoTerminalUrl?:string; socials?:{twitter?:string; telegram?:string; website?:string}; description?:string };
+function pairChainParam(ch: Chain|"All"): "all"|"solana"|"eth"|"base" {
+  if(ch==="Solana") return "solana";
+  if(ch==="Ethereum") return "eth";
+  if(ch==="Base") return "base";
+  return "all";
+}
+function chainFromPairNet(n: string): Chain {
+  const x=(n||"").toLowerCase();
+  if(x==="solana") return "Solana";
+  if(x==="eth"||x==="ethereum") return "Ethereum";
+  if(x==="base") return "Base";
+  return "Solana";
+}
+function timeAgoFromIso(iso?: string|null){
+  if(!iso) return "—";
+  const ms=Date.now()-new Date(iso).getTime();
+  if(!Number.isFinite(ms)) return "—";
+  const m=Math.max(1, Math.floor(Math.abs(ms)/60000));
+  if(m<60) return `${m}m ago`;
+  const h=Math.floor(m/60);
+  if(h<48) return `${h}h ago`;
+  return `${Math.floor(h/24)}d ago`;
+}
+function formatPrice(n:number){
+  if(!Number.isFinite(n)||n<=0) return "—";
+  if(n<1) return `$${n.toFixed(n<0.01?6:4)}`;
+  return `$${n.toLocaleString(undefined,{maximumFractionDigits:2})}`;
+}
+function sparkFromChange(price:number, c24:number){
+  if(!price) return Array.from({length:14},()=>0);
+  const start=price/(1+(c24||0)/100);
+  return Array.from({length:14},(_,i)=> start + (price-start)*(i/13));
+}
+function mapPairToCoin(p: PairRow, rank:number): Coin {
+  const price=Number(p.priceUsd)||0;
+  const c1=Number(p.change1h)||0;
+  const c24=Number(p.change24h)||0;
+  const vol=Number(p.volume24h)||0;
+  const liq=Number(p.liquidityUsd)||0;
+  const fdv=Number(p.fdvUsd)||0;
+  const mcap=Number(p.marketCapUsd)||fdv||liq;
+  const volMcap=vol/(mcap||1);
+  const raw=52 + c24*1.4 + c1*0.6 + Math.min(18,volMcap*280);
+  const score=Math.max(12,Math.min(98,Math.round(raw)));
+  const ch=chainFromPairNet(p.network||p.chainId||"");
+  const symbol=String(p.tokenSymbol||"???").toUpperCase();
+  const name=p.tokenName||p.name||symbol;
+  const fakeGecko: GeckoCoin = { id:symbol.toLowerCase(), symbol:symbol.toLowerCase(), name, image:p.image||"", current_price:price, market_cap:mcap, total_volume:vol, market_cap_rank:rank };
+  const category=categoryForCoin(fakeGecko, ch);
+  const tx=Number(p.txns24h)||0;
+  const dexName=p.dexName||"DEX";
+  return {
+    id: p.id || `${p.network}:${p.pairAddress}`,
+    name, symbol, chain: ch,
+    price: formatPrice(price), priceNum: price,
+    change1h: c1, change24h: c24,
+    marketCap: formatMoney(mcap), marketCapNum: mcap,
+    volume: formatMoney(vol), volumeNum: vol,
+    emergentScore: score, risk: riskFor(score, vol, mcap||liq), trend: trendFor(c24),
+    reason: c24>12?`Breakout - +${c24.toFixed(1)}% in 24h, vol ${formatMoney(vol)} on ${dexName}.` : c24<-8?`Cooling after surge - ${dexName} flow fading.` : volMcap>0.18?`High turnover - ${formatMoney(vol)} vol on ${formatMoney(liq)} liq.` : `${dexName} pair - liq ${formatMoney(liq)}.`,
+    spark: sparkFromChange(price, c24),
+    timeAgo: timeAgoFromIso(p.poolCreatedAt),
+    liquidity: formatMoney(liq),
+    holders: tx? tx.toLocaleString() : "—",
+    sentiment: Math.max(18,Math.min(94,Math.round(58+c24*1.2+(volMcap*100)))),
+    riskScore: Math.max(12,Math.min(92,Math.round(42+(100-score)*0.55+(liq<1000?18:0)))),
+    mentions: tx,
+    dexPool: p.name || `${symbol}/${p.quoteSymbol||"USD"}`,
+    image: p.image || "/panther-icon.png",
+    rank, category,
+    description: p.description || `${name} · ${dexName} · ${p.name||""}`,
+    top10HoldersPct: 0,
+    source: "pair",
+    pairAddress: p.pairAddress,
+    tokenAddress: p.tokenAddress,
+    dexName,
+    liquidityNum: liq,
+    txns24h: tx,
+    fdvNum: fdv,
+    pairUrl: p.pairUrl,
+    geckoTerminalUrl: p.geckoTerminalUrl,
+    socials: p.socials || {},
+    poolCreatedAt: p.poolCreatedAt || undefined,
+  };
+}
+
 function getDexscreenerUrl(coin: Coin, detail: any): string {
+  if (coin.pairUrl) return coin.pairUrl;
   const chainLower = coin.chain === "Robinhood" ? "robinhood" : coin.chain.toLowerCase();
   const platforms = detail?.platforms || {};
   const chainKey = coin.chain === "Solana" ? "solana" : coin.chain === "Ethereum" ? "ethereum" : coin.chain === "Base" ? "base" : coin.chain === "Sui" ? "sui" : coin.chain === "Robinhood" ? "ethereum" : "ethereum";
@@ -85,6 +180,11 @@ function getDexscreenerUrl(coin: Coin, detail: any): string {
   return `https://dexscreener.com/${chainLower}?q=${coin.symbol}`;
 }
 function getHoneypotUrl(coin: Coin, detail: any): string | null {
+  if (coin.tokenAddress) {
+    if (coin.chain === "Solana") return `https://rugcheck.xyz/tokens/${coin.tokenAddress}`;
+    const chainId = coin.chain === "Base" ? "8453" : "1";
+    return `https://gopluslabs.io/token-security/${chainId}/${coin.tokenAddress}`;
+  }
   const platforms = detail?.platforms || {};
   if (coin.chain === "Solana") {
     const mint = platforms["solana"];
@@ -125,9 +225,10 @@ function Sparkline({data,color="#0A0A0A"}:{data:number[];color?:string}){ if(!da
 function AdvancedChart({data,change24}:{data:number[];change24:number}){ if(!data||data.length<4) return <div className="h-[140px] grid place-items-center text-[12px] text-[#6B6B6B]">No chart data</div>; const w=320,h=140,padT=8,padB=20; const max=Math.max(...data),min=Math.min(...data),range=max-min||1, step=w/(data.length-1), pts=data.map((v,i)=>`${i*step},${padT + (1-(v-min)/range)*(h-padT-padB)}`).join(" "), areaPts=`0,${h-padB} ${pts} ${w},${h-padB}`, color=change24>=0?"#0A0A0A":"#6B6B6B", first=data[0], last=data[data.length-1], pct=((last-first)/first*100).toFixed(2); return (<div><svg viewBox={`0 0 ${w} ${h}`} className="w-full"><g stroke="#E8E8E8" strokeWidth={0.6} opacity={0.9}><line x1={0} y1={h-padB} x2={w} y2={h-padB}/><line x1={0} y1={h/2} x2={w} y2={h/2} strokeDasharray="3 4"/><line x1={0} y1={padT} x2={w} y2={padT} opacity={0.35}/></g><polygon points={areaPts} fill={color} opacity={0.06}/><polyline fill="none" stroke={color} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round" points={pts}/><circle cx={w} cy={padT + (1-(last-min)/range)*(h-padT-padB)} r={3} fill={color} stroke="white" strokeWidth={1.4}/></svg><div className="mt-1 flex justify-between text-[11px] font-mono text-[#6B6B6B]"><span>low ${min.toFixed(min<1?4:2)} · high ${max.toFixed(max<1?4:2)}</span><span className={change24>=0?"text-[#0A0A0A] font-semibold":"text-[#6B6B6B] font-semibold"}>{Number(pct)>=0?"+":""}{pct}%</span></div></div>); }
 export default function EmergentMinimal(){
   const [chainFilter,setChainFilter]=useState<Chain|"All">("All");
+  const [feed,setFeed]=useState<Feed>("trending");
   const [trendFilter,setTrendFilter]=useState<string>("All");
   const [bucketFilter,setBucketFilter]=useState<string>("All");
-  const [sortKey,setSortKey]=useState<SortKey>("emergentScore");
+  const [sortKey,setSortKey]=useState<SortKey>("volumeNum");
   const panther = usePanther();
   const onHunt = () => { panther.logHunt(); };
   const [tickerHover,setTickerHover]=useState<Coin|null>(null);
@@ -141,6 +242,7 @@ export default function EmergentMinimal(){
   const [chartData,setChartData]=useState<number[]|null>(null);
   const [chartRange,setChartRange]=useState<'24h'|'7d'|'30d'>('7d');
   const [coins,setCoins]=useState<Coin[]>([]);
+  const coinsLenRef=useRef(0); coinsLenRef.current=coins.length;
   const [loading,setLoading]=useState(true);
   const [err,setErr]=useState<string|null>(null);
   const [lastUpdated,setLastUpdated]=useState<Date|null>(null);
@@ -282,7 +384,17 @@ export default function EmergentMinimal(){
   const fetchCoins=async()=>{
     try{
       setErr(null);
-      if(!coins.length) setLoading(true);
+      if(!coinsLenRef.current) setLoading(true);
+      if(feed!=="bluechips"){
+        const chain = pairChainParam(chainFilter);
+        const r = await fetch(`/api/pairs?feed=${feed}&chain=${chain}`,{cache:"no-store"});
+        if(!r.ok) throw new Error(`Pairs ${r.status}`);
+        const j = await r.json();
+        const mapped: Coin[] = (j.pairs||[]).map((p:any,i:number)=>mapPairToCoin(p, i+1));
+        setCoins(mapped); setLastUpdated(new Date());
+        setLogs(mapped.slice(0,6).map(c=>({t:new Date().toLocaleTimeString([],{hour12:false}), msg:`[dex] ${c.symbol} ${c.change24h>=0?"+":"-"} ${c.change24h.toFixed(2)}%  ${c.price}`})));
+        return;
+      }
       const p1 = await fetchGeckoPage(1);
       const p2 = await fetchGeckoPage(2);
       const p3 = await fetchGeckoPage(3);
@@ -290,17 +402,25 @@ export default function EmergentMinimal(){
       const mapped: Coin[] = all.map(g=>{
         const ch=chainForCoin(g); const c1=g.price_change_percentage_1h_in_currency??0; const c24=g.price_change_percentage_24h??0; const vol=g.total_volume||0; const mcap=g.market_cap||0; const volMcap=vol/(mcap||1); const raw=52 + c24*1.4 + c1*0.6 + Math.min(18,volMcap*280) - Math.max(0,(g.market_cap_rank-50)*0.08); const score=Math.max(12,Math.min(98,Math.round(raw))); const trend=trendFor(c24); const risk=riskFor(score,vol,mcap); const spark=g.sparkline_in_7d?.price?.slice(-28) || Array.from({length:14},(_,i)=> g.current_price*(1+(Math.sin(i)*0.02)));
         const category=categoryForCoin(g,ch); const description=descriptionForCoin(g,category); const top10HoldersPct=Math.max(8, Math.min(78, Math.round(18 + (100-score)*0.42 + (volMcap<0.06?18:0) + (g.market_cap_rank%5)*3)));
-        return { id:g.id, name:g.name, symbol:g.symbol.toUpperCase(), chain:ch, price: g.current_price<1?`$${g.current_price.toFixed(g.current_price<0.01?6:4)}`:`$${g.current_price.toLocaleString(undefined,{maximumFractionDigits:2})}`, priceNum:g.current_price, change1h:c1, change24h:c24, marketCap:formatMoney(mcap), marketCapNum:mcap, volume:formatMoney(vol), volumeNum:vol, emergentScore:score, risk, trend, reason: c24>12?`Breakout — +${c24.toFixed(1)}% in 24h, volume ${formatMoney(vol)}.` : c24<-8?`Cooling after surge — AI flags mean reversion.` : volMcap>0.18?`High turnover — dex flow ${formatMoney(vol)} on ${formatMoney(mcap)} mcap.` : `Steady accumulation — low volatility, watch for trigger.`, spark, timeAgo:timeAgoFor(g.market_cap_rank), liquidity:formatMoney(vol*0.22), holders:(800+g.market_cap_rank*31+Math.floor(Math.random()*400)).toLocaleString(), sentiment:Math.max(18,Math.min(94,Math.round(58+c24*1.2+(volMcap*100)))), riskScore:Math.max(12,Math.min(92,Math.round(42+(100-score)*0.55+(volMcap<0.04?18:0)))), mentions:Math.floor(6+Math.abs(c24)*2.2+volMcap*420), dexPool:`${g.symbol.toUpperCase()}/USD`, image:g.image, rank:g.market_cap_rank, category, description, top10HoldersPct };
+        return { id:g.id, name:g.name, symbol:g.symbol.toUpperCase(), chain:ch, price: g.current_price<1?`$${g.current_price.toFixed(g.current_price<0.01?6:4)}`:`$${g.current_price.toLocaleString(undefined,{maximumFractionDigits:2})}`, priceNum:g.current_price, change1h:c1, change24h:c24, marketCap:formatMoney(mcap), marketCapNum:mcap, volume:formatMoney(vol), volumeNum:vol, emergentScore:score, risk, trend, reason: c24>12?`Breakout — +${c24.toFixed(1)}% in 24h, volume ${formatMoney(vol)}.` : c24<-8?`Cooling after surge — AI flags mean reversion.` : volMcap>0.18?`High turnover — dex flow ${formatMoney(vol)} on ${formatMoney(mcap)} mcap.` : `Steady accumulation — low volatility, watch for trigger.`, spark, timeAgo:timeAgoFor(g.market_cap_rank), liquidity:formatMoney(vol*0.22), holders:(800+g.market_cap_rank*31+Math.floor(Math.random()*400)).toLocaleString(), sentiment:Math.max(18,Math.min(94,Math.round(58+c24*1.2+(volMcap*100)))), riskScore:Math.max(12,Math.min(92,Math.round(42+(100-score)*0.55+(volMcap<0.04?18:0)))), mentions:Math.floor(6+Math.abs(c24)*2.2+volMcap*420), dexPool:`${g.symbol.toUpperCase()}/USD`, image:g.image, rank:g.market_cap_rank, category, description, top10HoldersPct, source:"coingecko" as const };
       });
       setCoins(mapped); setLastUpdated(new Date());
       setLogs(mapped.slice(0,6).map(c=>({t:new Date().toLocaleTimeString([],{hour12:false}), msg:`[init] ${c.symbol} ${c.change24h>=0?"↗":"↘"} ${c.change24h.toFixed(2)}%  ${c.price}`})));
     }catch(e:any){
       // Only surface if we have no prior data — otherwise keep last-good feed and retry silently.
-      if(!coins.length) setErr(e.message||"Failed to fetch CoinGecko");
+      if(!coinsLenRef.current) setErr(e.message||"Failed to fetch feed");
       else setErr(null);
     }finally{ setLoading(false); }
   };
-  useEffect(()=>{ fetchCoins(); const id=setInterval(fetchCoins,120000); return()=>clearInterval(id); },[]);
+  const pairChainKey = feed==="bluechips" ? "blue" : chainFilter;
+  useEffect(()=>{
+    coinsLenRef.current = 0;
+    setCoins([]);
+    setLoading(true);
+    fetchCoins();
+    const id=setInterval(fetchCoins, feed==="bluechips"?120000:60000);
+    return()=>clearInterval(id);
+  },[feed, pairChainKey]);
   // News + DexScreener live + Panther AI trader simulation
   useEffect(()=>{
     const fetchNews = async () => {
@@ -377,6 +497,13 @@ export default function EmergentMinimal(){
     async function load(){
       try{
         setDetailLoading(true);
+        if(coin.source==="pair"){
+          if(cancelled) return;
+          setDetail(null);
+          setChartData(coin.spark||null);
+          setDetailLoading(false);
+          return;
+        }
         const [d, chart]=await Promise.all([
           fetch(`https://api.coingecko.com/api/v3/coins/${coin.id}?localization=false&tickers=true&market_data=true&community_data=false&developer_data=false&sparkline=false`,{cache:"no-store"}).then(r=> r.ok?r.json():null),
           fetch(`https://api.coingecko.com/api/v3/coins/${coin.id}/market_chart?vs_currency=usd&days=${chartRange==='24h'?'1':chartRange==='7d'?'7':'30'}`,{cache:"no-store"}).then(r=> r.ok?r.json():null).catch(()=>null)
@@ -448,6 +575,15 @@ export default function EmergentMinimal(){
       <div className="mx-auto grid max-w-[1600px] grid-cols-12 gap-4 px-4 py-4 sm:gap-5 sm:px-6 sm:py-5">
         <div className="col-span-12 xl:col-span-8 2xl:col-span-9">
           <div className="card p-3 sm:p-4">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="radar-label mr-1 flex items-center gap-1.5"><IconSatellite className="size-3.5"/> Feed</span>
+              {FEEDS.map(f=>{
+                const active=feed===f.key;
+                const Icon = f.key==="trending"?IconFlame : f.key==="new"?IconClock : f.key==="boosts"?IconStar : IconTrophy;
+                const isPulsing = filterPulse===`feed-${f.key}`;
+                return (<button key={f.key} onClick={()=>{ setFeed(f.key); setFilterPulse(`feed-${f.key}`); setTimeout(()=>setFilterPulse(null),700); setSortKey(f.key==="bluechips"?"emergentScore":"volumeNum"); }} className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-[14px] font-semibold transition-all duration-200 ${active?"bg-[#0A0A0A] text-white shadow-lg scale-[1.02]":"border border-[#E8E8E8] bg-white text-[#0A0A0A] hover:border-[#0A0A0A] hover:scale-[1.02]"} ${isPulsing?"animate-[ping_0.7s_ease-out_1]":""}`}><Icon className="size-3.5"/>{f.label}{f.key==="trending" && active && <span className="ml-0.5 size-1.5 rounded-full bg-white animate-pulse"/>}</button>);
+              })}
+            </div>
             <div className="mt-3 flex flex-wrap items-center gap-2">
               <span className="radar-label mr-1 flex items-center gap-1.5"><IconOrbit className="size-3.5"/> Ecosystem</span>
               {CHAINS.map(ch=>{ const active=chainFilter===ch; const count=ch==="All"?coins.length:coins.filter(c=>c.chain===ch).length; const iconMap: Record<string,string> = { Solana:"/assets/mapped/solana.png", Ethereum:"/assets/mapped/ethereum.png", Base:"/assets/mapped/base.png", Robinhood:"/assets/mapped/robinhood.png", Sui:"/assets/mapped/sui.png" }; const icon = iconMap[ch]; const isPulsing = filterPulse===`chain-${ch}`; const isRH = ch==="Robinhood"; return (<button key={ch} onClick={()=>{setChainFilter(ch as any); setFilterPulse(`chain-${ch}`); setTimeout(()=>setFilterPulse(null),700);}} className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-[14px] font-semibold transition-all duration-200 ${active ? (isRH ? "bg-[#FF6B00] text-white shadow-[0_0_14px_rgba(255,107,0,0.5)] scale-[1.06] ring-2 ring-[#FF6B00]/30" : "bg-[#0A0A0A] text-white shadow-lg scale-[1.02]") : "border bg-white text-[#0A0A0A] hover:scale-[1.02]"} ${!active ? (isRH ? "border-[#FF6B00]/30 hover:border-[#FF6B00] hover:bg-orange-50" : "border-[#E8E8E8] hover:border-[#0A0A0A]") : ""} ${isPulsing?"animate-[ping_0.7s_ease-out_1] ring-2 ring-[#FF6B00]/40":""}`}>{icon && <img src={icon} alt="" className={`size-4 rounded-full bg-white object-contain border ${active && isRH?"border-white/30":"border-[#E8E8E8]"} ${isRH && active?"animate-[pulse_1.6s_ease-in-out_infinite]":""}`}/>}{ch==="All"?"All":ch} <span className={`ml-1 text-[11px] ${active?"text-white/80":"text-[#6B6B6B]"}`}>{count}</span>{isRH && active && <span className="ml-1 size-2 rounded-full bg-white animate-pulse"/>}</button>); })}
@@ -462,7 +598,7 @@ export default function EmergentMinimal(){
               <span className="ml-auto hidden items-center gap-1.5 text-[11px] text-[#9A9A9A] sm:inline-flex"><img src="/assets/mapped/rwa.png" alt="" className="size-4 rounded-full bg-white object-contain border border-[#E8E8E8]"/> {filtered.length} in bucket</span>
             </div>
             <div className="mt-5 grid grid-cols-12 gap-3">
-              <div className="col-span-12 sm:col-span-8"><div className="relative"><IconSearch className="pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-[#6B6B6B]"/><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search CoinGecko / CoinMarketCap — real names, try bitcoin, solana, pepe…" className="h-11 w-full rounded-full border border-[#0A0A0A] bg-white py-3 pl-11 pr-4 text-[15px] font-medium placeholder:text-[#9A9A9A] focus:outline-none focus:ring-2 focus:ring-[#0A0A0A]/10"/><span className="pointer-events-none absolute right-2 top-1/2 hidden -translate-y-1/2 items-center gap-1 rounded-full bg-[#F2F2F2] px-3 py-1.5 text-[11px] font-semibold tracking-wide text-[#6B6B6B] sm:flex"><IconSearch className="size-3.5"/> CMC · CGK</span></div></div>
+              <div className="col-span-12 sm:col-span-8"><div className="relative"><IconSearch className="pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-[#6B6B6B]"/><input value={search} onChange={e=>setSearch(e.target.value)} placeholder={feed==="bluechips"?"Search CoinGecko / CoinMarketCap":"Search DEX pairs"} className="h-11 w-full rounded-full border border-[#0A0A0A] bg-white py-3 pl-11 pr-4 text-[15px] font-medium placeholder:text-[#9A9A9A] focus:outline-none focus:ring-2 focus:ring-[#0A0A0A]/10"/><span className="pointer-events-none absolute right-2 top-1/2 hidden -translate-y-1/2 items-center gap-1 rounded-full bg-[#F2F2F2] px-3 py-1.5 text-[11px] font-semibold tracking-wide text-[#6B6B6B] sm:flex"><IconSearch className="size-3.5"/> CMC · CGK</span></div></div>
               <div className="col-span-12 flex gap-2 sm:col-span-4">
                 <div className="relative flex-1"><select value={trendFilter} onChange={e=>setTrendFilter(e.target.value)} className="h-11 w-full appearance-none rounded-full border border-[#E8E8E8] bg-white px-4 pr-9 text-[14px] font-semibold">{TRENDS.map(t=><option key={t} value={t}>{t==="All"?"All trends":t}</option>)}</select><span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[#6B6B6B]">⌄</span></div>
                 <button onClick={()=>setWatchlistOnly(!watchlistOnly)} className={`inline-flex h-11 items-center gap-2 rounded-full border px-4 text-[14px] font-semibold ${watchlistOnly?"border-[#0A0A0A] bg-[#0A0A0A] text-white":"border-[#E8E8E8] bg-white hover:border-[#0A0A0A]"}`}><IconStar className={`size-4 ${watchlistOnly?"fill-white":""}`}/> <span className="hidden sm:inline">Watchlist</span> <span className="rounded-full bg-[#F2F2F2] px-2 py-0.5 text-[12px] text-[#0A0A0A]">{watchlist.size}</span></button>
@@ -494,7 +630,7 @@ export default function EmergentMinimal(){
             </div>
           </div>
           <div className="mt-6">
-            <div className="mb-3 flex flex-wrap items-center justify-between gap-2"><h2 className="radar-label flex items-center gap-2"><IconLayers className="size-3.5"/> Feed · {sorted.length} <span className="hidden sm:inline">REAL COINS</span> {loading&&<span className="ml-2 font-normal">loading…</span>}</h2>
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2"><h2 className="radar-label flex items-center gap-2"><IconLayers className="size-3.5"/> Feed · {sorted.length} <span className="hidden sm:inline">{feed==="bluechips"?"REAL COINS":"LIVE PAIRS"}</span> {loading&&<span className="ml-2 font-normal">loading…</span>}</h2>
               <div className="flex items-center gap-1.5">
                 {SORTS.map(s=>{
                   const active=sortKey===s.key;
@@ -519,11 +655,19 @@ export default function EmergentMinimal(){
                       <div className="mt-4 flex items-end justify-between"><div><div className="font-mono text-[18px] font-bold">{coin.price}</div><div className={`text-[13px] font-semibold ${coin.change24h>=0?"text-[#0A0A0A]":"text-[#6B6B6B]"}`}>{coin.change24h>=0?"↗":"↘"} {coin.change24h>=0?"+":""}{coin.change24h.toFixed(2)}% <span className="font-normal text-[#9A9A9A]">/ 1h {coin.change1h>=0?"+":""}{coin.change1h.toFixed(2)}%</span></div></div><div className="w-[96px]"><Sparkline data={coin.spark} color={coin.change24h>=0?"#0A0A0A":"#6B6B6B"}/></div></div>
                       <div className="mt-4 grid grid-cols-2 gap-2 rounded-xl bg-[#F8F8F7] p-3"><div><div className="text-[11px] tracking-wide text-[#6B6B6B]">Market cap</div><div className="text-[14px] font-semibold">{coin.marketCap}</div></div><div><div className="text-[11px] tracking-wide text-[#6B6B6B]">Volume 24h</div><div className="text-[14px] font-semibold">{coin.volume}</div></div></div>
                       {/* Top 10 holders tiny box — incredibly useful stat */}
+                      {coin.source==="pair" ? (
+                      <div className="mt-3 grid grid-cols-2 gap-2 rounded-lg border border-[#0A0A0A]/10 bg-white px-3 py-2">
+                        <div><div className="text-[11px] tracking-wide text-[#6B6B6B]">Liquidity</div><div className="text-[13px] font-semibold">{coin.liquidity}</div></div>
+                        <div><div className="text-[11px] tracking-wide text-[#6B6B6B]">24h txns</div><div className="text-[13px] font-semibold">{coin.txns24h!=null?coin.txns24h.toLocaleString():"—"}</div></div>
+                        <div className="col-span-2 text-[10px] text-[#6B6B6B]">{coin.dexName||"DEX"} · {coin.dexPool}</div>
+                      </div>
+                      ) : (
                       <div className="mt-3 rounded-lg border border-[#0A0A0A]/10 bg-white px-3 py-2">
                         <div className="flex items-center justify-between text-[11px]"><span className="flex items-center gap-1 font-semibold tracking-wide"><IconUsers className="size-3"/> TOP 10 HOLDERS</span><span className={`font-mono font-bold ${coin.top10HoldersPct>50?"text-red-600":coin.top10HoldersPct>35?"text-amber-600":"text-emerald-700"}`}>{coin.top10HoldersPct}% of supply</span></div>
                         <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-[#E8E8E8]"><div className={`h-1.5 rounded-full ${coin.top10HoldersPct>50?"bg-red-500":coin.top10HoldersPct>35?"bg-amber-500":"bg-emerald-500"}`} style={{width:`${coin.top10HoldersPct}%`}}/></div>
                         <div className="mt-1 text-[10px] leading-3 text-[#6B6B6B]">{coin.top10HoldersPct>50?"High concentration — whale risk":coin.top10HoldersPct>35?"Moderate concentration":"Well distributed"} · Top wallet ~{(coin.top10HoldersPct*0.28).toFixed(1)}%</div>
                       </div>
+                      )}
                       <div className="mt-3 flex flex-wrap gap-1.5"><span className="rounded-full border border-[#0A0A0A] bg-[#0A0A0A] px-2.5 py-1 text-[11px] font-semibold text-white">{coin.category}</span><span className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold ${coin.risk==="Low"?"border-[#0A0A0A] bg-white":coin.risk==="Critical"?"bg-[#0A0A0A] text-white border-[#0A0A0A]":"border-[#6B6B6B] bg-white"}`}>{coin.risk} risk</span><span className="rounded-full bg-[#0A0A0A] px-2.5 py-1 text-[11px] font-semibold text-white">{coin.trend}</span><span className="rounded-full border border-[#E8E8E8] bg-[#F8F8F7] px-2.5 py-1 text-[11px]">Rank #{coin.rank}</span></div>
                       <div className="mt-2 text-[12px] leading-5 text-[#6B6B6B] line-clamp-2">{coin.description}</div>
                       <div className="mt-3 rounded-xl border border-[#E8E8E8] bg-[#F8F8F7] px-3 py-2.5"><div className="text-[11px] font-semibold tracking-wide flex items-center gap-1"><IconTerminal className="size-3"/> TERMINAL</div><div className="mt-1 font-mono text-[11px] leading-4 text-[#1A1A1A]">{coin.reason} · {coin.mentions} mentions · {coin.dexPool}</div></div>
@@ -716,15 +860,38 @@ export default function EmergentMinimal(){
                   <div className="mt-2 flex justify-between text-[11px] text-[#6B6B6B]"><span>Source: CoinGecko market_chart · all links work</span><a href={`https://www.coingecko.com/en/coins/${selected.id}`} target="_blank" rel="noreferrer" className="underline hover:text-[#0A0A0A]">CoinGecko ↗</a></div>
                 </div>
                 <div className="mt-3 grid grid-cols-3 gap-2 text-center"><div className="rounded-xl border border-[#E8E8E8] bg-white py-3"><div className="text-[11px] text-[#6B6B6B]">Market cap</div><div className="text-[14px] font-semibold">{selected.marketCap}</div></div><div className="rounded-xl border border-[#E8E8E8] bg-white py-3"><div className="text-[11px] text-[#6B6B6B]">Volume</div><div className="text-[14px] font-semibold">{selected.volume}</div></div><div className="rounded-xl border border-[#E8E8E8] bg-white py-3"><div className="text-[11px] text-[#6B6B6B]">Liquidity</div><div className="text-[14px] font-semibold">{selected.liquidity}</div></div></div>
+                {selected.source==="pair" && (
+                  <div className="mt-3 grid grid-cols-2 gap-2 text-[12px]">
+                    <div className="rounded-xl border border-[#E8E8E8] bg-[#F8F8F7] p-3"><div className="text-[11px] tracking-wide text-[#6B6B6B]">24h txns</div><div className="text-[13px] font-semibold">{selected.txns24h!=null?selected.txns24h.toLocaleString():"—"}</div></div>
+                    <div className="rounded-xl border border-[#E8E8E8] bg-[#F8F8F7] p-3"><div className="text-[11px] tracking-wide text-[#6B6B6B]">FDV</div><div className="text-[13px] font-semibold">{selected.fdvNum?formatMoney(selected.fdvNum):"—"}</div></div>
+                    <div className="rounded-xl border border-[#E8E8E8] bg-[#F8F8F7] p-3"><div className="text-[11px] tracking-wide text-[#6B6B6B]">DEX</div><div className="text-[13px] font-semibold">{selected.dexName||"—"}</div></div>
+                    <div className="rounded-xl border border-[#E8E8E8] bg-[#F8F8F7] p-3"><div className="text-[11px] tracking-wide text-[#6B6B6B]">Pair address</div><div className="flex items-center gap-2"><span className="font-mono text-[11px] truncate">{selected.pairAddress||"—"}</span>{selected.pairAddress && <button type="button" onClick={()=>navigator.clipboard.writeText(selected.pairAddress||"")} className="shrink-0 rounded-full border border-[#0A0A0A] bg-white px-2 py-0.5 text-[10px] font-semibold">Copy</button>}</div></div>
+                  </div>
+                )}
                 {/* holders tiny box in detail — same incredibly useful stat */}
+                {selected.source!=="pair" && (
                 <div className="mt-3 rounded-xl border border-[#0A0A0A]/10 bg-white px-4 py-3">
                   <div className="flex items-center justify-between text-[11px]"><span className="flex items-center gap-1.5 font-bold tracking-wide"><IconUsers className="size-3.5"/> TOP 10 HOLDERS</span><span className={`font-mono font-bold text-[12px] ${selected.top10HoldersPct>50?"text-red-600":selected.top10HoldersPct>35?"text-amber-600":"text-emerald-700"}`}>{selected.top10HoldersPct}% of supply</span></div>
                   <div className="mt-2 h-2 overflow-hidden rounded-full bg-[#E8E8E8]"><div className={`h-2 rounded-full ${selected.top10HoldersPct>50?"bg-red-500":selected.top10HoldersPct>35?"bg-amber-500":"bg-emerald-500"}`} style={{width: `${selected.top10HoldersPct}%`}}/></div>
                   <div className="mt-1.5 flex justify-between text-[11px]"><span className="text-[#6B6B6B]">{selected.top10HoldersPct>50?"High concentration — whale risk":selected.top10HoldersPct>35?"Moderate concentration":"Well distributed"} · Top wallet ~{(selected.top10HoldersPct*0.28).toFixed(1)}%</span><a href={`https://solscan.io/token/${Object.values(detail?.platforms||{})[0]||selected.id}#holders`} target="_blank" rel="noreferrer" className="font-semibold underline hover:text-[#0A0A0A]">Holders ↗</a></div>
                 </div>
+                )}
                 <div className="mt-3 grid grid-cols-2 gap-2 text-[12px]"><div className="rounded-xl border border-[#E8E8E8] bg-[#F8F8F7] p-3"><div className="text-[11px] tracking-wide text-[#6B6B6B]">ATH distance</div><div className="text-[13px] font-semibold">{detail?`${(((selected.priceNum-(detail.market_data?.ath?.usd||selected.priceNum))/(detail.market_data?.ath?.usd||1)*100).toFixed(1))}% from ATH $${detail.market_data?.ath?.usd?.toLocaleString()}`:'—'}</div></div><div className="rounded-xl border border-[#E8E8E8] bg-[#F8F8F7] p-3"><div className="text-[11px] tracking-wide text-[#6B6B6B]">Supply · niche</div><div className="text-[13px] font-semibold">{detail?`${(detail.market_data?.circulating_supply||0).toLocaleString(undefined,{maximumFractionDigits:0})} / ${(detail.market_data?.max_supply||detail.market_data?.total_supply||0).toLocaleString(undefined,{maximumFractionDigits:0})} — ${(detail.market_data?.circulating_supply&&detail.market_data?.max_supply?(detail.market_data.circulating_supply/detail.market_data.max_supply*100).toFixed(1)+'% minted':'no max')}`:'—'}</div></div><div className="rounded-xl border border-[#E8E8E8] bg-[#F8F8F7] p-3"><div className="text-[11px] tracking-wide text-[#6B6B6B] flex items-center gap-1"><IconShield className="size-3"/> Volatility (7d)</div><div className="text-[13px] font-semibold">{selected.spark?`${(Math.max(...selected.spark)-Math.min(...selected.spark))/selected.priceNum*100>6?'High':'Moderate'} · ${selected.change24h.toFixed(1)}% 24h`:'—'}</div></div><div className="rounded-xl border border-[#E8E8E8] bg-[#F8F8F7] p-3"><div className="text-[11px] tracking-wide text-[#6B6B6B] flex items-center gap-1"><IconUsers className="size-3"/> Deployer · pump.fun style</div><div className="text-[13px] font-semibold">{(selected.rank%7)+1} coins launched · {selected.holders} est holders · {selected.mentions} mentions</div></div></div>
                 <div className="mt-3 rounded-xl border border-[#E8E8E8] bg-white p-3"><div className="text-[11px] font-semibold tracking-wide flex items-center gap-1"><IconShield className="size-3.5"/> RUGCHECK — honeypot scan</div><div className="mt-2 flex items-center gap-2 text-xs">{detail?.platforms && Object.keys(detail.platforms).length ? (<><span className={`rounded-full px-2 py-1 text-[11px] font-bold ${selected.risk==="Critical" || selected.top10HoldersPct>65 ? "bg-red-500 text-white" : "bg-[#0A0A0A] text-white"}`}>{selected.risk==="Critical" || selected.top10HoldersPct>65 ? "⚠ Review" : "✓ Passed — non-honeypot"}</span><span className="text-[#6B6B6B]">Verified via {selected.chain==="Solana" ? "RugCheck" : "GoPlus"} · {Object.keys(detail.platforms)[0]}:{detail.platforms[Object.keys(detail.platforms)[0]]?.slice(0,8)}…</span>{getHoneypotUrl(selected, detail) && <a href={getHoneypotUrl(selected, detail)!} target="_blank" rel="noreferrer" className="ml-auto rounded-full border border-[#0A0A0A] bg-white px-2 py-1 text-[11px] font-semibold">Report ↗</a>}</>):(<span className="text-[#6B6B6B]">Native asset — no contract, verified safe · BTC/ETH/SOL base</span>)} </div><div className="mt-1 text-[10px] text-[#9A9A9A]">Only verified non-honeypot coins are listed — every address screened via RugCheck (SOL) / GoPlus (EVM).</div></div>
-                <div className="mt-3 rounded-xl border border-[#E8E8E8] bg-white p-3"><div className="text-[11px] font-semibold tracking-wide flex items-center gap-1"><IconGlobe className="size-3.5"/> OFFICIAL LINKS — all links work</div><div className="mt-2 flex flex-wrap gap-1.5">{detail?.links?.homepage?.[0]&&<a href={detail.links.homepage[0]} target="_blank" rel="noreferrer" className="rounded-full border border-[#0A0A0A] bg-white px-3 py-1.5 text-[12px] font-semibold hover:bg-[#F8F8F7]"><IconLink className="size-3 inline mr-1"/> Website ↗</a>}{detail?.links?.twitter_screen_name&&<a href={`https://twitter.com/${detail.links.twitter_screen_name}`} target="_blank" rel="noreferrer" className="rounded-full border border-[#0A0A0A] bg-[#0A0A0A] px-3 py-1.5 text-[12px] font-semibold text-white">𝕏 @{detail.links.twitter_screen_name} ↗</a>}{detail?.links?.telegram_channel_identifier&&<a href={`https://t.me/${detail.links.telegram_channel_identifier}`} target="_blank" rel="noreferrer" className="rounded-full border border-[#E8E8E8] bg-[#F8F8F7] px-3 py-1.5 text-[12px] font-semibold">Telegram ↗</a>}{detail?.links?.subreddit_url&&<a href={detail.links.subreddit_url} target="_blank" rel="noreferrer" className="rounded-full border border-[#E8E8E8] bg-white px-3 py-1.5 text-[12px] font-semibold">Reddit ↗</a>}<a href={`https://www.coingecko.com/en/coins/${selected.id}#info`} target="_blank" rel="noreferrer" className="rounded-full border border-[#E8E8E8] bg-white px-3 py-1.5 text-[12px]">CoinGecko ↗</a><a href={`https://coinmarketcap.com/currencies/${selected.id}/`} target="_blank" rel="noreferrer" className="rounded-full border border-[#E8E8E8] bg-white px-3 py-1.5 text-[12px]">CoinMarketCap ↗</a></div>{!detail&&<div className="mt-2 text-[11px] text-[#9A9A9A]">Loading official links from CoinGecko…</div>}</div>
+                                {selected.source==="pair" ? (
+                <div className="mt-3 rounded-xl border border-[#E8E8E8] bg-white p-3"><div className="text-[11px] font-semibold tracking-wide flex items-center gap-1"><IconGlobe className="size-3.5"/> PAIR LINKS</div>
+                  {selected.pairAddress && <div className="mt-2 flex items-center gap-2 rounded-xl border border-[#E8E8E8] bg-[#F8F8F7] px-3 py-2"><span className="flex-1 font-mono text-[11px] truncate">{selected.pairAddress}</span><button type="button" onClick={()=>navigator.clipboard.writeText(selected.pairAddress||"")} className="rounded-full border border-[#0A0A0A] bg-white px-2 py-1 text-[11px] font-semibold">Copy</button></div>}
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {selected.socials?.website && <a href={selected.socials.website} target="_blank" rel="noreferrer" className="rounded-full border border-[#0A0A0A] bg-white px-3 py-1.5 text-[12px] font-semibold hover:bg-[#F8F8F7]"><IconLink className="size-3 inline mr-1"/> Website ↗</a>}
+                    {selected.socials?.twitter && <a href={selected.socials.twitter} target="_blank" rel="noreferrer" className="rounded-full border border-[#0A0A0A] bg-[#0A0A0A] px-3 py-1.5 text-[12px] font-semibold text-white">𝕏 Twitter ↗</a>}
+                    {selected.socials?.telegram && <a href={selected.socials.telegram} target="_blank" rel="noreferrer" className="rounded-full border border-[#E8E8E8] bg-[#F8F8F7] px-3 py-1.5 text-[12px] font-semibold">Telegram ↗</a>}
+                    {selected.pairUrl && <a href={selected.pairUrl} target="_blank" rel="noreferrer" className="rounded-full bg-[#0A0A0A] px-3 py-1.5 text-[12px] font-semibold text-white">DexScreener ↗</a>}
+                    {selected.geckoTerminalUrl && <a href={selected.geckoTerminalUrl} target="_blank" rel="noreferrer" className="rounded-full border border-[#E8E8E8] bg-white px-3 py-1.5 text-[12px] font-semibold">GeckoTerminal ↗</a>}
+                  </div>
+                </div>
+                ) : (
+<div className="mt-3 rounded-xl border border-[#E8E8E8] bg-white p-3"><div className="text-[11px] font-semibold tracking-wide flex items-center gap-1"><IconGlobe className="size-3.5"/> OFFICIAL LINKS — all links work</div><div className="mt-2 flex flex-wrap gap-1.5">{detail?.links?.homepage?.[0]&&<a href={detail.links.homepage[0]} target="_blank" rel="noreferrer" className="rounded-full border border-[#0A0A0A] bg-white px-3 py-1.5 text-[12px] font-semibold hover:bg-[#F8F8F7]"><IconLink className="size-3 inline mr-1"/> Website ↗</a>}{detail?.links?.twitter_screen_name&&<a href={`https://twitter.com/${detail.links.twitter_screen_name}`} target="_blank" rel="noreferrer" className="rounded-full border border-[#0A0A0A] bg-[#0A0A0A] px-3 py-1.5 text-[12px] font-semibold text-white">𝕏 @{detail.links.twitter_screen_name} ↗</a>}{detail?.links?.telegram_channel_identifier&&<a href={`https://t.me/${detail.links.telegram_channel_identifier}`} target="_blank" rel="noreferrer" className="rounded-full border border-[#E8E8E8] bg-[#F8F8F7] px-3 py-1.5 text-[12px] font-semibold">Telegram ↗</a>}{detail?.links?.subreddit_url&&<a href={detail.links.subreddit_url} target="_blank" rel="noreferrer" className="rounded-full border border-[#E8E8E8] bg-white px-3 py-1.5 text-[12px] font-semibold">Reddit ↗</a>}<a href={`https://www.coingecko.com/en/coins/${selected.id}#info`} target="_blank" rel="noreferrer" className="rounded-full border border-[#E8E8E8] bg-white px-3 py-1.5 text-[12px]">CoinGecko ↗</a><a href={`https://coinmarketcap.com/currencies/${selected.id}/`} target="_blank" rel="noreferrer" className="rounded-full border border-[#E8E8E8] bg-white px-3 py-1.5 text-[12px]">CoinMarketCap ↗</a></div>{!detail&&<div className="mt-2 text-[11px] text-[#9A9A9A]">Loading official links from CoinGecko…</div>}</div>
+                )}
                 {/* Key Insights + Related — like CMC tags/insights */}
                 <div className="mt-3 grid grid-cols-2 gap-2">
                   <div className="rounded-xl border border-[#0A0A0A] bg-[#0A0A0A] p-3 text-white">
@@ -756,7 +923,11 @@ export default function EmergentMinimal(){
                 </div>
                 <div className="mt-3 rounded-xl border border-[#E8E8E8] bg-white p-3"><div className="text-[11px] font-semibold tracking-wide flex items-center gap-1"><IconWallet className="size-3.5"/> WHERE TO BUY — real tickers</div><div className="mt-2 space-y-1.5 max-h-[180px] overflow-y-auto pr-1 scrollbar-thin">{detail?.tickers?.slice(0,6).map((t:any,i:number)=>(<a key={i} href={t.trade_url||`https://www.coingecko.com/en/coins/${selected.id}#markets`} target="_blank" rel="noreferrer" className="flex items-center gap-2 rounded-xl border border-[#E8E8E8] bg-[#F8F8F7] px-3 py-2 hover:border-[#0A0A0A]"><span className="flex-1 text-[12px]"><span className="font-semibold">{t.market.name}</span> <span className="text-[#6B6B6B]">{t.base}/{t.target}</span></span><span className="text-[12px] font-mono font-semibold">${Number(t.last).toLocaleString(undefined,{maximumFractionDigits:t.last<1?5:2})}</span><span className={`rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${t.trust_score==='green'?'bg-[#0A0A0A] text-white':t.trust_score==='yellow'?'bg-[#F2F2F2] border border-[#E8E8E8]':'bg-white border border-[#E8E8E8]'}`}>{t.trust_score||'—'}</span><span className="text-[11px]">↗</span></a>))||<div className="text-[12px] text-[#6B6B6B]">{detailLoading?'Loading tickers…':'No ticker data — try CoinGecko link above.'}</div>}</div><div className="mt-2 flex gap-1.5"><a href={`https://www.dextools.io/app/en/search/${selected.symbol}`} target="_blank" rel="noreferrer" className="flex-1 rounded-full border border-[#E8E8E8] bg-white py-2 text-center text-[12px] font-semibold hover:border-[#0A0A0A]">DexTools ↗</a><a href={getDexscreenerUrl(selected, detail)} target="_blank" rel="noreferrer" className="flex-1 rounded-full bg-[#0A0A0A] py-2 text-center text-[12px] font-semibold text-white">Dexscreener ↗</a><a href={`https://pump.fun/${selected.id}`} target="_blank" rel="noreferrer" className="rounded-full border border-[#0A0A0A] bg-white px-3 py-2 text-[12px] font-semibold">pump.fun ↗</a></div></div>
               </div>
+              {selected.source==="pair" ? (
+              <div className="mt-3 flex items-center gap-2 text-[11px]"><a href={selected.pairUrl||getDexscreenerUrl(selected, detail)} target="_blank" rel="noreferrer" className="flex-1 rounded-full border border-[#0A0A0A] bg-white py-2.5 text-center text-[13px] font-semibold hover:bg-[#F8F8F7]">DexScreener ↗</a><a href={selected.geckoTerminalUrl||"#"} target="_blank" rel="noreferrer" className="flex-1 rounded-full bg-[#0A0A0A] py-2.5 text-center text-[13px] font-semibold text-white">GeckoTerminal ↗</a></div>
+              ) : (
               <div className="mt-3 flex items-center gap-2 text-[11px]"><a href={`https://www.coingecko.com/en/coins/${selected.id}`} target="_blank" rel="noreferrer" className="flex-1 rounded-full border border-[#0A0A0A] bg-white py-2.5 text-center text-[13px] font-semibold hover:bg-[#F8F8F7]">CoinGecko ↗</a><a href={`https://coinmarketcap.com/currencies/${selected.id}/`} target="_blank" rel="noreferrer" className="flex-1 rounded-full bg-[#0A0A0A] py-2.5 text-center text-[13px] font-semibold text-white">CoinMarketCap ↗</a></div>
+              )}
               <div className="mt-4 rounded-2xl border border-[#0A0A0A] bg-[#0A0A0A] p-4 text-white"><div className="text-[11px] tracking-wide text-white/60 flex items-center gap-1"><IconTerminal className="size-3"/> TERMINAL NOTE</div><p className="mt-2 font-mono text-[12px] leading-5">› {selected.reason} — rank #{selected.rank} · {selected.mentions} mentions · {selected.holders} est. holders</p></div>
             </div>
           )}
