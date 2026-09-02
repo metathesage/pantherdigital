@@ -29,6 +29,34 @@ To learn more about Next.js, take a look at the following resources:
 
 You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
+## Robinhood Chain feed (letscash.fun)
+
+The radar's **Robinhood Chain** feed is powered by [letscash.fun](https://www.letscash.fun/),
+the memecoin launchpad on Robinhood Chain. It has no published JSON API, so:
+
+- `src/lib/letscash.ts` — types, board sorts, the emergent-score model, and a
+  defensive scraper. Anything that parses to fewer than `MIN_LIVE_TOKENS` rows is
+  discarded, so a markup change can never render garbage.
+- `src/data/letscash.json` — a snapshot of the board, chain receipts, fee flow,
+  rank tiers and trade tape, captured from the live site. Served whenever
+  upstream is unreachable; the payload says `live: false` in that case.
+- `src/app/api/letscash/route.ts` — `?sort=trending|newest|mcap|burned|oldest`,
+  `?kind=tape`, `?address=0x…`. Live scrape first, snapshot on any failure.
+- `src/components/LetscashPanel.tsx` — chain receipts, "where the fees went",
+  trader ranks, and a live trade tape.
+
+The score is computed server-side (momentum + real cap + verified supply burn +
+survivorship) and trusted by the client — the pair-engine formula is not reused,
+because it knows nothing about launchpad age or burn.
+
+## Tests
+
+```bash
+npm test       # data layer: parsing, scoring, sorts, snapshot integrity
+npm run test:ui # SSR-renders LetscashPanel and asserts the real markup
+npm run typecheck
+```
+
 ## Deploy on Vercel
 
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.

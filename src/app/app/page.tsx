@@ -2,6 +2,7 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePanther, PANTHER_AVATARS } from "@/lib/panther";
+import LetscashPanel, { type LetscashPanelData, type LetscashSort } from "@/components/LetscashPanel";
 const _hasPrivyEnv = !!process.env.NEXT_PUBLIC_PRIVY_APP_ID && process.env.NEXT_PUBLIC_PRIVY_APP_ID !== "clz-demo-privy-app-id";
 let _usePrivy: any = null;
 if (_hasPrivyEnv) { try { _usePrivy = require("@privy-io/react-auth").usePrivy; } catch {} }
@@ -11,11 +12,12 @@ type Risk = "Low" | "Medium" | "High" | "Critical";
 type Coin = { id:string; name:string; symbol:string; chain:Chain; price:string; priceNum:number; change1h:number; change24h:number; marketCap:string; marketCapNum:number; volume:string; volumeNum:number; emergentScore:number; risk:Risk; trend:Trend; reason:string; spark:number[]; timeAgo:string; liquidity:string; holders:string; sentiment:number; riskScore:number; mentions:number; dexPool:string; image:string; rank:number; category:string; description:string; top10HoldersPct:number; source?:"coingecko"|"pair"; pairAddress?:string; tokenAddress?:string; dexName?:string; liquidityNum?:number; txns24h?:number; fdvNum?:number; pairUrl?:string; geckoTerminalUrl?:string; socials?:{twitter?:string; telegram?:string; website?:string}; poolCreatedAt?:string; };
 type GeckoCoin = { id:string; symbol:string; name:string; image:string; current_price:number; market_cap:number; total_volume:number; price_change_percentage_1h_in_currency?:number; price_change_percentage_24h?:number; market_cap_rank:number; sparkline_in_7d?:{price:number[]}; };
 const CHAINS: (Chain | "All")[] = ["All","Solana","Ethereum","Base","Robinhood","Sui"];
-type Feed = "trending" | "new" | "boosts" | "bluechips";
+type Feed = "trending" | "new" | "boosts" | "bluechips" | "robinhood";
 const FEEDS: { key: Feed; label: string }[] = [
   { key: "trending", label: "Trending" },
   { key: "new", label: "New" },
   { key: "boosts", label: "Boosts" },
+  { key: "robinhood", label: "Robinhood Chain" },
   { key: "bluechips", label: "Blue chips" },
 ];
 const TRENDS = ["All","Breaking","Heating","Stealth","Volatile","Cooling"] as const;
@@ -223,6 +225,73 @@ const IconVol=(p:any)=>(<svg viewBox="0 0 24 24" fill="none" stroke="currentColo
 function ScoreRing({score}:{score:number}){ const r=17,c=2*Math.PI*r,dash=c*(score/100),gap=c-dash; const is90 = score>=90; return (<div className={`relative size-[52px] shrink-0 ${is90?"drop-shadow-[0_0_8px_rgba(255,107,0,0.55)]":""}`}><svg viewBox="0 0 44 44" className={`size-[52px] -rotate-90 ${is90?"animate-[pulse_1.6s_ease-in-out_infinite]":""}`}><circle cx="22" cy="22" r={r} fill="none" stroke="#EEE" strokeWidth={3.5}/><circle cx="22" cy="22" r={r} fill="none" stroke={is90?"#FF6B00":"#0A0A0A"} strokeWidth={is90?4:3.5} strokeLinecap="round" strokeDasharray={`${dash} ${gap}`} style={is90?{filter:"drop-shadow(0 0 6px rgba(255,107,0,0.6))"}:undefined}/>{is90 && <circle cx="22" cy="22" r={r+4} fill="none" stroke="#FF6B00" strokeWidth={0.9} opacity={0.35} strokeDasharray="2 3"/>}</svg><span className={`absolute inset-0 grid place-items-center text-[13px] font-bold tabular-nums ${is90?"text-[#FF6B00]":""}`}>{score}{is90 && <span className="ml-0.5 text-[10px]">★</span>}</span>{is90 && <span className="pointer-events-none absolute -inset-1 rounded-full border border-[#FF6B00]/30 animate-[ping_1.8s_cubic-bezier(0,0,0.2,1)_infinite]"/>}</div>); }
 function Sparkline({data,color="#0A0A0A"}:{data:number[];color?:string}){ if(!data||data.length<2) return <div className="h-7 w-full"/>; const w=96,h=28,pad=3, max=Math.max(...data),min=Math.min(...data),range=max-min||1, pts=data.map((v,i)=>`${(i/(data.length-1))*(w-pad*2)+pad},${h-pad - ((v-min)/range)*(h-pad*2)}`).join(" "); return <svg viewBox={`0 0 ${w} ${h}`} className="h-7 w-full"><polyline fill="none" stroke={color} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round" points={pts}/></svg>; }
 function AdvancedChart({data,change24}:{data:number[];change24:number}){ if(!data||data.length<4) return <div className="h-[140px] grid place-items-center text-[12px] text-[#6B6B6B]">No chart data</div>; const w=320,h=140,padT=8,padB=20; const max=Math.max(...data),min=Math.min(...data),range=max-min||1, step=w/(data.length-1), pts=data.map((v,i)=>`${i*step},${padT + (1-(v-min)/range)*(h-padT-padB)}`).join(" "), areaPts=`0,${h-padB} ${pts} ${w},${h-padB}`, color=change24>=0?"#0A0A0A":"#6B6B6B", first=data[0], last=data[data.length-1], pct=((last-first)/first*100).toFixed(2); return (<div><svg viewBox={`0 0 ${w} ${h}`} className="w-full"><g stroke="#E8E8E8" strokeWidth={0.6} opacity={0.9}><line x1={0} y1={h-padB} x2={w} y2={h-padB}/><line x1={0} y1={h/2} x2={w} y2={h/2} strokeDasharray="3 4"/><line x1={0} y1={padT} x2={w} y2={padT} opacity={0.35}/></g><polygon points={areaPts} fill={color} opacity={0.06}/><polyline fill="none" stroke={color} strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round" points={pts}/><circle cx={w} cy={padT + (1-(last-min)/range)*(h-padT-padB)} r={3} fill={color} stroke="white" strokeWidth={1.4}/></svg><div className="mt-1 flex justify-between text-[11px] font-mono text-[#6B6B6B]"><span>low ${min.toFixed(min<1?4:2)} · high ${max.toFixed(max<1?4:2)}</span><span className={change24>=0?"text-[#0A0A0A] font-semibold":"text-[#6B6B6B] font-semibold"}>{Number(pct)>=0?"+":""}{pct}%</span></div></div>); }
+// --- letscash.fun / Robinhood Chain -----------------------------------------
+// The score is computed server-side in src/lib/letscash.ts (momentum + real cap
+// + verified burn + survivorship) and trusted here — do NOT recompute it with the
+// pair-engine formula, which knows nothing about launchpad age or supply burn.
+type LetscashRow = {
+  id: string; name: string; tokenName: string; tokenSymbol: string; image: string;
+  marketCapUsd: number; change24h: number; volume24h: number; liquidityUsd: number;
+  emergentScore: number; rank: number; taxPct: number | null; burnedPct: number | null;
+  holders: number | null; ageSeconds: number; pairUrl: string; description: string;
+  socials: { x?: string; tg?: string; web?: string };
+};
+/** Robinhood rows carry market cap, not unit price — show the cap as the headline. */
+function formatUsdShort(n: number): string {
+  if (!Number.isFinite(n) || n <= 0) return "—";
+  if (n >= 1e6) return `$${(n / 1e6).toFixed(2)}M cap`;
+  if (n >= 1e3) return `$${(n / 1e3).toFixed(1)}K cap`;
+  return `$${n.toFixed(0)} cap`;
+}
+function mapLetscashToCoin(p: LetscashRow): Coin {
+  const mcap = Number(p.marketCapUsd) || 0;
+  const vol = Number(p.volume24h) || 0;
+  const liq = Number(p.liquidityUsd) || 0;
+  const c24 = Number(p.change24h) || 0;
+  const score = Number(p.emergentScore) || 50;
+  const ageDays = (Number(p.ageSeconds) || 0) / 86400;
+  const tax = p.taxPct == null ? null : Number(p.taxPct);
+  const burned = p.burnedPct == null ? null : Number(p.burnedPct);
+  const risk: Risk = ageDays < 1 || mcap < 5000 ? "Critical" : score < 50 ? "High" : score < 70 ? "Medium" : "Low";
+  const ageStr = ageDays < 1 ? `${Math.max(1, Math.floor(ageDays * 24))}h ago` : `${Math.max(1, Math.floor(ageDays))}d ago`;
+  const symbol = String(p.tokenSymbol || "???").toUpperCase();
+  const name = p.tokenName || p.name || symbol;
+  const addr = p.id ? p.id.split(":")[1] : "";
+  return {
+    id: p.id || `robinhood:${symbol}`,
+    name, symbol, chain: "Robinhood",
+    price: formatUsdShort(mcap), priceNum: mcap,
+    change1h: 0, change24h: c24,
+    marketCap: formatMoney(mcap), marketCapNum: mcap,
+    volume: formatMoney(vol), volumeNum: vol,
+    emergentScore: score, risk, trend: trendFor(c24),
+    reason: burned
+      ? `Self-burn launch — ${burned}% of supply destroyed. ${ageStr}, ${formatMoney(mcap)} cap.`
+      : tax
+        ? `${tax}% trading tax, ${ageStr}. ${formatMoney(mcap)} cap, ${formatMoney(vol)} 24h flow.`
+        : `Launched ${ageStr} on letscash.fun — ${formatMoney(mcap)} cap.`,
+    spark: sparkFromChange(mcap, c24),
+    timeAgo: ageStr,
+    liquidity: formatMoney(liq),
+    holders: p.holders ? p.holders.toLocaleString() : "—",
+    sentiment: Math.max(18, Math.min(94, Math.round(50 + c24 * 0.6))),
+    riskScore: Math.max(58, Math.min(96, Math.round(100 - score * 0.5 + (ageDays < 1 ? 18 : 0)))),
+    mentions: 0,
+    dexPool: `${symbol}/ETH`,
+    image: p.image || "/panther-icon.png",
+    rank: p.rank, category: "Meme",
+    description: p.description || `${name} — launched on letscash.fun, Robinhood Chain.`,
+    top10HoldersPct: 0,
+    source: "pair",
+    pairAddress: addr,
+    tokenAddress: addr,
+    dexName: "letscash.fun",
+    liquidityNum: liq,
+    pairUrl: p.pairUrl,
+    geckoTerminalUrl: p.pairUrl,
+    socials: { twitter: p.socials?.x, telegram: p.socials?.tg, website: p.socials?.web },
+  };
+}
 export default function EmergentMinimal(){
   const [chainFilter,setChainFilter]=useState<Chain|"All">("All");
   const [feed,setFeed]=useState<Feed>("trending");
@@ -243,6 +312,9 @@ export default function EmergentMinimal(){
   const [chartRange,setChartRange]=useState<'24h'|'7d'|'30d'>('7d');
   const [coins,setCoins]=useState<Coin[]>([]);
   const coinsLenRef=useRef(0); coinsLenRef.current=coins.length;
+  // Robinhood Chain (letscash.fun) — panel receipts + board sort
+  const [letscash,setLetscash]=useState<LetscashPanelData|null>(null);
+  const [letscashSort,setLetscashSort]=useState<LetscashSort>("trending");
   const [loading,setLoading]=useState(true);
   const [err,setErr]=useState<string|null>(null);
   const [lastUpdated,setLastUpdated]=useState<Date|null>(null);
@@ -385,6 +457,26 @@ export default function EmergentMinimal(){
     try{
       setErr(null);
       if(!coinsLenRef.current) setLoading(true);
+      if(feed==="robinhood"){
+        // letscash.fun — Robinhood Chain launchpad. Route falls back to a bundled
+        // snapshot when upstream is unreachable, so this never dead-ends the page.
+        const r = await fetch(`/api/letscash?sort=${letscashSort}`,{cache:"no-store"});
+        if(!r.ok) throw new Error(`Letscash ${r.status}`);
+        const j = await r.json();
+        setLetscash({
+          live: !!j.live,
+          capturedAt: j.capturedAt,
+          sourceUrl: j.sourceUrl || "https://www.letscash.fun/",
+          chain: j.chain,
+          tokenomics: j.tokenomics,
+          ranks: j.ranks || [],
+          tape: j.tape || [],
+        });
+        const mapped: Coin[] = (j.pairs||[]).map((p:LetscashRow)=>mapLetscashToCoin(p));
+        setCoins(mapped); setLastUpdated(new Date());
+        setLogs(mapped.slice(0,6).map(c=>({t:new Date().toLocaleTimeString([],{hour12:false}), msg:`[rh${j.live?"":"·snap"}] ${c.symbol} ${c.change24h>=0?"+":"-"} ${c.change24h.toFixed(2)}%  ${c.marketCap}`})));
+        return;
+      }
       if(feed!=="bluechips"){
         const chain = pairChainParam(chainFilter);
         const r = await fetch(`/api/pairs?feed=${feed}&chain=${chain}`,{cache:"no-store"});
@@ -420,7 +512,7 @@ export default function EmergentMinimal(){
     fetchCoins();
     const id=setInterval(fetchCoins, feed==="bluechips"?120000:60000);
     return()=>clearInterval(id);
-  },[feed, pairChainKey]);
+  },[feed, pairChainKey, letscashSort]);
   // News + DexScreener live + Panther AI trader simulation
   useEffect(()=>{
     const fetchNews = async () => {
@@ -579,7 +671,7 @@ export default function EmergentMinimal(){
               <span className="radar-label mr-1 flex items-center gap-1.5"><IconSatellite className="size-3.5"/> Feed</span>
               {FEEDS.map(f=>{
                 const active=feed===f.key;
-                const Icon = f.key==="trending"?IconFlame : f.key==="new"?IconClock : f.key==="boosts"?IconStar : IconTrophy;
+                const Icon = f.key==="trending"?IconFlame : f.key==="new"?IconClock : f.key==="boosts"?IconStar : f.key==="robinhood"?IconOrbit : IconTrophy;
                 const isPulsing = filterPulse===`feed-${f.key}`;
                 return (<button key={f.key} onClick={()=>{ setFeed(f.key); setFilterPulse(`feed-${f.key}`); setTimeout(()=>setFilterPulse(null),700); setSortKey(f.key==="bluechips"?"emergentScore":"volumeNum"); }} className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-[14px] font-semibold transition-all duration-200 ${active?"bg-[#0A0A0A] text-white shadow-lg scale-[1.02]":"border border-[#E8E8E8] bg-white text-[#0A0A0A] hover:border-[#0A0A0A] hover:scale-[1.02]"} ${isPulsing?"animate-[ping_0.7s_ease-out_1]":""}`}><Icon className="size-3.5"/>{f.label}{f.key==="trending" && active && <span className="ml-0.5 size-1.5 rounded-full bg-white animate-pulse"/>}</button>);
               })}
@@ -606,6 +698,11 @@ export default function EmergentMinimal(){
             </div>
             {err&&<div className="mt-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-[13px] text-red-700">{err} — <button onClick={fetchCoins} className="underline">retry</button></div>}
           </div>
+          {feed==="robinhood" && letscash && (
+            <div className="mt-5">
+              <LetscashPanel data={letscash} sort={letscashSort} onSort={setLetscashSort}/>
+            </div>
+          )}
           <div className="card mt-5 overflow-hidden hidden">
             <div className="flex items-center justify-between border-b border-[#E8E8E8] bg-[#0A0A0A] px-4 py-2.5 text-white"><span className="flex items-center gap-2 text-[12px] font-semibold tracking-widest"><IconTerminal className="size-4"/> TERMINAL — COINGECKO LIVE</span><span className="flex items-center gap-2 text-[11px]"><span className="size-1.5 rounded-full bg-white animate-[pulse-dot_1s_ease-in-out_infinite]"/> {coins.length?"STREAMING":"CONNECTING"} · {logs.length} lines</span></div>
             <div ref={logRef} className="h-[140px] overflow-y-auto bg-[#0A0A0A] p-3 font-mono text-[12px] leading-5 text-white scrollbar-thin">{logs.length===0?<div className="text-white/40">Waiting for CoinGecko feed…</div>:logs.map((l,i)=><div key={i} className="whitespace-nowrap text-white/90">{l.msg}</div>)}</div>
@@ -630,7 +727,7 @@ export default function EmergentMinimal(){
             </div>
           </div>
           <div className="mt-6">
-            <div className="mb-3 flex flex-wrap items-center justify-between gap-2"><h2 className="radar-label flex items-center gap-2"><IconLayers className="size-3.5"/> Feed · {sorted.length} <span className="hidden sm:inline">{feed==="bluechips"?"REAL COINS":"LIVE PAIRS"}</span> {loading&&<span className="ml-2 font-normal">loading…</span>}</h2>
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2"><h2 className="radar-label flex items-center gap-2"><IconLayers className="size-3.5"/> Feed · {sorted.length} <span className="hidden sm:inline">{feed==="bluechips"?"REAL COINS":feed==="robinhood"?"LAUNCHPAD":"LIVE PAIRS"}</span> {loading&&<span className="ml-2 font-normal">loading…</span>}</h2>
               <div className="flex items-center gap-1.5">
                 {SORTS.map(s=>{
                   const active=sortKey===s.key;
@@ -842,12 +939,12 @@ export default function EmergentMinimal(){
                     <div className="flex gap-1.5 pt-1">
                       <a href={getDexscreenerUrl(selected, detail)} target="_blank" rel="noreferrer" className="flex-1 rounded-full bg-[#0A0A0A] py-1.5 text-center text-[11px] font-bold text-white">Dexscreener ↗</a>
                       <a href={`https://www.dextools.io/app/${selected.chain.toLowerCase()}/pair-explorer/${Object.values(detail.platforms)[0]}`} target="_blank" rel="noreferrer" className="flex-1 rounded-full border border-[#E8E8E8] bg-white py-1.5 text-center text-[11px] font-semibold hover:border-[#0A0A0A]">DexTools ↗</a>
-                      {selected.chain==="Robinhood" && <a href="https://www.dextools.io/app/robinhood/pairs" target="_blank" rel="noreferrer" className="rounded-full border border-[#0A0A0A] bg-white px-3 py-1.5 text-[11px] font-semibold">Robinhood Pairs ↗</a>}
+                      {selected.chain==="Robinhood" && <a href="https://www.letscash.fun/" target="_blank" rel="noreferrer" className="rounded-full border border-[#0A0A0A] bg-white px-3 py-1.5 text-[11px] font-semibold">letscash.fun ↗</a>}
                     </div>
                   </div>
                 ) : (
                   <div className="mt-2 rounded-xl border border-dashed border-[#E8E8E8] bg-[#F8F8F7] px-3 py-3 text-[11px] text-[#6B6B6B]">
-                    {selected.chain==="Robinhood" ? "Robinhood chain · native listing — see Dexscreener Robinhood for pairs" : "Native asset — no contract (BTC/ETH/SOL)."} <a href={`https://www.coingecko.com/en/coins/${selected.id}#info`} target="_blank" rel="noreferrer" className="ml-1 underline">View on CoinGecko ↗</a>
+                    {selected.chain==="Robinhood" ? "Robinhood Chain · native listing — trades on the letscash.fun launchpad" : "Native asset — no contract (BTC/ETH/SOL)."} <a href={`https://www.coingecko.com/en/coins/${selected.id}#info`} target="_blank" rel="noreferrer" className="ml-1 underline">View on CoinGecko ↗</a>
                   </div>
                 )}
               </div>
@@ -917,7 +1014,7 @@ export default function EmergentMinimal(){
                     </div>
                     <div className="mt-2 flex gap-1.5">
                       <a href={`https://coinmarketcap.com/view/${selected.category.toLowerCase().replace(/\s+/g,'-')}/`} target="_blank" rel="noreferrer" className="flex-1 rounded-full border border-[#E8E8E8] bg-white py-1 text-center text-[11px] font-semibold hover:border-[#0A0A0A]">View Category ↗</a>
-                      <a href="https://www.dextools.io/app/robinhood/pairs" target="_blank" rel="noreferrer" className="flex-1 rounded-full bg-[#0A0A0A] py-1 text-center text-[11px] font-semibold text-white">More Pairs ↗</a>
+                      <a href="https://www.letscash.fun/" target="_blank" rel="noreferrer" className="flex-1 rounded-full bg-[#0A0A0A] py-1 text-center text-[11px] font-semibold text-white">Launchpad ↗</a>
                     </div>
                   </div>
                 </div>
@@ -945,7 +1042,7 @@ export default function EmergentMinimal(){
           <h2 className="text-[14px] font-black tracking-[0.14em] flex items-center gap-2"><IconGlobe className="size-4"/> ABOUT — CoinPanther</h2>
           <p className="mt-2 text-[14px] leading-6 text-[#1A1A1A]">CoinPanther is a minimal, luxury discovery engine for 300+ real coins. We pull live prices, images, spark lines, tickers and socials directly from <a href="https://www.coingecko.com" target="_blank" rel="noreferrer" className="underline">CoinGecko</a> (no key), with trading pairs via <a href="https://dexscreener.com" target="_blank" rel="noreferrer" className="underline">Dexscreener</a> (Robinhood: <a href="https://dexscreener.com/robinhood" target="_blank" rel="noreferrer" className="underline">dexscreener.com/robinhood</a>), charts via <a href="https://www.coingecko.com/api" target="_blank" rel="noreferrer" className="underline">CoinGecko market_chart</a>, and wallet auth via <a href="https://www.privy.io" target="_blank" rel="noreferrer" className="underline">Privy</a> + free injected wallets (MetaMask/Phantom/Coinbase — no API). Every contract is screened for honeypots before listing — SOL via <a href="https://rugcheck.xyz" target="_blank" rel="noreferrer" className="underline">RugCheck.xyz</a>, EVM via <a href="https://gopluslabs.io" target="_blank" rel="noreferrer" className="underline">GoPlus</a> (trust_score). Only verified non-honeypot assets are shown.</p>
           <div className="mt-4 grid gap-3 sm:grid-cols-3 text-[13px]">
-            <div className="rounded-xl border border-[#E8E8E8] bg-[#F8F8F7] p-3"><div className="font-semibold">Sources</div><div className="mt-1 text-[#6B6B6B]">CoinGecko (prices/images), Dexscreener (pairs, Robinhood), CoinMarketCap (links), pump.fun, X, Birdeye/Jupiter (SOL)</div></div>
+            <div className="rounded-xl border border-[#E8E8E8] bg-[#F8F8F7] p-3"><div className="font-semibold">Sources</div><div className="mt-1 text-[#6B6B6B]">CoinGecko (prices/images), Dexscreener (pairs), letscash.fun (Robinhood Chain launchpad — board, fees, ranks, tape), CoinMarketCap (links), pump.fun, X, Birdeye/Jupiter (SOL)</div></div>
             <div className="rounded-xl border border-[#E8E8E8] bg-[#F8F8F7] p-3"><div className="font-semibold">Security</div><div className="mt-1 text-[#6B6B6B]">RugCheck (SOL) + GoPlus (EVM) honeypot scan, top-10 holders %, risk scores, trust_score badges. Native assets (BTC/ETH/SOL) marked safe.</div></div>
             <div className="rounded-xl border border-[#E8E8E8] bg-[#F8F8F7] p-3"><div className="font-semibold">More coins & data</div><div className="mt-1 text-[#6B6B6B]">300 coins (3 pages), categories (Layer 1/DeFi/Meme/AI/Gaming/Stable), descriptions, ATH/supply/volatility, deployer launches, holders, mentions, 24h/7d/30d charts.</div></div>
           </div>

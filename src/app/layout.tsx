@@ -1,9 +1,13 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+// Self-hosted via the `geist` package (next/font/local + bundled woff2).
+// Previously next/font/google, which fetches fonts.googleapis.com at build time —
+// that is a hard build failure whenever the network is absent or restricted.
+import { GeistSans } from "geist/font/sans";
+import { GeistMono } from "geist/font/mono";
 import "./globals.css";
 import Providers from "@/components/PrivyProvider";
-const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin", "latin-ext"] });
-const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin", "latin-ext"] });
+const geistSans = GeistSans;
+const geistMono = GeistMono;
 export const metadata: Metadata = {
   title: { default: "CoinPanther - Crypto Discovery Radar", template: "%s | CoinPanther" },
   description: "CoinPanther - minimal, luxury crypto discovery. Real CoinGecko prices, AI wallet analysis, NFT gallery, and X-ray radar for 300+ coins.",
