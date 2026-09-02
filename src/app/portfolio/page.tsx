@@ -7,7 +7,7 @@ import { clientJson } from "@/lib/http";
  * Real on-chain data only. No mocked balances, prices, tokens, or P&L.
  *  - Solana: public mainnet RPC (keyless) + Jupiter token list/price (keyless).
  *  - Ethereum: public LlamaRPC (keyless) for native balance; Etherscan V2
- *    (optional NEXT_PUBLIC_ETHERSCAN_API_KEY) for ERC-20 holdings + history.
+ *    optional ETHERSCAN_API_KEY, held by /api/etherscan) for ERC-20 holdings + history.
  * Cost-basis / missed-gains is intentionally NOT shown — it would require
  * guessing buy prices, which is mock data.
  * ------------------------------------------------------------------------- */
@@ -47,7 +47,7 @@ type Stats = {
   nativeBalance: number;
   nativePriceUsd: number;
   totalValueUsd: number;
-  enriched: boolean; // false when Etherscan key missing (ETH)
+  enriched: boolean; // false when the server has no Etherscan key (ETH)
 };
 
 const SOL_NATIVE = "So11111111111111111111111111111111111111112";
@@ -283,7 +283,6 @@ async function fetchSolana(addr: string): Promise<{ holdings: Holding[]; txns: T
 }
 
 async function fetchEthereum(addr: string): Promise<{ holdings: Holding[]; txns: Txn[]; stats: Stats }> {
-  const key = process.env.NEXT_PUBLIC_ETHERSCAN_API_KEY;
   const prices = await fetchNativePrices();
   const balRes = await rpcPost(ETH_RPC, "eth_getBalance", [addr, "latest"]);
   const wei = balRes?.result ? Number(balRes.result) : 0;
@@ -304,12 +303,23 @@ async function fetchEthereum(addr: string): Promise<{ holdings: Holding[]; txns:
   let enriched = false;
   let tokenCount = 1;
 
+  // Etherscan is read through /api/etherscan, which holds the key server-side and answers
+  // 503 when none is configured. Reading process.env.NEXT_PUBLIC_ETHERSCAN_API_KEY here
+  // (this file is "use client") inlined the key into the shipped JS bundle, i.e. public.
+  const ethCall = async (kind: "txlist" | "tokenlist") => {
+    try {
+      return { data: await clientJson(`/api/etherscan?kind=${kind}&address=${addr}`), noKey: false };
+    } catch (e) {
+      return { data: null, noKey: (e as { status?: number })?.status === 503 };
+    }
+  };
+  const [txCall, tokCall] = await Promise.all([ethCall("txlist"), ethCall("tokenlist")]);
+  const key = !(txCall.noKey && tokCall.noKey);
+
   if (key) {
     enriched = true;
-    const [txlistRes, tokRes] = await Promise.all([
-      clientJson(`https://api.etherscan.io/v2/api?chainid=1&module=account&action=txlist&address=${addr}&startblock=0&endblock=99999999&sort=asc&apikey=${key}`).catch(() => null),
-      clientJson(`https://api.etherscan.io/v2/api?chainid=1&module=account&action=tokenlist&address=${addr}&apikey=${key}`).catch(() => null),
-    ]);
+    const txlistRes = txCall.data;
+    const tokRes = tokCall.data;
     const txs: any[] = txlistRes?.status === "1" ? txlistRes.result : [];
     const toks: any[] = tokRes?.status === "1" ? tokRes.result : [];
 
@@ -580,7 +590,7 @@ export default function PortfolioPage() {
               <span className="rounded-full border border-[#0A0A0A] bg-white px-3 py-1.5 font-mono font-bold">{short(address)}</span>
               <span className="rounded-full border border-[#E8E8E8] bg-[#F8F8F7] px-3 py-1.5">{chain} · {stats.tokenCount} tokens</span>
               <span className="rounded-full border border-[#E8E8E8] bg-[#F8F8F7] px-3 py-1.5">{stats.txCount} txns</span>
-              {!stats.enriched && <span className="rounded-full border border-[#0A0A0A] bg-white px-3 py-1.5">Add NEXT_PUBLIC_ETHERSCAN_API_KEY for ERC-20 + history</span>}
+              {!stats.enriched && <span className="rounded-full border border-[#0A0A0A] bg-white px-3 py-1.5">Set ETHERSCAN_API_KEY server-side for ERC-20 + history</span>}
             </div>
           )}
         </div>
@@ -665,7 +675,7 @@ export default function PortfolioPage() {
               <div className="mt-6 rounded-2xl border border-[#E8E8E8] bg-white">
                 {txns.length === 0 ? (
                   <div className="grid place-items-center py-16 text-sm text-[#6B6B6B]">
-                    {stats?.enriched ? "No transactions found for this address." : "Transaction history needs an Etherscan API key (set NEXT_PUBLIC_ETHERSCAN_API_KEY). Solana history loads automatically."}
+                    {stats?.enriched ? "No transactions found for this address." : "Transaction history needs an Etherscan API key (set ETHERSCAN_API_KEY in .env.local / the host env — never a NEXT_PUBLIC_ var). Solana history loads automatically."}
                   </div>
                 ) : (
                   <div className="divide-y divide-[#E8E8E8]">

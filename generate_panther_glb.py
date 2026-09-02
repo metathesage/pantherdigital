@@ -1,9 +1,13 @@
 #!/usr/bin/env python3
 """
 generate_panther_glb.py — No Blender needed.
-Builds public/panther.glb as a stylized low-poly panther (boxes + spheres)
-so PantherBackground.tsx can load a real GLB immediately.
+Builds public/panther.glb as a stylized low-poly panther (boxes + spheres).
 Run: python generate_panther_glb.py
+
+NOTE: the consumer of this file (PantherBackground.tsx) was removed on 2026-09-02 — it
+was imported by nothing and the 63MB GLB was being served from public/. Output is now
+gitignored. Re-run only if you are adding back a 3D hero, and serve the model from a CDN
+or compress it (Draco/meshopt) rather than committing it to public/.
 """
 import struct, json, os, math
 

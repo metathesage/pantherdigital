@@ -59,6 +59,13 @@ next-env.d.ts
 /*.blend
 /*.blend[0-9]
 
+# The 3D panther hero was removed (63MB served to every visitor, only consumer was an
+# unused component). generate_panther_glb.py / panther_digital_blender.py still export to
+# this path, so keep it out of git if they are re-run. Re-add deliberately with -f only
+# alongside a component that actually loads it.
+/public/panther.glb
+/public/panther-procedural.glb
+
 .vercel
 .env*
 Hi3D_Untitled_allparts_20260831_235734.glb
