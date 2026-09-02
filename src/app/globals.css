@@ -223,3 +223,41 @@ body { background: #FFFFFF; color: #0A0A0A; font-family: var(--font-geist-sans),
   .radar-app .ticker-item img { animation: none !important; }
   .hallow-float, .hallow-glow { animation: none; }
 }
+
+/* CoinPanther command-center refresh */
+:root {
+  --cp-ink: #0b0d0f;
+  --cp-paper: #f7f7f5;
+  --cp-line: #262a2d;
+  --cp-muted: #92999d;
+  --cp-signal: #ff6b00;
+}
+.radar-app {
+  background: var(--cp-ink) !important;
+  color: var(--cp-paper) !important;
+}
+.radar-app header.sticky {
+  background: rgba(11,13,15,0.94) !important;
+  border-bottom-color: var(--cp-line) !important;
+  color: var(--cp-paper);
+}
+.radar-app header.sticky a,
+.radar-app header.sticky button { color: var(--cp-paper); }
+.radar-app header.sticky .icon-nav-btn { background: transparent; border-color: var(--cp-line); }
+.radar-app header.sticky .icon-nav-btn:hover { background: var(--cp-paper); color: var(--cp-ink); }
+.radar-app .ticker-bar { background: var(--cp-ink); border-color: var(--cp-line); }
+.radar-app .ticker-marble-overlay { background: rgba(11,13,15,0.96); border-color: var(--cp-line); }
+.radar-app .ticker-item { color: var(--cp-paper); background: #16191b; border-color: var(--cp-line); }
+.radar-app .ticker-gain { background: #16191b; box-shadow: inset 0 0 0 1px #30363a; }
+.radar-app .ticker-item span.text-\[\#6B6B6B\] { color: var(--cp-muted); }
+.radar-app > .mx-auto { position: relative; }
+.radar-app > .mx-auto::before { content: 'LIVE MARKET INTELLIGENCE'; display: block; margin: 0 0 1rem; color: var(--cp-muted); font-size: 10px; font-weight: 700; letter-spacing: .2em; }
+.radar-app .card { background: var(--cp-paper); border-color: #dfe1df; color: var(--cp-ink); box-shadow: 0 10px 34px rgba(0,0,0,.14); }
+.radar-app .radar-label { color: #687075; }
+.radar-app .radar-app-muted { color: var(--cp-muted); }
+.radar-app input, .radar-app select { background: #fff; }
+.radar-app .card.bg-\[\#0A0A0A\], .radar-app .card .bg-\[\#0A0A0A\] { color: #fff; }
+.radar-app .coin-card:hover { box-shadow: 0 12px 30px rgba(0,0,0,.18); }
+@media (max-width: 640px) {
+  .radar-app > .mx-auto::before { margin-bottom: .75rem; }
+}
