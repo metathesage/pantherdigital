@@ -43,6 +43,22 @@ next-env.d.ts
 # Local Netlify folder
 .netlify
 
+# Generated asset scratch at the repo root (3D exports, renders, zip dumps).
+# These are inputs to public/ assets, never served or imported by the app, and
+# committing them bloats both the repo and every deploy upload (~300MB as of 2026-09).
+# Leading slash keeps this root-only: public/** is still tracked normally.
+/*.png
+/*.jpg
+/*.jpeg
+/*.gif
+/*.webp
+/*.glb
+/*.gltf
+/*.obj
+/*.zip
+/*.blend
+/*.blend[0-9]
+
 .vercel
 .env*
 Hi3D_Untitled_allparts_20260831_235734.glb

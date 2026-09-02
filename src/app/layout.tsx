@@ -1,9 +1,28 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import Providers from "@/components/PrivyProvider";
-const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin", "latin-ext"] });
-const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin", "latin-ext"] });
+// Self-hosted Geist (SIL OFL 1.1, vendored in ./fonts) — deliberately NOT next/font/google,
+// which fetches fonts.googleapis.com at build time and fails the whole build when the
+// deploy environment has no outbound network.
+const geistSans = localFont({
+  variable: "--font-geist-sans",
+  display: "swap",
+  fallback: ["system-ui", "-apple-system", "sans-serif"],
+  src: [
+    { path: "./fonts/geist-latin-wght-normal.woff2", weight: "100 900", style: "normal" },
+    { path: "./fonts/geist-latin-ext-wght-normal.woff2", weight: "100 900", style: "normal" },
+  ],
+});
+const geistMono = localFont({
+  variable: "--font-geist-mono",
+  display: "swap",
+  fallback: ["ui-monospace", "SFMono-Regular", "monospace"],
+  src: [
+    { path: "./fonts/geist-mono-latin-wght-normal.woff2", weight: "100 900", style: "normal" },
+    { path: "./fonts/geist-mono-latin-ext-wght-normal.woff2", weight: "100 900", style: "normal" },
+  ],
+});
 export const metadata: Metadata = {
   title: { default: "CoinPanther - Crypto Discovery Radar", template: "%s | CoinPanther" },
   description: "CoinPanther - minimal, luxury crypto discovery. Real CoinGecko prices, AI wallet analysis, NFT gallery, and X-ray radar for 300+ coins.",

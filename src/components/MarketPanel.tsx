@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { TcgCard } from "@/types";
+import { clientJson } from "@/lib/http";
 
 interface MarketComp {
   source: string;
@@ -38,9 +39,8 @@ export default function MarketPanel({ card }: { card: TcgCard }) {
 
   useEffect(() => {
     let cancelled = false;
-    fetch(`/api/market/${encodeURIComponent(card.id)}`)
-      .then((res) => (res.ok ? res.json() : Promise.reject(new Error(String(res.status)))))
-      .then((snapshot: Snapshot) => {
+    clientJson<Snapshot>(`/api/market/${encodeURIComponent(card.id)}`)
+      .then((snapshot) => {
         if (!cancelled) setState({ kind: "ready", snapshot });
       })
       .catch(() => {

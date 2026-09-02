@@ -1,4 +1,5 @@
 import type { TcgCard, TcgSet } from "@/types";
+import { timedFetch } from "@/lib/http";
 
 /**
  * Market & grading integrations.
@@ -113,16 +114,6 @@ interface CacheEntry {
 
 const cache = new Map<string, CacheEntry>();
 const CACHE_TTL_MS = 10 * 60 * 1000;
-
-async function timedFetch(url: string, init?: RequestInit): Promise<Response> {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 12_000);
-  try {
-    return await fetch(url, { ...init, signal: controller.signal });
-  } finally {
-    clearTimeout(timeout);
-  }
-}
 
 /** OAuth2 client-credentials token for eBay Browse API. */
 async function ebayToken(): Promise<string> {

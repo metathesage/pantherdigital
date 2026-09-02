@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { fetchJson, UpstreamError, UPSTREAM_TIMEOUT_MS } from "@/lib/http";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -15,19 +16,26 @@ export async function GET(request: Request) {
   try {
     const headers: Record<string, string> = { Accept: "application/json" };
     if (CG_KEY) headers["x-cg-demo-api-key"] = CG_KEY;
-    const r = await fetch(url, { cache: "no-store", headers });
-    if (!r.ok) {
-      const text = await r.text();
-      return NextResponse.json({ error: `CoinGecko ${r.status}`, detail: text.slice(0, 800) }, { status: r.status });
-    }
-    const data = await r.json();
+    const data = await fetchJson(url, { cache: "no-store", headers });
     return NextResponse.json(data, {
       headers: {
         "Cache-Control": "public, s-maxage=30, stale-while-revalidate=60",
         "Access-Control-Allow-Origin": "*",
       },
     });
-  } catch (e: any) {
-    return NextResponse.json({ error: e.message || "proxy failed" }, { status: 500 });
+  } catch (e) {
+    // Always answer — a hung request here leaves the whole feed spinner running.
+    const status = e instanceof UpstreamError ? e.proxyStatus : 502;
+    const message = e instanceof Error ? e.message : "proxy failed";
+    return NextResponse.json(
+      { error: `CoinGecko ${message}`, detail: `proxy gave up after ${UPSTREAM_TIMEOUT_MS / 1000}s` },
+      {
+        status,
+        headers: {
+          "Cache-Control": "no-store",
+          ...(status === 429 ? { "Retry-After": "30" } : {}),
+        },
+      }
+    );
   }
 }

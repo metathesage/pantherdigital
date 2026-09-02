@@ -1,3 +1,4 @@
+import { tryJson } from "@/lib/http";
 import { NextResponse } from "next/server";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -20,10 +21,10 @@ export async function GET(req: Request) {
     // Attempt OpenSea v2 collections — needs key, otherwise 401/429
     if (OPENSEA_KEY) {
       const url = `https://api.opensea.io/api/v2/collections?chain=${chain}&limit=${limit}`;
-      const r = await fetch(url, { headers, cache: "no-store" });
-      if (r.ok) {
-        const j = await r.json();
-        const collections = (j.collections || j || []).slice(0, Number(limit));
+      const j = await tryJson(url, { headers, cache: "no-store" });
+      if (j) {
+        // OpenSea may return {collections:[...]} or a bare array — never trust either.
+        const collections = (Array.isArray(j.collections) ? j.collections : Array.isArray(j) ? j : []).slice(0, Number(limit));
         const mapped = collections.map((c: any) => ({
           id: c.collection || c.slug || c.name,
           name: c.name || c.collection,
@@ -38,7 +39,7 @@ export async function GET(req: Request) {
     }
     // No key or failed — report that opensea needs key, client will fallback to CoinGecko/Dex
     return NextResponse.json({ source: "fallback", note: OPENSEA_KEY ? "opensea empty" : "OPENSEA_API_KEY not set — using CoinGecko + DexScreener fallback (free, no key)", collections: [] }, { headers: { "Cache-Control": "public, s-maxage=60" } });
-  } catch (e: any) {
-    return NextResponse.json({ source: "error", error: e.message, collections: [] }, { status: 200 });
+  } catch (e) {
+    return NextResponse.json({ source: "error", error: e instanceof Error ? e.message : "opensea proxy failed", collections: [] }, { status: 200 });
   }
 }

@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useMemo } from "react";
 import { usePanther } from "@/lib/panther";
+import { clientJson } from "@/lib/http";
 
 /* ----------------------------------------------------------------------------
  * Real on-chain data only. No mocked balances, prices, tokens, or P&L.
@@ -85,22 +86,19 @@ const short = (a: string) => `${a.slice(0, 6)}…${a.slice(-4)}`;
 const fmtDate = (ms: number | null) =>
   ms ? new Date(ms).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" }) : "—";
 
+// Every RPC/explorer call is time-boxed via clientJson: a public endpoint that
+// stalls must degrade into "no data for this asset", never an eternal spinner.
 async function rpcPost(url: string, method: string, params: any[]) {
-  const r = await fetch(url, {
+  return clientJson(url, {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }),
-    cache: "no-store",
   });
-  return r.json();
 }
 
 async function fetchNativePrices(): Promise<{ eth: number; sol: number }> {
   try {
-    const r = await fetch(
-      "https://api.coingecko.com/api/v3/simple/price?ids=ethereum,solana&vs_currencies=usd",
-      { cache: "no-store" }
-    ).then((x) => x.json());
+    const r = await clientJson("https://api.coingecko.com/api/v3/simple/price?ids=ethereum,solana&vs_currencies=usd");
     return { eth: r?.ethereum?.usd ?? 0, sol: r?.solana?.usd ?? 0 };
   } catch {
     return { eth: 0, sol: 0 };
@@ -109,10 +107,9 @@ async function fetchNativePrices(): Promise<{ eth: number; sol: number }> {
 
 async function fetchDexPrice(mint: string): Promise<{ price: number; logo: string | null; symbol: string | null }> {
   try {
-    const r = await fetch(`https://api.dexscreener.com/latest/dex/tokens/${mint}`, {
+    const r = await clientJson(`https://api.dexscreener.com/latest/dex/tokens/${mint}`, {
       headers: { accept: "application/json" },
-      cache: "no-store",
-    }).then((x) => x.json());
+    });
     const pairs: any[] = r?.pairs || [];
     if (!pairs.length) return { price: 0, logo: null, symbol: null };
     // Prefer a pair where our mint is the base (priceUsd is then ours directly)
@@ -151,9 +148,7 @@ async function fetchSolana(addr: string): Promise<{ holdings: Holding[]; txns: T
       { programId: "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA" },
       { encoding: "jsonParsed" },
     ]),
-    fetch("https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd", { cache: "no-store" })
-      .then((r) => r.json())
-      .catch(() => null),
+    clientJson("https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd").catch(() => null),
   ]);
   const lamports: number = balanceRes?.result?.value ?? 0;
   const accounts: any[] = tokenRes?.result?.value ?? [];
@@ -312,8 +307,8 @@ async function fetchEthereum(addr: string): Promise<{ holdings: Holding[]; txns:
   if (key) {
     enriched = true;
     const [txlistRes, tokRes] = await Promise.all([
-      fetch(`https://api.etherscan.io/v2/api?chainid=1&module=account&action=txlist&address=${addr}&startblock=0&endblock=99999999&sort=asc&apikey=${key}`, { cache: "no-store" }).then((r) => r.json()).catch(() => null),
-      fetch(`https://api.etherscan.io/v2/api?chainid=1&module=account&action=tokenlist&address=${addr}&apikey=${key}`, { cache: "no-store" }).then((r) => r.json()).catch(() => null),
+      clientJson(`https://api.etherscan.io/v2/api?chainid=1&module=account&action=txlist&address=${addr}&startblock=0&endblock=99999999&sort=asc&apikey=${key}`).catch(() => null),
+      clientJson(`https://api.etherscan.io/v2/api?chainid=1&module=account&action=tokenlist&address=${addr}&apikey=${key}`).catch(() => null),
     ]);
     const txs: any[] = txlistRes?.status === "1" ? txlistRes.result : [];
     const toks: any[] = tokRes?.status === "1" ? tokRes.result : [];
@@ -323,7 +318,7 @@ async function fetchEthereum(addr: string): Promise<{ holdings: Holding[]; txns:
       const contract: string = t.contractAddress;
       let meta: any = null;
       try {
-        meta = await fetch(`https://api.coingecko.com/api/v3/coins/ethereum/contract/${contract}`, { cache: "no-store" }).then((r) => (r.ok ? r.json() : null));
+        meta = await clientJson(`https://api.coingecko.com/api/v3/coins/ethereum/contract/${contract}`).catch(() => null);
       } catch { meta = null; }
       const bal = Number(t.balance) / Math.pow(10, Number(t.tokenDecimal || 18));
       const price = meta?.market_data?.current_price?.usd ?? 0;

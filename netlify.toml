@@ -2,5 +2,8 @@
   command = "npm run build"
   publish = ".next"
 
+# Reference the runtime by package name (it is a devDependency) — a ./node_modules
+# path is not how Netlify resolves plugins, so the Next.js runtime never loaded and
+# the deploy published raw .next output with no functions (404 on every /api route).
 [[plugins]]
-  package = "./node_modules/@netlify/plugin-nextjs"
+  package = "@netlify/plugin-nextjs"

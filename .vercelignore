@@ -1,19 +1,41 @@
+# Vercel uploads everything that is not ignored, and .vercelignore excludes files
+# from the deployment upload — so anything listed here simply does not exist at build time.
+#
+# This file used to allowlist-by-exclusion and accidentally listed live app routes
+# (src/app/cards, src/app/sets, src/app/wiki, src/app/collection, src/app/decks,
+# src/app/packs, src/app/releases, src/app/search, src/app/fan-art) plus
+# public/panther.glb and public/panther-meshy-8192.jpg, which were tracked and rendered
+# by the app. Those pages 404'd and the hero 3D/textures 404'd on every deploy.
+#
+# It is now inverted to an allowlist: ignore the repo root, then opt the build inputs in.
+# That keeps the ~300MB of root-level scratch (renders, .zip dumps, sample .glb/.obj)
+# out of the upload without ever dropping a route again.
+#
+# NOTE: if you add a NEW root-level build input (middleware.ts, vercel.json,
+# instrumentation.ts, custom tsconfig-like config...), allowlist it below or Vercel
+# will not upload it and the build will fail or behave differently from local.
+
+# Ignore everything at the repo root (non-recursive: subdirs are opted in below).
+/*
+
+# App source + static assets
+!/src
+!/public
+
+# Build inputs
+!/package.json
+!/package-lock.json
+!/next.config.ts
+!/tsconfig.json
+!/postcss.config.mjs
+!/eslint.config.mjs
+
+# Never uploaded, whatever else changes:
 node_modules
 .next
 out
 .netlify
+.vercel
 .git
 *.log
 .env*
-public/panther-procedural.glb
-public/panther.glb
-public/panther-meshy-8192.jpg
-src/app/cards
-src/app/sets
-src/app/wiki
-src/app/collection
-src/app/decks
-src/app/packs
-src/app/releases
-src/app/search
-src/app/fan-art

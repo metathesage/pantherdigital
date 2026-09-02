@@ -1,3 +1,4 @@
+import { fetchJson, UpstreamError } from "@/lib/http";
 import { NextResponse } from "next/server";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -32,11 +33,20 @@ export async function GET(req: Request) {
     else if (kind === "trending") url = "https://api.dexscreener.com/token-boosts/top/v1";
     else return NextResponse.json({ error: "missing q/address/pair" }, { status: 400 });
 
-    const r = await fetch(url, { cache: "no-store", headers: { Accept: "application/json", "User-Agent": "CoinPanther/1.0" } });
-    if (!r.ok) return NextResponse.json({ error: `DexScreener ${r.status}` }, { status: r.status });
-    const data = await r.json();
+    const data = await fetchJson(url, {
+      cache: "no-store",
+      headers: { Accept: "application/json", "User-Agent": "CoinPanther/1.0" },
+    });
     return NextResponse.json(data, { headers: { "Cache-Control": "public, s-maxage=20, stale-while-revalidate=40" } });
-  } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+  } catch (e) {
+    // Never hang the caller: answer fast and let the UI keep its last-good data.
+    const status = e instanceof UpstreamError ? e.proxyStatus : 502;
+    return NextResponse.json(
+      { error: e instanceof Error ? e.message : "proxy failed", pairs: [] },
+      {
+        status,
+        headers: { "Cache-Control": "no-store", ...(status === 429 ? { "Retry-After": "20" } : {}) },
+      }
+    );
   }
 }

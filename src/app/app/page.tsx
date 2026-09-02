@@ -2,6 +2,7 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePanther, PANTHER_AVATARS } from "@/lib/panther";
+import { clientJson } from "@/lib/http";
 const _hasPrivyEnv = !!process.env.NEXT_PUBLIC_PRIVY_APP_ID && process.env.NEXT_PUBLIC_PRIVY_APP_ID !== "clz-demo-privy-app-id";
 let _usePrivy: any = null;
 if (_hasPrivyEnv) { try { _usePrivy = require("@privy-io/react-auth").usePrivy; } catch {} }
@@ -374,12 +375,16 @@ export default function EmergentMinimal(){
   const fetchGeckoPage = async (pageNum:number, attempt=0):Promise<GeckoCoin[]> => {
     // server proxy uses env COINGECKO_API_KEY via x-cg-demo-api-key (never hardcode)
     const url = `/api/coins/markets?per_page=100&page=${pageNum}`;
-    const r = await fetch(url, {cache:"no-store"});
-    if(!r.ok){
-      if(r.status===429 && attempt<3){ await new Promise(res=>setTimeout(res, 900*Math.pow(2,attempt))); return fetchGeckoPage(pageNum, attempt+1); }
-      throw new Error(`CoinGecko ${r.status}`);
+    try {
+      return await clientJson<GeckoCoin[]>(url);
+    } catch (e) {
+      // UpstreamError shape from src/lib/http: { status, timedOut, message }.
+      const err = e as { status?: number; timedOut?: boolean; message?: string };
+      // Back off on rate limits only. Timeouts must surface, otherwise the feed
+      // retries forever behind a spinner and the page never resolves.
+      if(err?.status===429 && attempt<3){ await new Promise(res=>setTimeout(res, 900*Math.pow(2,attempt))); return fetchGeckoPage(pageNum, attempt+1); }
+      throw new Error(err?.timedOut ? "CoinGecko proxy timed out" : `CoinGecko ${err?.status ?? err?.message ?? "failed"}`);
     }
-    return r.json() as Promise<GeckoCoin[]>;
   };
   const fetchCoins=async()=>{
     try{
@@ -387,9 +392,7 @@ export default function EmergentMinimal(){
       if(!coinsLenRef.current) setLoading(true);
       if(feed!=="bluechips"){
         const chain = pairChainParam(chainFilter);
-        const r = await fetch(`/api/pairs?feed=${feed}&chain=${chain}`,{cache:"no-store"});
-        if(!r.ok) throw new Error(`Pairs ${r.status}`);
-        const j = await r.json();
+        const j = await clientJson(`/api/pairs?feed=${feed}&chain=${chain}`);
         const mapped: Coin[] = (j.pairs||[]).map((p:any,i:number)=>mapPairToCoin(p, i+1));
         setCoins(mapped); setLastUpdated(new Date());
         setLogs(mapped.slice(0,6).map(c=>({t:new Date().toLocaleTimeString([],{hour12:false}), msg:`[dex] ${c.symbol} ${c.change24h>=0?"+":"-"} ${c.change24h.toFixed(2)}%  ${c.price}`})));
@@ -424,10 +427,10 @@ export default function EmergentMinimal(){
   // News + DexScreener live + Panther AI trader simulation
   useEffect(()=>{
     const fetchNews = async () => {
-      try { setNewsLoading(true); const r=await fetch("/api/news",{cache:"no-store"}); const j=await r.json(); setNews(j.items||[]);} catch{} finally{ setNewsLoading(false); }
+      try { setNewsLoading(true); const j=await clientJson("/api/news"); setNews(j?.items||[]);} catch{} finally{ setNewsLoading(false); }
     }; fetchNews(); const nid=setInterval(fetchNews, 300000);
     const fetchDex = async () => {
-      try { const r=await fetch("/api/dex?kind=boosts",{cache:"no-store"}); const j=await r.json(); setLiveDexPairs((j||[]).slice(0,8)); } catch {}
+      try { const j=await clientJson("/api/dex?kind=boosts"); setLiveDexPairs((Array.isArray(j)?j:[]).slice(0,8)); } catch {}
     }; fetchDex(); const did=setInterval(fetchDex, 60000);
     return()=>{clearInterval(nid); clearInterval(did);};
   },[]);
@@ -454,15 +457,15 @@ export default function EmergentMinimal(){
       let data:any[]=[];
       // 1) Try OpenSea via /api/opensea (if OPENSEA_API_KEY set) — primary aggregator per user request
       try{
-        const ro=await fetch(`/api/opensea?chain=ethereum&limit=12`,{cache:"no-store"});
-        if(ro.ok){ const jo=await ro.json(); const cols=jo.collections||[]; if(cols.length){ data=cols.map((c:any)=>({ id:c.id, name:c.name, symbol:c.symbol, image:c.image, floor:c.floor??0, volume:c.volume??0, marketCap:0, opensea:c.opensea, blur:null, totalSupply:0, floorChange:0 })); }}
+        const jo=await clientJson<any>(`/api/opensea?chain=ethereum&limit=12`).catch(()=>null);
+        if(jo){ const cols=jo.collections||[]; if(cols.length){ data=cols.map((c:any)=>({ id:c.id, name:c.name, symbol:c.symbol, image:c.image, floor:c.floor??0, volume:c.volume??0, marketCap:0, opensea:c.opensea, blur:null, totalSupply:0, floorChange:0 })); }}
       }catch{}
       // 2) Try CG nfts markets first (if available), fallback to list + detail, fallback to curated known collections via markets
       if(!data.length) try{
-        const r=await fetch(`https://api.coingecko.com/api/v3/nfts/list?per_page=40`,{cache:"no-store"});
-        if(r.ok){ const list=await r.json(); const ids=list.slice(0,16).map((x:any)=>x.id);
+        const list=await clientJson<any[]>(`https://api.coingecko.com/api/v3/nfts/list?per_page=40`).catch(()=>null);
+        if(Array.isArray(list)){ const ids=list.slice(0,16).map((x:any)=>x.id);
           const details=await Promise.all(ids.map(async (id:string)=>{
-            try{ const rr=await fetch(`https://api.coingecko.com/api/v3/nfts/${id}?localization=false`,{cache:"no-store"}); if(!rr.ok) return null; return rr.json(); }catch{return null;}
+            try{ return await clientJson(`https://api.coingecko.com/api/v3/nfts/${id}?localization=false`); }catch{return null;}
           }));
           data=details.filter(Boolean).map((d:any)=>({
             id:d.id, name:d.name, symbol:d.symbol, image:d.image?.small || d.image?.thumb || "", floor: d.floor_price?.usd ?? d.floor_price?.native_currency ?? 0, volume: d.volume_24h?.usd ?? d.market_cap?.usd ?? 0, marketCap: d.market_cap?.usd ?? 0, opensea: d.links?.opensea || null, blur: d.links?.blur || null, totalSupply: d.total_supply || 0, floorChange: d.floor_price_in_usd_24h_percentage_change ?? 0
@@ -473,16 +476,15 @@ export default function EmergentMinimal(){
       if(!data.length){
         const blueIds=["bored-ape-yacht-club","cryptopunks","azuki","clonex","doodles-official","moonbirds","pudgy-penguins","milady","de-gods","mutant-ape-yacht-club","art-blocks","otherdeed"];
         const rows=await Promise.all(blueIds.slice(0,12).map(async (id)=>{
-          try{ const rr=await fetch(`https://api.coingecko.com/api/v3/nfts/${id}?localization=false`,{cache:"no-store"}); if(!rr.ok) return null; const d=await rr.json(); return { id:d.id, name:d.name, symbol:d.symbol, image:d.image?.small || "", floor: d.floor_price?.usd ?? 0, volume: d.volume_24h?.usd ?? 0, marketCap: d.market_cap?.usd ?? 0, opensea: d.links?.opensea || null, blur: d.links?.blur || null, totalSupply: d.total_supply || 0, floorChange: d.floor_price_in_usd_24h_percentage_change ?? 0 }; }catch{return null;}
+          try{ const d=await clientJson<any>(`https://api.coingecko.com/api/v3/nfts/${id}?localization=false`); if(!d) return null; return { id:d.id, name:d.name, symbol:d.symbol, image:d.image?.small || "", floor: d.floor_price?.usd ?? 0, volume: d.volume_24h?.usd ?? 0, marketCap: d.market_cap?.usd ?? 0, opensea: d.links?.opensea || null, blur: d.links?.blur || null, totalSupply: d.total_supply || 0, floorChange: d.floor_price_in_usd_24h_percentage_change ?? 0 }; }catch{return null;}
         }));
         data=rows.filter(Boolean) as any[];
       }
       // if still empty, fallback to DexScreener trending as placeholder NFTs (keeps section alive)
       if(!data.length){
         try{
-          const rr=await fetch("/api/dex?kind=topBoosts",{cache:"no-store"});
-          const j=await rr.json();
-          data=(j||[]).slice(0,8).map((p:any,i:number)=>({ id:`dex-${i}`, name:p.header||p.description?.slice(0,18)||"Boosted", symbol:p.header?.slice(0,6)||"DEX", image:p.icon||"/panther-icon.png", floor: 0, volume: 0, marketCap:0, opensea: p.url, blur:null, totalSupply:0, floorChange:0 }));
+          const j=await clientJson<any>("/api/dex?kind=topBoosts").catch(()=>null);
+          data=(Array.isArray(j)?j:[]).slice(0,8).map((p:any,i:number)=>({ id:`dex-${i}`, name:p.header||p.description?.slice(0,18)||"Boosted", symbol:p.header?.slice(0,6)||"DEX", image:p.icon||"/panther-icon.png", floor: 0, volume: 0, marketCap:0, opensea: p.url, blur:null, totalSupply:0, floorChange:0 }));
         }catch{}
       }
       // simulate timeframe variation (24h/7d/30d) cryptoslam-like: scale volume
@@ -505,8 +507,8 @@ export default function EmergentMinimal(){
           return;
         }
         const [d, chart]=await Promise.all([
-          fetch(`https://api.coingecko.com/api/v3/coins/${coin.id}?localization=false&tickers=true&market_data=true&community_data=false&developer_data=false&sparkline=false`,{cache:"no-store"}).then(r=> r.ok?r.json():null),
-          fetch(`https://api.coingecko.com/api/v3/coins/${coin.id}/market_chart?vs_currency=usd&days=${chartRange==='24h'?'1':chartRange==='7d'?'7':'30'}`,{cache:"no-store"}).then(r=> r.ok?r.json():null).catch(()=>null)
+          clientJson(`https://api.coingecko.com/api/v3/coins/${coin.id}?localization=false&tickers=true&market_data=true&community_data=false&developer_data=false&sparkline=false`).catch(()=>null),
+          clientJson(`https://api.coingecko.com/api/v3/coins/${coin.id}/market_chart?vs_currency=usd&days=${chartRange==='24h'?'1':chartRange==='7d'?'7':'30'}`).catch(()=>null)
         ]);
         if(cancelled) return; setDetail(d); if(chart?.prices) setChartData(chart.prices.map((p:any)=>p[1])); else setChartData(coin.spark);
       }catch{ if(!cancelled) setDetail(null); }finally{ if(!cancelled) setDetailLoading(false); }
@@ -785,7 +787,7 @@ export default function EmergentMinimal(){
         {/* Trending News — top crypto news past week */}
         <div className="card p-5">
           <div className="flex items-center justify-between"><h3 className="text-[12px] font-bold tracking-[0.14em] flex items-center gap-1.5"><IconGlobe className="size-3.5"/> TRENDING NEWS · PAST WEEK</h3><span className="text-[11px] text-[#6B6B6B]">{newsLoading?"Loading…":`${news.length} articles`}</span></div>
-          {newsLoading ? <div className="mt-4 space-y-2">{Array.from({length:4}).map((_,i)=><div key={i} className="h-16 animate-pulse rounded-xl bg-[#F2F2F2]"/>)}</div> : news.length===0 ? <div className="mt-4 rounded-xl border border-dashed border-[#E8E8E8] bg-[#F8F8F7] p-6 text-center text-sm text-[#6B6B6B]">No news — <button onClick={async()=>{setNewsLoading(true); const r=await fetch("/api/news"); const j=await r.json(); setNews(j.items||[]); setNewsLoading(false);}} className="underline">retry</button></div> : (
+          {newsLoading ? <div className="mt-4 space-y-2">{Array.from({length:4}).map((_,i)=><div key={i} className="h-16 animate-pulse rounded-xl bg-[#F2F2F2]"/>)}</div> : news.length===0 ? <div className="mt-4 rounded-xl border border-dashed border-[#E8E8E8] bg-[#F8F8F7] p-6 text-center text-sm text-[#6B6B6B]">No news — <button onClick={async()=>{setNewsLoading(true); const j=await clientJson("/api/news").catch(()=>({items:[]})); setNews(j?.items||[]); setNewsLoading(false);}} className="underline">retry</button></div> : (
             <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
               {news.slice(0,10).map((n:any,i)=>(
                 <a key={i} href={n.link} target="_blank" rel="noreferrer" className="flex gap-3 rounded-xl border border-[#E8E8E8] bg-white p-3 hover:border-[#0A0A0A] hover:bg-[#F8F8F7] text-left">

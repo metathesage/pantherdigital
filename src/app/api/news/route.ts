@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { tryJson, UPSTREAM_TIMEOUT_MS } from "@/lib/http";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
@@ -15,22 +16,25 @@ export async function GET() {
   try {
     const items: any[] = [];
     // Try RSS via rss2json free tier
+    // Time-boxed + non-throwing (see src/lib/http): one dead RSS source must not
+    // stall the whole route, or the news panel spins forever and the feed looks broken.
     const tryFetch = async (rss: string, source: string) => {
-      try {
-        const r = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(rss)}`, { next: { revalidate: 60 } });
-        if (!r.ok) return;
-        const j = await r.json();
-        for (const it of (j.items || []).slice(0, 6)) {
-          items.push({
-            title: it.title,
-            link: it.link,
-            pubDate: it.pubDate,
-            source,
-            thumb: it.enclosure?.link || null,
-            description: (it.description || "").replace(/<[^>]*>/g, "").slice(0, 180),
-          });
-        }
-      } catch {}
+      const j = await tryJson(
+        `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(rss)}`,
+        { next: { revalidate: 60 } },
+        UPSTREAM_TIMEOUT_MS
+      );
+      if (!j) return;
+      for (const it of (j.items || []).slice(0, 6)) {
+        items.push({
+          title: it.title,
+          link: it.link,
+          pubDate: it.pubDate,
+          source,
+          thumb: it.enclosure?.link || null,
+          description: (it.description || "").replace(/<[^>]*>/g, "").slice(0, 180),
+        });
+      }
     };
     await Promise.all(SOURCES.map(s => tryFetch(s.rss, s.name)));
     // Fallback curated if RSS fails ( siempre show something )
@@ -48,7 +52,7 @@ export async function GET() {
     // sort by pubDate desc
     items.sort((a,b)=> new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime());
     return NextResponse.json({ items: items.slice(0, 18), updatedAt: new Date().toISOString() }, { headers: { "Cache-Control": "s-maxage=60, stale-while-revalidate=120" } });
-  } catch (e:any) {
-    return NextResponse.json({ items: [], error: e.message }, { status: 200 });
+  } catch (e) {
+    return NextResponse.json({ items: [], error: e instanceof Error ? e.message : "news aggregation failed" }, { status: 200 });
   }
 }
