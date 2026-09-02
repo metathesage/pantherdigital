@@ -156,6 +156,11 @@ export default function EmergentMinimal(){
   const [pantherTrades,setPantherTrades]=useState<any[]>([]);
   const [liveDexPairs,setLiveDexPairs]=useState<any[]>([]);
   const [traderPnl,setTraderPnl]=useState(0);
+  // Market pulse + AI spotlight + X scans + show more
+  const [showCount,setShowCount]=useState(25);
+  const [globalData,setGlobalData]=useState<any>(null);
+  const [fng,setFng]=useState<any>(null);
+  const [xScans,setXScans]=useState<any[]>([]);
   let privy: any = { ready: true, authenticated: false, user: null, login: ()=>setShowConnect(true), logout: ()=>{}, linkTwitter: ()=>{} };
   if (_usePrivy) { try { privy = _usePrivy(); } catch {} }
   const { ready, authenticated, user: privyUser, login, logout, linkTwitter } = privy;
@@ -301,7 +306,7 @@ export default function EmergentMinimal(){
     }finally{ setLoading(false); }
   };
   useEffect(()=>{ fetchCoins(); const id=setInterval(fetchCoins,120000); return()=>clearInterval(id); },[]);
-  // News + DexScreener live + Panther AI trader simulation
+  // News + DexScreener live + Panther AI trader simulation + market pulse + X scans
   useEffect(()=>{
     const fetchNews = async () => {
       try { setNewsLoading(true); const r=await fetch("/api/news",{cache:"no-store"}); const j=await r.json(); setNews(j.items||[]);} catch{} finally{ setNewsLoading(false); }
@@ -309,7 +314,12 @@ export default function EmergentMinimal(){
     const fetchDex = async () => {
       try { const r=await fetch("/api/dex?kind=boosts",{cache:"no-store"}); const j=await r.json(); setLiveDexPairs((j||[]).slice(0,8)); } catch {}
     }; fetchDex(); const did=setInterval(fetchDex, 60000);
-    return()=>{clearInterval(nid); clearInterval(did);};
+    const fetchGlobal = async()=>{ try{ const r=await fetch("/api/global",{cache:"no-store"}); if(r.ok) setGlobalData(await r.json());}catch{} };
+    const fetchFng = async()=>{ try{ const r=await fetch("/api/fng",{cache:"no-store"}); if(r.ok) setFng(await r.json());}catch{} };
+    const fetchX = async()=>{ try{ const r=await fetch("/api/x-scan",{cache:"no-store"}); if(r.ok){ const j=await r.json(); setXScans(j.items||[]);}}catch{} };
+    fetchGlobal(); fetchFng(); fetchX();
+    const gid=setInterval(fetchGlobal, 120000); const fid=setInterval(fetchFng, 300000); const xid=setInterval(fetchX, 90000);
+    return()=>{clearInterval(nid); clearInterval(did);clearInterval(gid);clearInterval(fid);clearInterval(xid);};
   },[]);
   // Panther AI trader — trades top Breaking/Heating coins, holds 3-5 positions, real PnL from live price delta
   useEffect(()=>{
@@ -392,11 +402,26 @@ export default function EmergentMinimal(){
   const rwaCoins=useMemo(()=>coins.filter(c=>c.category==="RWA").slice(0,12),[coins]);
   const aiPicks=useMemo(()=>{ if(!coins.length) return []; const top=[...coins].sort((a,b)=>b.change24h-a.change24h).slice(0,6); return top.map(c=>({ symbol:c.symbol, name:c.name, image:c.image, change24:c.change24h, score:c.emergentScore, entry:`$${(c.priceNum/(1+c.change24h/100)).toFixed(c.priceNum<1?6:3)}`, current:c.price, pnl:`${c.change24h>=0?"+" :""}${c.change24h.toFixed(2)}%`, status: c.change24h>12?"Take Profit":c.change24h<-6?"Stop Hit":"Active" as const, time:c.timeAgo })); },[coins]);
   const topPnl=useMemo(()=>[...coins].slice().sort((a,b)=>b.change24h-a.change24h).slice(0,10),[coins]);
+  const topVolume=useMemo(()=>[...coins].sort((a,b)=>b.volumeNum-a.volumeNum).slice(0,3),[coins]);
+  const memeStats=useMemo(()=>{ const memes=coins.filter(c=>c.category==="Meme"); if(!memes.length) return { count:0, avg:0, totalVol:0, top: null as any }; const avg=memes.reduce((a,c)=>a+c.change24h,0)/memes.length; const totalVol=memes.reduce((a,c)=>a+c.volumeNum,0); const top=[...memes].sort((a,b)=>b.volumeNum-a.volumeNum)[0]; return { count: memes.length, avg, totalVol, top }; },[coins]);
+  const btcDom=useMemo(()=>{
+    if (globalData?.market_cap_percentage?.btc) return globalData.market_cap_percentage.btc.toFixed(1);
+    const btc = coins.find(c=>c.id==="bitcoin"); const total = coins.reduce((a,c)=>a+c.marketCapNum,0);
+    if (btc && total) return ((btc.marketCapNum/total)*100).toFixed(1);
+    return "—";
+  },[globalData,coins]);
+  const aiSpotlight=useMemo(()=>{
+    const aiCoins = coins.filter(c=>c.category==="AI").sort((a,b)=>b.emergentScore-a.emergentScore).slice(0,4);
+    const fallback = [...coins].sort((a,b)=>b.emergentScore-a.emergentScore).slice(0,4);
+    const list = aiCoins.length>=3 ? aiCoins : fallback;
+    return list.map(c=>({ ...c, spotlightReason: c.emergentScore>=90 ? "ELITE — trending AI infra" : c.change24h>8 ? `Breakout +${c.change24h.toFixed(1)}% · AI momentum` : c.trend==="Heating" ? "Heating — accumulation" : "AI watch · model flagged" }));
+  },[coins]);
   const pnlUrl=(c:any)=> c.chain==="Solana"
     ? `https://gmgn.ai/sol/token/${c.id}`
     : `https://fomo.app/token/${c.id}`;
+  useEffect(()=>{ setShowCount(25); },[chainFilter, trendFilter, bucketFilter, search, sortKey, watchlistOnly]);
   const claimDaily=()=>{ if(claimedToday) return; setXp(x=>x+25); setStreak(s=>s+1); if(xp+25>1500) setLevel(l=>l+1); setClaimedToday(true); };
-  if(!ready) return <div className="grid min-h-screen place-items-center bg-[#F8F8F7] text-[14px] text-[#6B6B6B]">Initializing Privy…</div>;
+  if(!ready) return <div className="grid min-h-screen place-items-center bg-[#F8F8F7] text-[14px] text-[#6B6B6B]">Loading…</div>;
   return (
     <div className="radar-app min-h-screen bg-[#F8F8F7] text-[#0A0A0A]">
       <header className="sticky top-0 z-40 border-b border-[#E8E8E8] bg-white/95 backdrop-blur">
@@ -409,25 +434,17 @@ export default function EmergentMinimal(){
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <a href="/" title="App · Radar" className="grid size-10 place-items-center rounded-full border border-[#E8E8E8] bg-white hover:border-[#0A0A0A] hover:bg-[#0A0A0A] hover:text-white transition-colors"><IconLayers className="size-4"/></a>
-            <a href="/portfolio" title="Portfolio · Wallets" className="grid size-10 place-items-center rounded-full border border-[#E8E8E8] bg-white hover:border-[#0A0A0A] hover:bg-[#0A0A0A] hover:text-white transition-colors"><IconWallet className="size-4"/></a>
-            <a href="/about" title="Wiki · About" className="grid size-10 place-items-center rounded-full border border-[#E8E8E8] bg-white hover:border-[#0A0A0A] hover:bg-[#0A0A0A] hover:text-white transition-colors"><IconGlobe className="size-4"/></a>
-            {isConnected?(
-              <>
-                <button onClick={onHunt} title="Hunt" className="hidden items-center gap-1.5 rounded-full border border-[#0A0A0A] bg-white px-3 py-2 text-[13px] font-semibold hover:bg-[#F8F8F7] sm:flex">🔥 <span className="text-[#0A0A0A]">{panther.streak}</span></button>
-                <button onClick={()=>setShowProfile(true)} className="hidden items-center gap-3 rounded-full border border-[#0A0A0A] bg-white px-3 py-2 sm:flex"><span className="grid size-8 place-items-center rounded-full bg-[#0A0A0A] text-white text-[14px]">{panther.avatar}</span><span className="text-left"><span className="block text-[13px] font-semibold leading-none">{panther.handle||displayName}</span><span className="block text-[11px] text-[#6B6B6B]">Lvl {panther.level} · 💎 {panther.gems} · {directChain || (twitterHandle?"X":"Panther")}</span></span><span className="ml-1 rounded-full bg-[#0A0A0A] px-2 py-1 text-[11px] font-semibold text-white">{panther.xp} XP</span></button>
-                <button onClick={()=>setShowProfile(true)} className="grid size-10 place-items-center rounded-full bg-[#0A0A0A] text-white sm:hidden">{panther.avatar}</button>
-                <button onClick={()=>{ if(authenticated) logout(); setDirectWallet(null); setDirectChain(""); }} className="hidden rounded-full border border-[#E8E8E8] bg-white px-4 py-2.5 text-[13px] font-semibold hover:border-[#0A0A0A] sm:block">Disconnect</button>
-              </>
-            ):(
-              <>
-              <button onClick={()=>setShowProfile(true)} className="hidden items-center gap-2 rounded-full border border-[#0A0A0A] bg-white px-3 py-2.5 text-[13px] font-semibold hover:bg-[#F8F8F7] sm:flex">{panther.avatar} <span className="text-[#6B6B6B]">Lvl {panther.level} · 💎 {panther.gems}</span></button>
+            <Link href="/" title="App · Radar" className="grid size-10 place-items-center rounded-full border border-[#E8E8E8] bg-white hover:border-[#0A0A0A] hover:bg-[#0A0A0A] hover:text-white transition-colors"><IconLayers className="size-4"/></Link>
+            <Link href="/portfolio" title="Portfolio · Wallets" className="grid size-10 place-items-center rounded-full border border-[#E8E8E8] bg-white hover:border-[#0A0A0A] hover:bg-[#0A0A0A] hover:text-white transition-colors"><IconWallet className="size-4"/></Link>
+            <Link href="/about" title="Wiki · About" className="grid size-10 place-items-center rounded-full border border-[#E8E8E8] bg-white hover:border-[#0A0A0A] hover:bg-[#0A0A0A] hover:text-white transition-colors"><IconGlobe className="size-4"/></Link>
+            {isConnected ? (
+              <button onClick={()=>setShowProfile(true)} className="inline-flex items-center gap-2 rounded-full border border-[#0A0A0A] bg-white px-3 py-2 text-[13px] font-semibold hover:bg-[#F8F8F7]" title={effectiveWallet || displayName}><span className="grid size-7 place-items-center rounded-full bg-[#0A0A0A] text-white text-[13px]">{panther.avatar}</span><span className="hidden sm:inline max-w-[120px] truncate">{panther.handle || displayName}</span></button>
+            ) : (
               <button onClick={()=>setShowConnect(true)} className="inline-flex items-center gap-2 rounded-full bg-[#0A0A0A] px-5 py-2.5 text-[13px] font-semibold text-white hover:bg-black"><IconWallet className="size-4"/> Connect</button>
-              </>
             )}
           </div>
         </div>
-        <div className="border-t border-[#E8E8E8] relative ticker-bar ticker-marble"><div className="ticker-marble-overlay border-y border-white/40"><div className="ticker-track py-1.5" style={{animationDuration:"600s", gap:"6px"}}>{[...(coins.length?coins:[]),...(coins.length?coins:[])].map((c,i)=>{ const surging = c.change24h>=8 || c.trend==="Breaking"; const is90 = c.emergentScore>=90; const gainer = c.change24h>0; return (<button key={c.id+i} onClick={()=>setSelected(c)} onMouseEnter={()=>setTickerHover(c)} onMouseLeave={()=>setTickerHover(null)} className={`ticker-item flex shrink-0 items-center gap-2 border px-3 py-1.5 text-[13px] text-left ${gainer?"ticker-gain border-[#E8E8E8]":"bg-white/70 border-white/50 opacity-80"} ${surging?"ticker-surge border-[#0A0A0A] surge-glow":""} ${is90 && !surging?"surge-90":""}` }><img src={c.image} alt={c.symbol} className={`size-5 rounded-full bg-white object-cover border border-black/10 ${surging?"animate-[pulse_1.6s_ease-in-out_infinite]":""}`}/><span className="font-mono text-[13px] font-bold tracking-tight">${c.symbol}</span><span className={`text-[12px] font-semibold ${c.change24h>=0?"text-emerald-700": "text-red-600"}`}>{c.change24h>=0?"↗":"↘"} {Math.abs(c.change24h).toFixed(1)}%</span><span className="hidden text-[11px] text-[#6B6B6B] sm:inline">· {c.marketCap}</span><span className={`ml-1 hidden rounded-full px-2 py-0.5 text-[10px] font-bold tracking-wide sm:inline ${surging?"bg-white text-[#0A0A0A] border border-white animate-pulse": gainer?"bg-[#0A0A0A] text-white":"bg-white border border-[#E8E8E8]"}`}>{surging?"🔥 SURGING":c.category}</span></button>); })}</div></div>
+        <div className="border-t border-[#E8E8E8] relative ticker-bar ticker-marble"><div className="ticker-marble-overlay border-y border-white/40"><div className="ticker-track py-1.5" style={{animationDuration:"600s", gap:"6px"}}>{[...(coins.length?coins:[]),...(coins.length?coins:[])].map((c,i)=>{ const surging = c.change24h>=8 || c.trend==="Breaking"; const is90 = c.emergentScore>=90; const gainer = c.change24h>0; return (<button key={c.id+i} onClick={()=>setSelected(c)} onMouseEnter={()=>setTickerHover(c)} onMouseLeave={()=>setTickerHover(null)} className={`ticker-item flex shrink-0 items-center gap-2 border px-3 py-1.5 text-[13px] text-left ${gainer?"ticker-gain border-emerald-400/50 bg-white shadow-[0_0_8px_rgba(16,185,129,0.15)]":"bg-white/70 border-white/50 opacity-80"} ${surging?"ticker-surge !border-[#FF6B00] surge-glow shadow-[0_0_16px_rgba(255,107,0,0.45)] ring-1 ring-[#FF6B00]/30":""} ${is90 && !surging?"surge-90":""}` }><img src={c.image} alt={c.symbol} className={`size-5 rounded-full bg-white object-cover border ${surging?"border-[#FF6B00] shadow-[0_0_6px_rgba(255,107,0,0.5)] animate-[pulse_1.6s_ease-in-out_infinite]":"border-black/10"}`}/><span className="font-mono text-[13px] font-bold tracking-tight">${c.symbol}</span><span className={`text-[12px] font-semibold ${c.change24h>=0?"text-emerald-700": "text-red-600"}`}>{c.change24h>=0?"↗":"↘"} {Math.abs(c.change24h).toFixed(1)}%</span><span className="hidden text-[11px] text-[#6B6B6B] sm:inline">· {c.marketCap}</span><span className={`ml-1 hidden rounded-full px-2 py-0.5 text-[10px] font-bold tracking-wide sm:inline border ${surging?"bg-[#0A0A0A] text-white border-white animate-pulse shadow-[0_0_8px_rgba(255,107,0,0.35)]": gainer?"bg-[#0A0A0A] text-white border-[#0A0A0A]":"bg-white border-[#E8E8E8] text-[#6B6B6B]"}`}>{surging?"🔥 SURGING":c.category}</span></button>); })}</div></div>
           {tickerHover && (
             <div className="absolute left-1/2 top-full z-20 mt-2 hidden -translate-x-1/2 rounded-2xl border border-[#0A0A0A] bg-white p-3 shadow-2xl sm:flex gap-3 min-w-[380px]">
               <img src={tickerHover.image} alt={tickerHover.name} className="size-11 rounded-xl border border-[#E8E8E8] bg-white object-cover"/>
@@ -470,9 +487,89 @@ export default function EmergentMinimal(){
             </div>
             {err&&<div className="mt-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-[13px] text-red-700">{err} — <button onClick={fetchCoins} className="underline">retry</button></div>}
           </div>
-          <div className="card mt-5 overflow-hidden hidden">
-            <div className="flex items-center justify-between border-b border-[#E8E8E8] bg-[#0A0A0A] px-4 py-2.5 text-white"><span className="flex items-center gap-2 text-[12px] font-semibold tracking-widest"><IconTerminal className="size-4"/> TERMINAL — COINGECKO LIVE</span><span className="flex items-center gap-2 text-[11px]"><span className="size-1.5 rounded-full bg-white animate-[pulse-dot_1s_ease-in-out_infinite]"/> {coins.length?"STREAMING":"CONNECTING"} · {logs.length} lines</span></div>
-            <div ref={logRef} className="h-[140px] overflow-y-auto bg-[#0A0A0A] p-3 font-mono text-[12px] leading-5 text-white scrollbar-thin">{logs.length===0?<div className="text-white/40">Waiting for CoinGecko feed…</div>:logs.map((l,i)=><div key={i} className="whitespace-nowrap text-white/90">{l.msg}</div>)}</div>
+          <div className="card mt-5 overflow-hidden">
+            {/* MARKET PULSE — fills missing terminal part above radar */}
+            <div className="flex items-center justify-between bg-[#0A0A0A] px-4 py-2.5 text-white"><span className="flex items-center gap-2 text-[11px] font-bold tracking-[0.14em]"><IconChart className="size-3.5"/> MARKET PULSE · LIVE</span><span className="flex items-center gap-2 text-[11px]"><span className="size-1.5 rounded-full bg-emerald-400 animate-pulse"/> LIVE · {lastUpdated ? new Date(lastUpdated).toLocaleTimeString() : "syncing"}</span></div>
+            <div className="grid grid-cols-1 gap-3 p-3 sm:grid-cols-12">
+              {/* Top 3 volume */}
+              <div className="sm:col-span-5 rounded-xl border border-[#E8E8E8] bg-white p-3">
+                <div className="flex items-center justify-between"><span className="text-[11px] font-bold tracking-wide text-[#6B6B6B] flex items-center gap-1"><IconVol className="size-3"/> TOP 3 VOLUME · TODAY</span><span className="text-[10px] text-[#9A9A9A]">24h volume leaders</span></div>
+                <div className="mt-2 space-y-2">
+                  {topVolume.length===0 ? <div className="text-[12px] text-[#6B6B6B]">Loading…</div> : topVolume.map((c,i)=>(
+                    <button key={c.id} onClick={()=>setSelected(c)} className="flex w-full items-center gap-2.5 rounded-xl border border-[#F2F2F2] bg-[#F8F8F7] px-2.5 py-2 text-left hover:border-[#0A0A0A]">
+                      <span className={`grid size-6 place-items-center rounded-full text-[11px] font-bold ${i===0?"bg-[#0A0A0A] text-white":i===1?"bg-white border border-[#E8E8E8]":"bg-white border border-[#E8E8E8]"}`}>{i+1}</span>
+                      <img src={c.image} alt={c.symbol} className="size-7 rounded-full border bg-white object-cover"/>
+                      <span className="flex-1 min-w-0"><span className="block text-[13px] font-bold leading-none">{c.symbol}</span><span className="block text-[11px] text-[#6B6B6B] truncate">{c.name} · {c.change24h>=0?"+":""}{c.change24h.toFixed(1)}%</span></span>
+                      <span className="text-right"><span className="block font-mono text-[12px] font-bold">{c.volume}</span><span className="block text-[10px] text-[#6B6B6B]">{c.price}</span></span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+              {/* MEME INDEX + BTC DOMINANCE */}
+              <div className="sm:col-span-4 space-y-3">
+                <div className="rounded-xl border border-[#0A0A0A] bg-[#0A0A0A] p-3 text-white">
+                  <div className="flex items-center justify-between"><span className="text-[11px] font-bold tracking-wide text-white/60 flex items-center gap-1">⬢ MEME INDEX</span><span className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${memeStats.avg>=0?"bg-emerald-500 text-white":"bg-red-500 text-white"}`}>{memeStats.avg>=0?"+":""}{memeStats.avg.toFixed(1)}% · 24h</span></div>
+                  <div className="mt-2 flex items-baseline gap-2"><span className="text-[20px] font-black">{memeStats.count}</span><span className="text-[12px] text-white/60">meme coins tracked</span></div>
+                  <div className="mt-1 text-[11px] leading-4 text-white/60">Vol {formatMoney(memeStats.totalVol)} · Top {memeStats.top?.symbol || "—"} {memeStats.top ? `${memeStats.top.change24h>=0?"+":""}${memeStats.top.change24h.toFixed(1)}%` : ""}</div>
+                  <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/15"><div className="h-1.5 rounded-full bg-white" style={{width:`${Math.min(100, Math.max(8, 50 + memeStats.avg*3))}%`}}/></div>
+                  <div className="mt-1 flex justify-between text-[10px] text-white/40"><span>Bear</span><span>Bull</span></div>
+                </div>
+                <div className="rounded-xl border border-[#E8E8E8] bg-[#F8F8F7] p-3">
+                  <div className="flex items-center justify-between"><span className="text-[11px] font-bold tracking-wide text-[#6B6B6B] flex items-center gap-1"><IconLayers className="size-3"/> BTC DOMINANCE</span><span className="font-mono text-[13px] font-bold">{btcDom}%</span></div>
+                  <div className="mt-2 h-2 overflow-hidden rounded-full bg-[#E8E8E8]"><div className="h-2 rounded-full bg-[#0A0A0A]" style={{width:`${btcDom!=="—"?btcDom:"45"}%`}}/></div>
+                  <div className="mt-1 flex justify-between text-[10px] text-[#6B6B6B]"><span>BTC {btcDom}%</span><span>Alts {(100 - (Number(btcDom)||45)).toFixed(1)}%</span></div>
+                  <div className="mt-2 text-[11px] text-[#6B6B6B]">Mcap {globalData?.total_market_cap?.usd ? formatMoney(globalData.total_market_cap.usd) : "—"} · {globalData?.active_cryptocurrencies ? `${globalData.active_cryptocurrencies.toLocaleString()} coins` : ""}</div>
+                </div>
+              </div>
+              {/* Fear & Greed */}
+              <div className="sm:col-span-3 rounded-xl border border-[#E8E8E8] bg-white p-3">
+                <div className="flex items-center justify-between"><span className="text-[11px] font-bold tracking-wide text-[#6B6B6B]">FEAR & GREED</span><span className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${fng?.value>=60?"bg-emerald-500 text-white":fng?.value>=40?"bg-amber-400 text-black":fng?.value!=null?"bg-red-500 text-white":"bg-[#F2F2F2] text-[#6B6B6B]"}`}>{fng ? `${fng.value} · ${fng.label}` : "52 · Neutral"}</span></div>
+                <div className="mt-3">
+                  <div className="relative h-2 overflow-hidden rounded-full bg-gradient-to-r from-red-500 via-amber-400 to-emerald-500"><div className="absolute top-1/2 size-3 -translate-y-1/2 -translate-x-1/2 rounded-full border-2 border-white bg-black shadow" style={{left:`${fng?.value ?? 52}%`}}/></div>
+                  <div className="mt-1 flex justify-between text-[10px] text-[#9A9A9A]"><span>0 Fear</span><span>100 Greed</span></div>
+                </div>
+                <div className="mt-3 rounded-lg bg-[#F8F8F7] p-2 text-[11px] leading-4 text-[#6B6B6B]">
+                  {fng?.value>=75 ? "Extreme Greed — risk of pullback, take profit." : fng?.value>=60 ? "Greed — momentum, watch for overheated memes." : fng?.value>=40 ? "Neutral — balanced, good for accumulation." : fng?.value!=null ? "Fear — buy the fear, selective entries." : "Neutral — waiting for data…"}
+                </div>
+                {fng?.history && fng.history.length>1 && (
+                  <div className="mt-2 flex gap-1">{fng.history.slice(0,7).reverse().map((d:any,i:number)=>(<div key={i} className="flex-1 text-center"><div className="mx-auto h-8 w-full rounded bg-[#F2F2F2] relative overflow-hidden"><div className="absolute bottom-0 w-full bg-[#0A0A0A]" style={{height:`${d.value}%`}}/></div><div className="mt-1 text-[9px] text-[#9A9A9A]">{d.value}</div></div>))}</div>
+                )}
+                <div className="mt-2 text-[10px] text-[#9A9A9A]">Source: <a href="https://alternative.me/crypto/fear-and-greed-index/" target="_blank" rel="noreferrer" className="underline">alternative.me</a> + CoinGecko global · <a href="/api/fng" target="_blank" rel="noreferrer" className="underline">/api/fng</a></div>
+              </div>
+            </div>
+          </div>
+          {/* TRENDING NEWS — just below market pulse */}
+          <div className="card mt-4 p-4">
+            <div className="flex items-center justify-between"><h3 className="text-[11px] font-bold tracking-[0.14em] flex items-center gap-1.5"><IconGlobe className="size-3.5"/> TRENDING NEWS · PAST WEEK</h3><span className="text-[11px] text-[#6B6B6B]">{newsLoading?"Loading…":`${news.length} articles · live`}</span></div>
+            {newsLoading ? <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">{Array.from({length:4}).map((_,i)=><div key={i} className="h-20 animate-pulse rounded-xl bg-[#F2F2F2]"/>)}</div> : news.length===0 ? <div className="mt-3 rounded-xl border border-dashed border-[#E8E8E8] bg-[#F8F8F7] p-6 text-center text-sm text-[#6B6B6B]">No news — <button onClick={async()=>{setNewsLoading(true); const r=await fetch("/api/news"); const j=await r.json(); setNews(j.items||[]); setNewsLoading(false);}} className="underline">retry</button></div> : (
+              <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                {news.slice(0,4).map((n:any,i:number)=>(
+                  <a key={i} href={n.link} target="_blank" rel="noreferrer" className="flex gap-3 rounded-xl border border-[#E8E8E8] bg-white p-3 hover:border-[#0A0A0A] hover:bg-[#F8F8F7] text-left">
+                    <div className="flex-1 min-w-0"><div className="text-[13px] font-semibold leading-4 line-clamp-2">{n.title}</div><div className="mt-1 text-[11px] leading-4 text-[#6B6B6B] line-clamp-2">{n.description}</div><div className="mt-2 flex items-center gap-2 text-[10px]"><span className="rounded-full bg-[#0A0A0A] px-2 py-0.5 font-bold text-white">{n.source}</span><span className="text-[#9A9A9A]">{new Date(n.pubDate).toLocaleString()}</span></div></div>
+                    {n.thumb && <img src={n.thumb} alt="" className="size-16 shrink-0 rounded-lg object-cover border border-[#E8E8E8] bg-[#F8F8F7]"/>}
+                  </a>
+                ))}
+              </div>
+            )}
+            {news.length>4 && <a href="#trending-news-full" onClick={(e)=>{e.preventDefault(); document.getElementById('trending-news-full')?.scrollIntoView({behavior:'smooth'});}} className="mt-2 inline-flex text-[11px] font-semibold underline hover:text-[#0A0A0A]">See all {news.length} → full feed at bottom</a>}
+          </div>
+          {/* AI SPOTLIGHT — latest AI suggested */}
+          <div className="card mt-4 p-4 border-[#0A0A0A]">
+            <div className="flex items-center justify-between"><h3 className="text-[11px] font-black tracking-[0.14em] flex items-center gap-1.5"><span className="grid size-6 place-items-center rounded-full bg-[#0A0A0A] text-white text-[11px]">✦</span> AI SPOTLIGHT · SUGGESTED COINS</h3><span className="rounded-full bg-[#FF6B00] px-2.5 py-1 text-[11px] font-bold text-white">AI · {aiSpotlight.length}</span></div>
+            <p className="mt-1 text-[12px] text-[#6B6B6B]">Latest AI-suggested picks — emergentScore + momentum + volume signal. Tap to open details.</p>
+            <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+              {aiSpotlight.map(c=>(
+                <button key={c.id} onClick={()=>setSelected(c)} className="flex gap-3 rounded-xl border border-[#0A0A0A] bg-[#F8F8F7] p-3 text-left hover:bg-white hover:shadow">
+                  <img src={c.image} alt={c.symbol} className="size-10 rounded-xl border border-[#E8E8E8] bg-white object-cover"/>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5"><span className="text-[13px] font-bold">{c.symbol}</span><span className="rounded-full bg-[#0A0A0A] px-1.5 py-0.5 text-[10px] font-bold text-white">{c.category}</span><span className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold ${c.emergentScore>=90?"bg-[#FF6B00] text-white":c.emergentScore>=70?"bg-white border border-[#E8E8E8] text-[#0A0A0A]":"bg-white border border-[#E8E8E8] text-[#6B6B6B]"}`}>{c.emergentScore}</span></div>
+                    <div className="text-[11px] font-semibold text-[#0A0A0A]">{c.spotlightReason}</div>
+                    <div className="mt-1 flex gap-2 text-[11px] font-mono"><span className="font-bold">{c.price}</span><span className={c.change24h>=0?"text-emerald-600":"text-red-600"}>{c.change24h>=0?"+":""}{c.change24h.toFixed(2)}% · {c.trend}</span></div>
+                  </div>
+                  <span className="hidden sm:grid size-8 place-items-center rounded-full border border-[#0A0A0A] bg-white text-[#0A0A0A]"><IconArrow className="size-3.5"/></span>
+                </button>
+              ))}
+            </div>
           </div>
           <img aria-hidden src="/assets/marble-candlestick.png" alt="" className="pointer-events-none mt-4 ml-auto block w-28 opacity-25 sm:w-32" />
           <div className="mt-5 grid grid-cols-12 gap-5">
@@ -509,7 +606,7 @@ export default function EmergentMinimal(){
             </div>
             {sorted.length===0&&!loading?<div className="card grid place-items-center py-16 text-[#6B6B6B]">No signals match your filters.</div>:(
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 2xl:grid-cols-3">
-                {loading?Array.from({length:6}).map((_,i)=><div key={i} className="card animate-pulse p-4"><div className="h-11 w-11 rounded-xl bg-[#E8E8E8]"/><div className="mt-4 h-4 w-2/3 bg-[#E8E8E8] rounded"/></div>):sorted.slice(0,60).map(coin=>{
+                {loading?Array.from({length:6}).map((_,i)=><div key={i} className="card animate-pulse p-4"><div className="h-11 w-11 rounded-xl bg-[#E8E8E8]"/><div className="mt-4 h-4 w-2/3 bg-[#E8E8E8] rounded"/></div>):sorted.slice(0,showCount).map(coin=>{
                   const isWatched=watchlist.has(coin.id), hasAlert=alerts.has(coin.id);
                   const surging = coin.change24h>=8 || coin.trend==="Breaking";
                   const is90 = coin.emergentScore>=90;
@@ -533,7 +630,37 @@ export default function EmergentMinimal(){
                 })}
               </div>
             )}
-            {sorted.length>60&&<div className="mt-4 text-center text-[12px] text-[#6B6B6B]">Showing 60 of {sorted.length} — refine search or filters to see more.</div>}
+            {sorted.length>showCount ? (
+              <div className="mt-4 flex flex-col items-center gap-2">
+                <div className="text-[12px] text-[#6B6B6B]">Showing {Math.min(showCount, sorted.length)} of {sorted.length} — {sorted.length - showCount} more</div>
+                <button onClick={()=>setShowCount(c=> Math.min(c+25, sorted.length))} className="inline-flex items-center gap-2 rounded-full bg-[#0A0A0A] px-6 py-3 text-[13px] font-bold text-white hover:bg-black shadow">Show more +25 <span className="rounded-full bg-white/15 px-2 py-0.5 text-[11px]">{sorted.length - showCount} left</span></button>
+                {sorted.length - showCount > 25 && <button onClick={()=>setShowCount(sorted.length)} className="text-[12px] font-semibold underline text-[#6B6B6B] hover:text-[#0A0A0A]">Show all {sorted.length}</button>}
+              </div>
+            ) : sorted.length>25 ? (
+              <div className="mt-4 text-center text-[12px] text-[#6B6B6B]">Showing all {sorted.length} — refine search or filters to narrow.</div>
+            ) : null}
+          </div>
+
+          {/* X SCANS — new meme mentions / KOL coins */}
+          <div className="card mt-6 p-4 border-[#0A0A0A]">
+            <div className="flex items-center justify-between"><h3 className="text-[11px] font-black tracking-[0.14em] flex items-center gap-1.5"><span className="text-[14px]">𝕏</span> X SCANS · MEME MENTIONS / KOL COINS</h3><span className="rounded-full bg-[#0A0A0A] px-2.5 py-1 text-[11px] font-bold text-white flex items-center gap-1"><span className="size-1.5 rounded-full bg-emerald-400 animate-pulse"/> LIVE · {xScans.length}</span></div>
+            <p className="mt-1 text-[12px] text-[#6B6B6B]">New meme mentions & KOL-pushed coins — DexScreener boosts + CoinGecko trending (proxy for X chatter). Paid boosts = KOL signal.</p>
+            {xScans.length===0 ? <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">{Array.from({length:4}).map((_,i)=><div key={i} className="h-20 animate-pulse rounded-xl bg-[#F2F2F2]"/>)}</div> : (
+              <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                {xScans.slice(0,8).map((x:any,i:number)=>(
+                  <a key={i} href={x.url} target="_blank" rel="noreferrer" className="flex gap-3 rounded-xl border border-[#E8E8E8] bg-white p-3 hover:border-[#0A0A0A] hover:bg-[#F8F8F7] text-left">
+                    <img src={x.icon || "/panther-icon.png"} alt={x.symbol} className="size-10 shrink-0 rounded-xl border border-[#E8E8E8] bg-white object-cover"/>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5"><span className="text-[13px] font-bold">{x.symbol}</span><span className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold ${x.kind==="kol_boost"?"bg-[#FF6B00] text-white":"bg-[#0A0A0A] text-white"}`}>{x.kind==="kol_boost"?"KOL":"X"}</span><span className="text-[11px] text-[#6B6B6B] truncate">{x.tag}</span></div>
+                      <div className="text-[12px] leading-4 font-semibold line-clamp-1">{x.title}</div>
+                      <div className="mt-1 flex items-center gap-2 text-[11px]"><span className="font-mono font-bold">{x.mentions} mentions</span><span className="text-[#9A9A9A]">· {new Date(x.ts).toLocaleTimeString()} · {x.platform}</span></div>
+                    </div>
+                    <span className="hidden sm:grid size-8 place-items-center rounded-full border border-[#E8E8E8] bg-[#F8F8F7] text-[11px]">↗</span>
+                  </a>
+                ))}
+              </div>
+            )}
+            <div className="mt-2 text-[11px] text-[#9A9A9A]">Sources: <a href="https://api.dexscreener.com/token-boosts/top/v1" target="_blank" rel="noreferrer" className="underline">DexScreener boosts</a> (KOL paid) + <a href="https://www.coingecko.com/en/search/trending" target="_blank" rel="noreferrer" className="underline">CoinGecko trending</a> · <a href="/api/x-scan" target="_blank" rel="noreferrer" className="underline">/api/x-scan</a> · no X API key needed</div>
           </div>
 
           {/* NFT & RWA — cryptoslam.io style */}
@@ -639,7 +766,7 @@ export default function EmergentMinimal(){
         </div>
 
         {/* Trending News — top crypto news past week */}
-        <div className="card p-5">
+        <div id="trending-news-full" className="card p-5">
           <div className="flex items-center justify-between"><h3 className="text-[12px] font-bold tracking-[0.14em] flex items-center gap-1.5"><IconGlobe className="size-3.5"/> TRENDING NEWS · PAST WEEK</h3><span className="text-[11px] text-[#6B6B6B]">{newsLoading?"Loading…":`${news.length} articles`}</span></div>
           {newsLoading ? <div className="mt-4 space-y-2">{Array.from({length:4}).map((_,i)=><div key={i} className="h-16 animate-pulse rounded-xl bg-[#F2F2F2]"/>)}</div> : news.length===0 ? <div className="mt-4 rounded-xl border border-dashed border-[#E8E8E8] bg-[#F8F8F7] p-6 text-center text-sm text-[#6B6B6B]">No news — <button onClick={async()=>{setNewsLoading(true); const r=await fetch("/api/news"); const j=await r.json(); setNews(j.items||[]); setNewsLoading(false);}} className="underline">retry</button></div> : (
             <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -768,7 +895,7 @@ export default function EmergentMinimal(){
               <button onClick={connectPhantom} className="flex w-full items-center gap-3 rounded-2xl border border-white/15 bg-white/90 px-4 py-4 text-left backdrop-blur hover:bg-white"><span className="grid size-11 place-items-center rounded-xl bg-[#AB9FF2] text-white text-[12px] font-bold">👻</span><span className="flex-1"><span className="block text-[15px] font-semibold text-black">Phantom</span><span className="block text-[13px] text-black/60">Solana — free, no API</span></span><span className="text-black text-[12px] font-semibold">Connect →</span></button>
               <button onClick={connectCoinbase} className="flex w-full items-center gap-3 rounded-2xl border-2 border-[#0052FF] bg-[#0052FF] px-4 py-4 text-left text-white shadow-lg shadow-[#0052FF]/20 hover:bg-[#0047E6]"><span className="grid size-11 place-items-center rounded-xl bg-white text-[11px] font-black text-[#0052FF]">CB</span><span className="flex-1"><span className="block text-[15px] font-semibold">Coinbase Wallet</span><span className="block text-[13px] text-white/80">Base / EVM — one tap</span></span><span className="text-white text-[12px] font-semibold">Connect →</span></button>
               {walletError && <div className="rounded-xl bg-red-500/95 border border-red-200 px-3 py-2 text-[12px] font-medium text-white shadow">{walletError}</div>}<div className="rounded-xl bg-white/10 backdrop-blur border border-white/10 px-3 py-2 text-center text-[11px] leading-5 text-white/70">Direct wallets use free injected APIs — no key needed. Add <span className="font-mono text-white">NEXT_PUBLIC_PRIVY_APP_ID</span> for email/X passkeys.</div></div></div></div></div>)}
-      {showProfile&&(<div className="fixed inset-0 z-[60] grid place-items-center bg-[#0A0A0A]/40 p-4 backdrop-blur-sm"><div className="max-h-[90vh] w-full max-w-[560px] overflow-y-auto rounded-[24px] border border-[#E8E8E8] bg-white p-6 shadow-xl scrollbar-thin"><div className="flex items-start justify-between"><h2 className="text-[20px] font-bold flex items-center gap-2"><IconPlanet className="size-5"/> Your Panther Profile</h2><button onClick={()=>setShowProfile(false)} className="grid size-9 place-items-center rounded-full border border-[#E8E8E8]"><IconX className="size-4"/></button></div><div className="mt-5 rounded-2xl border border-[#0A0A0A] bg-[#0A0A0A] p-5 text-white"><div className="flex items-center gap-4"><div className="grid size-14 place-items-center rounded-2xl bg-white text-[22px] text-[#0A0A0A]">{panther.avatar}</div><div className="flex-1"><div className="text-[18px] font-bold">{panther.handle||"Panther Hunter"}</div><div className="text-[13px] text-white/60 truncate">{isConnected?(effectiveWallet||directChain||"Wallet connected"):"Not connected — customize anyway"}</div><div className="mt-1 flex flex-wrap gap-2 text-[11px]"><span className="rounded-full bg-white px-2 py-1 font-semibold text-[#0A0A0A]">Lvl {panther.level}</span><span className="rounded-full border border-white/30 px-2 py-1">{panther.xp} XP</span><span className="rounded-full border border-white/30 px-2 py-1">🔥 {panther.streak} hunt streak</span><span className="rounded-full border border-white/30 px-2 py-1">💎 {panther.gems} gems</span></div></div></div><div className="mt-3 grid grid-cols-2 gap-2 text-[12px]"><div className="rounded-xl border border-[#E8E8E8] bg-[#F8F8F7] p-3"><div className="text-[11px] tracking-wide text-[#6B6B6B]">Total hunts</div><div className="text-[16px] font-bold">{panther.hunts}</div></div><div className="rounded-xl border border-[#E8E8E8] bg-[#F8F8F7] p-3"><div className="text-[11px] tracking-wide text-[#6B6B6B]">Coins watched</div><div className="text-[16px] font-bold">{watchlist.size}</div></div></div></div><div className="mt-4"><div className="text-[12px] font-semibold tracking-wide text-[#6B6B6B]">DISPLAY NAME</div><input value={panther.handle} onChange={e=>panther.setHandle(e.target.value)} placeholder="Panther Hunter" className="mt-1 h-11 w-full rounded-full border border-[#E8E8E8] bg-white px-4 text-[14px] font-medium focus:border-[#0A0A0A] focus:outline-none"/></div><div className="mt-4"><div className="text-[12px] font-semibold tracking-wide text-[#6B6B6B]">BIO</div><textarea value={panther.bio} onChange={e=>panther.setBio(e.target.value)} placeholder="Tell the den about your hunt…" rows={2} className="mt-1 w-full resize-none rounded-2xl border border-[#E8E8E8] bg-white p-3 text-[13px] focus:border-[#0A0A0A] focus:outline-none"/></div><div className="mt-4"><div className="text-[12px] font-semibold tracking-wide text-[#6B6B6B]">PANTHER AVATAR</div><div className="mt-2 grid grid-cols-10 gap-1.5">{PANTHER_AVATARS.map(a=>{ const sel=panther.avatar===a; return <button key={a} onClick={()=>panther.setAvatar(a)} className={`grid size-9 place-items-center rounded-xl border text-[16px] ${sel?"border-[#0A0A0A] bg-[#0A0A0A] text-white":"border-[#E8E8E8] bg-white hover:border-[#0A0A0A]"}`}>{a}</button>; })}</div></div><div className="mt-5 flex gap-2"><button onClick={onHunt} className="flex-1 rounded-full bg-[#0A0A0A] py-3 text-[14px] font-semibold text-white hover:bg-black">🔥 Hunt (+gems)</button><button onClick={()=>setShowProfile(false)} className="rounded-full border border-[#E8E8E8] bg-white px-6 py-3 text-[14px] font-semibold hover:border-[#0A0A0A]">Done</button></div><div className="mt-3 rounded-xl bg-[#F8F8F7] px-3 py-2 text-center text-[11px] leading-5 text-[#6B6B6B]">Profile & gems saved locally on this device (localStorage) — no account needed. Connect a wallet to hunt on-chain.</div></div></div>)}
+      {showProfile&&(<div className="fixed inset-0 z-[60] grid place-items-center bg-[#0A0A0A]/40 p-4 backdrop-blur-sm"><div className="max-h-[90vh] w-full max-w-[560px] overflow-y-auto rounded-[24px] border border-[#E8E8E8] bg-white p-6 shadow-xl scrollbar-thin"><div className="flex items-start justify-between"><h2 className="text-[20px] font-bold flex items-center gap-2"><IconPlanet className="size-5"/> Your Panther Profile</h2><button onClick={()=>setShowProfile(false)} className="grid size-9 place-items-center rounded-full border border-[#E8E8E8]"><IconX className="size-4"/></button></div><div className="mt-5 rounded-2xl border border-[#0A0A0A] bg-[#0A0A0A] p-5 text-white"><div className="flex items-center gap-4"><div className="grid size-14 place-items-center rounded-2xl bg-white text-[22px] text-[#0A0A0A]">{panther.avatar}</div><div className="flex-1"><div className="text-[18px] font-bold">{panther.handle||"Panther Hunter"}</div><div className="text-[13px] text-white/60 truncate">{isConnected?(effectiveWallet||directChain||"Wallet connected"):"Not connected — customize anyway"}</div><div className="mt-1 flex flex-wrap gap-2 text-[11px]"><span className="rounded-full bg-white px-2 py-1 font-semibold text-[#0A0A0A]">Lvl {panther.level}</span><span className="rounded-full border border-white/30 px-2 py-1">{panther.xp} XP</span><span className="rounded-full border border-white/30 px-2 py-1">🔥 {panther.streak} hunt streak</span><span className="rounded-full border border-white/30 px-2 py-1">💎 {panther.gems} gems</span></div></div></div><div className="mt-3 grid grid-cols-2 gap-2 text-[12px]"><div className="rounded-xl border border-[#E8E8E8] bg-[#F8F8F7] p-3"><div className="text-[11px] tracking-wide text-[#6B6B6B]">Total hunts</div><div className="text-[16px] font-bold">{panther.hunts}</div></div><div className="rounded-xl border border-[#E8E8E8] bg-[#F8F8F7] p-3"><div className="text-[11px] tracking-wide text-[#6B6B6B]">Coins watched</div><div className="text-[16px] font-bold">{watchlist.size}</div></div></div></div><div className="mt-4"><div className="text-[12px] font-semibold tracking-wide text-[#6B6B6B]">DISPLAY NAME</div><input value={panther.handle} onChange={e=>panther.setHandle(e.target.value)} placeholder="Panther Hunter" className="mt-1 h-11 w-full rounded-full border border-[#E8E8E8] bg-white px-4 text-[14px] font-medium focus:border-[#0A0A0A] focus:outline-none"/></div><div className="mt-4"><div className="text-[12px] font-semibold tracking-wide text-[#6B6B6B]">BIO</div><textarea value={panther.bio} onChange={e=>panther.setBio(e.target.value)} placeholder="Tell the den about your hunt…" rows={2} className="mt-1 w-full resize-none rounded-2xl border border-[#E8E8E8] bg-white p-3 text-[13px] focus:border-[#0A0A0A] focus:outline-none"/></div><div className="mt-4"><div className="text-[12px] font-semibold tracking-wide text-[#6B6B6B]">PANTHER AVATAR</div><div className="mt-2 grid grid-cols-10 gap-1.5">{PANTHER_AVATARS.map(a=>{ const sel=panther.avatar===a; return <button key={a} onClick={()=>panther.setAvatar(a)} className={`grid size-9 place-items-center rounded-xl border text-[16px] ${sel?"border-[#0A0A0A] bg-[#0A0A0A] text-white":"border-[#E8E8E8] bg-white hover:border-[#0A0A0A]"}`}>{a}</button>; })}</div></div><div className="mt-5 flex gap-2"><button onClick={onHunt} className="flex-1 rounded-full bg-[#0A0A0A] py-3 text-[14px] font-semibold text-white hover:bg-black">🔥 Hunt (+gems)</button><button onClick={()=>setShowProfile(false)} className="rounded-full border border-[#E8E8E8] bg-white px-6 py-3 text-[14px] font-semibold hover:border-[#0A0A0A]">Done</button></div>{isConnected && <button onClick={()=>{ if(authenticated) logout(); setDirectWallet(null); setDirectChain(""); setShowProfile(false); }} className="mt-3 w-full rounded-full border border-red-200 bg-white px-4 py-3 text-[14px] font-semibold text-red-600 hover:bg-red-50 hover:border-red-300">Disconnect Wallet</button>}<div className="mt-3 rounded-xl bg-[#F8F8F7] px-3 py-2 text-center text-[11px] leading-5 text-[#6B6B6B]">Profile & gems saved locally on this device (localStorage) — no account needed. Connect a wallet to hunt on-chain.</div></div></div>)}
       <section id="about" className="mx-auto max-w-[1600px] px-4 pt-6 sm:px-6">
         <div className="card p-6">
           <h2 className="text-[14px] font-black tracking-[0.14em] flex items-center gap-2"><IconGlobe className="size-4"/> ABOUT — CoinPanther</h2>
