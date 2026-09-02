@@ -1,0 +1,27 @@
+{
+  "Version": 3,
+  "FileReferences": {
+    "Moc": "Alina.moc3",
+    "Textures": ["Alina.2048/texture_00.png"],
+    "Physics": "Alina.physics3.json",
+    "DisplayInfo": "Alina.cdi3.json"
+  },
+  "Groups": [
+    {
+      "Target": "Parameter",
+      "Name": "EyeBlink",
+      "Ids": ["ParamEyeLOpen", "ParamEyeROpen"]
+    },
+    {
+      "Target": "Parameter",
+      "Name": "LipSync",
+      "Ids": ["ParamMouthOpenY"]
+    }
+  ],
+  "HitAreas": [
+    { "Name": "Head", "Id": "HitAreaHead" },
+    { "Name": "Body", "Id": "HitAreaBody" }
+  ],
+  "_placeholder": true,
+  "_instructions": "Placeholder Live2D Cubism 3 model3.json. Replace with real export from Live2D Cubism Editor Free. Pipeline: PSD (from ComfyUI sheet) → Cubism rig → Export Runtime → drop moc3 + textures + physics3.json here. See docs/avatar.md §2.6. Current viewer (AlinaAvatar) treats this as optional; set avatar.config.json live2d.enabled=false until real files exist."
+}

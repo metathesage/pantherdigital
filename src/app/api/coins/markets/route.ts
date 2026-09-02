@@ -15,18 +15,44 @@ export async function GET(request: Request) {
   try {
     const headers: Record<string, string> = { Accept: "application/json" };
     if (CG_KEY) headers["x-cg-demo-api-key"] = CG_KEY;
-    const r = await fetch(url, { cache: "no-store", headers });
-    if (!r.ok) {
-      const text = await r.text();
-      return NextResponse.json({ error: `CoinGecko ${r.status}`, detail: text.slice(0, 800) }, { status: r.status });
+
+    // 429-aware fetch with exponential backoff (max 3 retries)
+    let lastRes: Response | null = null;
+    let lastText = "";
+    for (let attempt = 0; attempt <= 3; attempt++) {
+      const r = await fetch(url, { cache: "no-store", headers });
+      if (r.ok) {
+        const data = await r.json();
+        return NextResponse.json(data, {
+          headers: {
+            "Cache-Control": "public, s-maxage=30, stale-while-revalidate=60",
+            "Access-Control-Allow-Origin": "*",
+          },
+        });
+      }
+      lastRes = r;
+      lastText = await r.text().catch(() => "");
+      // only retry on 429 (rate limit); break immediately on other errors
+      if (r.status !== 429 || attempt === 3) break;
+      // respect Retry-After if CoinGecko sends it, else exponential backoff 900ms * 2^attempt
+      const retryAfter = r.headers.get("retry-after");
+      let delayMs = 900 * Math.pow(2, attempt);
+      if (retryAfter) {
+        const secs = Number(retryAfter);
+        if (!Number.isNaN(secs) && secs > 0) delayMs = Math.min(secs * 1000, 10000);
+        else {
+          const dateMs = Date.parse(retryAfter);
+          if (!Number.isNaN(dateMs)) delayMs = Math.max(0, dateMs - Date.now());
+        }
+      }
+      await new Promise((res) => setTimeout(res, delayMs));
     }
-    const data = await r.json();
-    return NextResponse.json(data, {
-      headers: {
-        "Cache-Control": "public, s-maxage=30, stale-while-revalidate=60",
-        "Access-Control-Allow-Origin": "*",
-      },
-    });
+
+    const status = lastRes?.status ?? 500;
+    return NextResponse.json(
+      { error: `CoinGecko ${status}`, detail: lastText.slice(0, 800) },
+      { status }
+    );
   } catch (e: any) {
     return NextResponse.json({ error: e.message || "proxy failed" }, { status: 500 });
   }

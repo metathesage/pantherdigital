@@ -161,6 +161,14 @@ export default function EmergentMinimal(){
   const [globalData,setGlobalData]=useState<any>(null);
   const [fng,setFng]=useState<any>(null);
   const [xScans,setXScans]=useState<any[]>([]);
+  // sexy app loading — ported from waifu navi / home launch-loader (free, same B&W tokens, RTX friendly)
+  const [appLoading,setAppLoading]=useState(true);
+  useEffect(()=>{
+    const reduce=window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if(reduce){ setAppLoading(false); return; }
+    const t=window.setTimeout(()=>setAppLoading(false),1100);
+    return()=>window.clearTimeout(t);
+  },[]);
   let privy: any = { ready: true, authenticated: false, user: null, login: ()=>setShowConnect(true), logout: ()=>{}, linkTwitter: ()=>{} };
   if (_usePrivy) { try { privy = _usePrivy(); } catch {} }
   const { ready, authenticated, user: privyUser, login, logout, linkTwitter } = privy;
@@ -424,6 +432,38 @@ export default function EmergentMinimal(){
   if(!ready) return <div className="grid min-h-screen place-items-center bg-[#F8F8F7] text-[14px] text-[#6B6B6B]">Loading…</div>;
   return (
     <div className="radar-app min-h-screen bg-[#F8F8F7] text-[#0A0A0A]">
+      {/* sexy loading — ported from waifu navi / home (launch-loader) — sexy as fuck, free, no hydration warn */}
+      {appLoading && (
+        <div
+          className="launch-loader fixed inset-0 z-[70] grid place-items-center bg-black"
+          role="status"
+          aria-live="polite"
+          aria-label="Loading Panther radar"
+        >
+          <div className="pointer-events-none absolute inset-0">
+            <img src="/black-marble-panther.jpg" alt="" aria-hidden className="h-full w-full object-cover object-[center_35%] opacity-[0.28]" />
+            <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/45 to-black/85" />
+            <div className="absolute inset-0 opacity-[0.07]" style={{backgroundImage:"linear-gradient(rgba(255,255,255,0.07) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.07) 1px, transparent 1px)",backgroundSize:"28px 28px"}}/>
+          </div>
+          <div className="relative flex flex-col items-center gap-6">
+            <div className="relative">
+              <div className="absolute inset-0 rounded-full bg-white/10 blur-xl" />
+              <div className="relative grid size-[4.5rem] place-items-center rounded-full border border-white/20 bg-white/5 backdrop-blur-sm">
+                <img src="/panther-icon.png" alt="" className="h-10 w-10 object-contain" />
+              </div>
+              <div className="launch-loader-ring absolute inset-0 rounded-full border border-white/25" />
+            </div>
+            <div className="flex flex-col items-center gap-2">
+              <span className="text-[11px] font-medium tracking-[0.42em] text-white/55">PANTHER DIGITAL</span>
+              <div className="h-px w-28 overflow-hidden rounded bg-white/10">
+                <div className="launch-loader-bar h-full w-1/2 bg-white" />
+              </div>
+              <span className="text-[10px] tracking-[0.28em] text-white/35">EMERGENT MATRIX · RADAR ONLINE</span>
+            </div>
+          </div>
+        </div>
+      )}
+      <div className={appLoading ? "opacity-0" : "opacity-100 transition-opacity duration-700"}>
       <header className="sticky top-0 z-40 border-b border-[#E8E8E8] bg-white/95 backdrop-blur">
         <div className="mx-auto flex max-w-[1600px] items-center justify-between gap-3 px-4 py-3 sm:px-6">
           <div className="flex items-center gap-3">
@@ -437,6 +477,7 @@ export default function EmergentMinimal(){
             <Link href="/" title="App · Radar" className="grid size-10 place-items-center rounded-full border border-[#E8E8E8] bg-white hover:border-[#0A0A0A] hover:bg-[#0A0A0A] hover:text-white transition-colors"><IconLayers className="size-4"/></Link>
             <Link href="/portfolio" title="Portfolio · Wallets" className="grid size-10 place-items-center rounded-full border border-[#E8E8E8] bg-white hover:border-[#0A0A0A] hover:bg-[#0A0A0A] hover:text-white transition-colors"><IconWallet className="size-4"/></Link>
             <Link href="/about" title="Wiki · About" className="grid size-10 place-items-center rounded-full border border-[#E8E8E8] bg-white hover:border-[#0A0A0A] hover:bg-[#0A0A0A] hover:text-white transition-colors"><IconGlobe className="size-4"/></Link>
+            <Link href="/bio/rias" title="Waifu Squad" className="grid size-10 place-items-center rounded-full border border-white/15 bg-white/60 hover:bg-white hover:border-[#e546a6] transition-colors" aria-label="Waifu squad"><img src="/rias-waifu.png" alt="waifu" className="h-6 w-6 object-contain rounded-full"/></Link>
             {isConnected ? (
               <button onClick={()=>setShowProfile(true)} className="inline-flex items-center gap-2 rounded-full border border-[#0A0A0A] bg-white px-3 py-2 text-[13px] font-semibold hover:bg-[#F8F8F7]" title={effectiveWallet || displayName}><span className="grid size-7 place-items-center rounded-full bg-[#0A0A0A] text-white text-[13px]">{panther.avatar}</span><span className="hidden sm:inline max-w-[120px] truncate">{panther.handle || displayName}</span></button>
             ) : (
@@ -611,7 +652,7 @@ export default function EmergentMinimal(){
                   const surging = coin.change24h>=8 || coin.trend==="Breaking";
                   const is90 = coin.emergentScore>=90;
                   return (
-                    <button type="button" key={coin.id} onClick={()=>setSelected(coin)} className={`card card-hover coin-card flex flex-col p-3 text-left sm:p-3.5 ${surging?"surge-glow surge-ring":""} ${is90?"surge-90":""}`}>
+                    <div role="button" tabIndex={0} key={coin.id} onClick={()=>setSelected(coin)} onKeyDown={(e)=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();setSelected(coin);}}} className={`card card-hover coin-card flex flex-col p-3 text-left cursor-pointer sm:p-3.5 ${surging?"surge-glow surge-ring":""} ${is90?"surge-90":""}`}>
                       <div className="flex items-start justify-between gap-3"><div className="flex items-center gap-3"><img src={coin.image} alt={coin.name} className="size-11 rounded-xl border border-[#E8E8E8] bg-white object-cover"/><div><div className="flex items-center gap-2"><span className="text-[15px] font-semibold leading-none">{coin.name}</span><span className="inline-flex items-center gap-1 rounded-full border border-[#0A0A0A] px-1.5 py-0.5 text-[10px] font-semibold"><img src={coin.chain==="Solana"?"/assets/mapped/solana.png":coin.chain==="Ethereum"?"/assets/mapped/ethereum.png":coin.chain==="Base"?"/assets/mapped/base.png":coin.chain==="Robinhood"?"/assets/mapped/robinhood.png":"/assets/mapped/sui.png"} alt={coin.chain} className="size-3.5 rounded-full object-contain"/>{coin.chain.slice(0,4).toUpperCase()}</span></div><div className="text-[13px] text-[#6B6B6B]">#{coin.rank} · ${coin.symbol} · {coin.timeAgo}</div></div></div><ScoreRing score={coin.emergentScore}/></div>
                       <div className="mt-4 flex items-end justify-between"><div><div className="font-mono text-[18px] font-bold">{coin.price}</div><div className={`text-[13px] font-semibold ${coin.change24h>=0?"text-[#0A0A0A]":"text-[#6B6B6B]"}`}>{coin.change24h>=0?"↗":"↘"} {coin.change24h>=0?"+":""}{coin.change24h.toFixed(2)}% <span className="font-normal text-[#9A9A9A]">/ 1h {coin.change1h>=0?"+":""}{coin.change1h.toFixed(2)}%</span></div></div><div className="w-[96px]"><Sparkline data={coin.spark} color={coin.change24h>=0?"#0A0A0A":"#6B6B6B"}/></div></div>
                       <div className="mt-4 grid grid-cols-2 gap-2 rounded-xl bg-[#F8F8F7] p-3"><div><div className="text-[11px] tracking-wide text-[#6B6B6B]">Market cap</div><div className="text-[14px] font-semibold">{coin.marketCap}</div></div><div><div className="text-[11px] tracking-wide text-[#6B6B6B]">Volume 24h</div><div className="text-[14px] font-semibold">{coin.volume}</div></div></div>
@@ -624,8 +665,8 @@ export default function EmergentMinimal(){
                       <div className="mt-3 flex flex-wrap gap-1.5"><span className="rounded-full border border-[#0A0A0A] bg-[#0A0A0A] px-2.5 py-1 text-[11px] font-semibold text-white">{coin.category}</span><span className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold ${coin.risk==="Low"?"border-[#0A0A0A] bg-white":coin.risk==="Critical"?"bg-[#0A0A0A] text-white border-[#0A0A0A]":"border-[#6B6B6B] bg-white"}`}>{coin.risk} risk</span><span className="rounded-full bg-[#0A0A0A] px-2.5 py-1 text-[11px] font-semibold text-white">{coin.trend}</span><span className="rounded-full border border-[#E8E8E8] bg-[#F8F8F7] px-2.5 py-1 text-[11px]">Rank #{coin.rank}</span></div>
                       <div className="mt-2 text-[12px] leading-5 text-[#6B6B6B] line-clamp-2">{coin.description}</div>
                       <div className="mt-3 rounded-xl border border-[#E8E8E8] bg-[#F8F8F7] px-3 py-2.5"><div className="text-[11px] font-semibold tracking-wide flex items-center gap-1"><IconTerminal className="size-3"/> TERMINAL</div><div className="mt-1 font-mono text-[11px] leading-4 text-[#1A1A1A]">{coin.reason} · {coin.mentions} mentions · {coin.dexPool}</div></div>
-                      <div className="mt-4 flex items-center gap-2"><span onClick={(e)=>{e.stopPropagation(); setWatchlist(prev=>{const n=new Set(prev); n.has(coin.id)?n.delete(coin.id):n.add(coin.id); return n;});}} className={`inline-flex flex-1 items-center justify-center gap-1.5 rounded-full border px-3 py-2.5 text-[13px] font-semibold ${isWatched?"border-[#0A0A0A] bg-[#0A0A0A] text-white":"border-[#0A0A0A] bg-white hover:bg-[#F8F8F7]"}`}><IconStar className={`size-4 ${isWatched?"fill-white":""}`}/> {isWatched?"Watching":"Watchlist"}</span><span onClick={(e)=>{e.stopPropagation(); setAlerts(prev=>{const n=new Set(prev); n.has(coin.id)?n.delete(coin.id):n.add(coin.id); return n;});}} className={`grid size-11 place-items-center rounded-full border ${hasAlert?"border-[#0A0A0A] bg-[#0A0A0A] text-white":"border-[#E8E8E8] bg-white"}`}><IconBell className="size-4"/></span></div>
-                    </button>
+                      <div className="mt-4 flex items-center gap-2"><button type="button" onClick={(e)=>{e.stopPropagation(); setWatchlist(prev=>{const n=new Set(prev); n.has(coin.id)?n.delete(coin.id):n.add(coin.id); return n;});}} className={`inline-flex flex-1 items-center justify-center gap-1.5 rounded-full border px-3 py-2.5 text-[13px] font-semibold ${isWatched?"border-[#0A0A0A] bg-[#0A0A0A] text-white":"border-[#0A0A0A] bg-white hover:bg-[#F8F8F7]"}`}><IconStar className={`size-4 ${isWatched?"fill-white":""}`}/> {isWatched?"Watching":"Watchlist"}</button><button type="button" onClick={(e)=>{e.stopPropagation(); setAlerts(prev=>{const n=new Set(prev); n.has(coin.id)?n.delete(coin.id):n.add(coin.id); return n;});}} aria-label={hasAlert?"Remove alert":"Set alert"} className={`grid size-11 place-items-center rounded-full border ${hasAlert?"border-[#0A0A0A] bg-[#0A0A0A] text-white":"border-[#E8E8E8] bg-white hover:border-[#0A0A0A]"}`}><IconBell className="size-4"/></button></div>
+                    </div>
                   );
                 })}
               </div>
@@ -915,6 +956,7 @@ export default function EmergentMinimal(){
         </div>
       </section>
       <footer className="mx-auto max-w-[1600px] px-4 pb-10 pt-2 sm:px-6"><div className="rounded-2xl border border-[#E8E8E8] bg-white px-4 py-4 text-center text-[13px] leading-6 text-[#6B6B6B]"><span className="inline-flex items-center gap-1.5"><img src="/panther.svg" alt="" className="h-4 w-4 object-contain"/> CoinPanther — panther precision</span> · 300 real coins · Buckets · Top-10 holders · Honeypot screened · All links work</div></footer>
+      </div>
     </div>
   );
 }

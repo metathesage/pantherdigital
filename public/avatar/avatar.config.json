@@ -1,0 +1,46 @@
+{
+  "version": 1,
+  "character": "Alina",
+  "role": "Boss · Rias head worker · Emergent Matrix",
+  "sources": [
+    "public/lucy-work.png",
+    "public/rias-waifu.png",
+    "public/lucy-private.png"
+  ],
+  "notes": "SFW, credit-light. Base likeness from avis; ComfyUI + VRoid keep it local.",
+  "vrm": {
+    "path": "/avatar.vrm",
+    "version": "1.0",
+    "fallback": "2d",
+    "placeholder": true
+  },
+  "live2d": {
+    "model": "/avatar/live2d/model3.json",
+    "enabled": false,
+    "placeholder": true
+  },
+  "display": {
+    "height": 560,
+    "autoRotate": true,
+    "autoRotateSpeed": 0.35,
+    "shadows": true,
+    "background": "transparent"
+  },
+  "tracking": {
+    "enabled": false,
+    "backend": "kalidokit+mediapipe",
+    "notes": "All local / in-browser. No cloud. Enable when kalidokit is installed."
+  },
+  "pipeline": {
+    "comfyui": "C:/Users/young/ComfyUI",
+    "checkpoints": [
+      "animagine-xl-3.1.safetensors (recommended, ~6.9GB, HF: cagliostrolab/animagine-xl-3.1)",
+      "Juggernaut-XL_v9.safetensors (already cached, fallback)",
+      "DreamShaperXL_Turbo_V2.safetensors (already cached, fast)"
+    ],
+    "controlnet": "sdxl-openpose (DW Pose) via comfyui_controlnet_aux",
+    "ipadapter": "ip-adapter_sdxl_vit-h.safetensors in models/ipadapter + clip_vision",
+    "vroid": "https://vroid.com/en/studio — free, local, exports VRM 1.0",
+    "blenderAddon": "https://github.com/saturday06/VRM-Addon-for-Blender (optional polish)"
+  }
+}
