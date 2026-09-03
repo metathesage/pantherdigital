@@ -73,6 +73,7 @@ const WAIFUS: Waifu[] = [
     name: "Kuro",
     title: "Market Panther",
     emoji: "🐆",
+    avatar: "/waifus/kuro.png",
     accent: "#0A0A0A",
     job: "panther-market",
     schedule: "every 30m",
@@ -87,6 +88,7 @@ const WAIFUS: Waifu[] = [
     name: "Hikari",
     title: "Surge Huntress",
     emoji: "⚡",
+    avatar: "/waifus/hikari.png",
     accent: "#FF6B00",
     job: "panther-ticker-feed",
     schedule: "every 2h",
@@ -101,6 +103,7 @@ const WAIFUS: Waifu[] = [
     name: "Mio",
     title: "Auth Guardian",
     emoji: "🔐",
+    avatar: "/waifus/mio.png",
     accent: "#6B7280",
     job: "panther-auth",
     schedule: "every 6h",
@@ -115,7 +118,7 @@ const WAIFUS: Waifu[] = [
     name: "Sable",
     title: "Paper Trader · Bot Desk",
     emoji: "📈",
-    avatar: "/panther-icon.png",
+    avatar: "/waifus/sable.png",
     accent: "#FF6B00",
     job: "panther-paper-bot",
     schedule: "on demand",
@@ -339,7 +342,7 @@ export default function WaifuCommand() {
 
                 {/* cron footer */}
                 <div className="mt-3 flex items-center gap-2">
-                  <span className="flex-1 rounded-full border border-[#0A0A0A] bg-white px-3 py-2 text-center text-[11px] font-bold tracking-wide">cron {w.cronName.slice(0, 6)} · {w.cronName}</span>
+                  <Link href={`/waifus/${w.id}`} className="flex-1 rounded-full border border-[#0A0A0A] bg-white px-3 py-2 text-center text-[11px] font-bold tracking-wide hover:bg-[#0A0A0A] hover:text-white transition-colors">dossier → · {w.cronName.slice(0, 6)}</Link>
                   {w.link ? (
                     <Link href={w.link} className="rounded-full bg-[#0A0A0A] px-4 py-2 text-[11px] font-bold tracking-wide text-white shadow-sm hover:bg-black">Open {w.name}&apos;s desk ↗</Link>
                   ) : (
