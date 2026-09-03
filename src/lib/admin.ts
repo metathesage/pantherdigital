@@ -1,7 +1,7 @@
-"use server";
-
 /**
  * PNHR DGTL — admin-bearer auth.
+ * Plain server-only helpers (imported by /api/bot/* routes). NOT server actions,
+ * so no "use server" directive — that breaks route-handler imports.
  * Admin is whoever holds the current ADMIN_BEARER_TOKEN.
  * Priority: build-time hardcoded token > ADMIN_BEARER_TOKEN env var.
  * Tokens are stored as a SHA-256 hash so the raw value is never kept in memory.
