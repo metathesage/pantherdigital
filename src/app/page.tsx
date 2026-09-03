@@ -73,7 +73,7 @@ export default function HomePage() {
           </span>
         </Link>
         <p className="launch-sub anim-fade-up anim-delay-3">
-          300+ COINS
+          1000+ COINS
           <span className="launch-dot" aria-hidden="true">
             {"\u00B7"}
           </span>
