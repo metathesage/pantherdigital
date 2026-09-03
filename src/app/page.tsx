@@ -17,7 +17,7 @@ export default function HomePage() {
 
   return (
     <main className="launch-root relative flex min-h-screen flex-col overflow-hidden bg-black text-white">
-      <h1 className="sr-only">CoinPanther{"\u2014"}Panther Digital crypto discovery radar</h1>
+      <h1 className="sr-only">PNHR DGTL{"\u2014"}Panther Digital crypto discovery radar</h1>
 
       <img
         src="/black-marble-panther.jpg"

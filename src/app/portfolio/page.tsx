@@ -520,7 +520,7 @@ export default function PortfolioPage() {
         <div className="mx-auto flex max-w-[1200px] items-center justify-between gap-4 px-4 py-3">
           <div className="flex items-center gap-3">
             <a href="/" className="grid size-9 place-items-center rounded-xl border border-[#0A0A0A] bg-white p-1">
-            <img src="/assets/icon-wallet.png" alt="CoinPanther" className="h-7 w-7 object-contain" />
+            <img src="/assets/icon-wallet.png" alt="PNHR DGTL" className="h-7 w-7 object-contain" />
             </a>
             <div>
               <div className="text-[16px] font-bold tracking-widest">PORTFOLIO</div>
@@ -528,7 +528,7 @@ export default function PortfolioPage() {
             </div>
           </div>
           <a href="/app" className="rounded-full border border-[#0A0A0A] bg-white px-4 py-2 text-xs font-semibold hover:bg-[#0A0A0A] hover:text-white transition-colors">
-            ← CoinPanther
+            ← PNHR DGTL
           </a>
         </div>
       </div>

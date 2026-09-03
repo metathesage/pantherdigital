@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Wiki — CoinPanther",
+  title: "Wiki — PNHR DGTL",
   description:
-    "The CoinPanther wiki: why we dominate the crypto discovery space, our design system, data sources, security model, and roadmap.",
+    "The PNHR DGTL wiki: why we dominate the crypto discovery space, our design system, data sources, security model, and roadmap.",
 };
 
 const PALETTE = [
@@ -35,7 +35,7 @@ const ROADMAP = [
   ["Next", "Watchlists & alerts", "Cross-device saved lists with price / trend alerts."],
   ["Next", "Multi-chain depth", "Sui, Base, and Robinhood surfaces with native pair data."],
   ["Next", "AI insights", "Per-coin narrative + risk summaries generated from live signals."],
-  ["Planned", "Public API & embed", "CoinPanther data API + radar widget for builders."],
+  ["Planned", "Public API & embed", "PNHR DGTL data API + radar widget for builders."],
   ["Planned", "Mobile app", "Native iOS / Android companion to the radar."],
 ];
 
@@ -43,12 +43,12 @@ export default function WikiPage() {
   return (
     <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
       <div className="flex items-center gap-3">
-        <Link href="/"><img src="/panther-icon.png" alt="CoinPanther" className="h-9 w-9 rounded object-contain" /></Link>
+        <Link href="/"><img src="/panther-icon.png" alt="PNHR DGTL" className="h-9 w-9 rounded object-contain" /></Link>
         <span className="text-[12px] font-semibold tracking-[0.3em] text-[#6B6B6B]">COINPANTHER · WIKI</span>
       </div>
       <h1 className="mt-4 text-3xl font-extrabold tracking-tight sm:text-4xl">Why we dominate</h1>
       <p className="mt-4 leading-relaxed text-[#4A4A4A]">
-        CoinPanther is a minimal, luxury discovery engine built on one principle: <strong>real data, no theater.</strong>{" "}
+        PNHR DGTL is a minimal, luxury discovery engine built on one principle: <strong>real data, no theater.</strong>{" "}
         Every price, image, wallet balance, and transaction is pulled live from primary sources. We never invent
         numbers to look impressive — if we can&apos;t verify it on-chain or from a market API, it doesn&apos;t appear.
         That discipline is what separates a discovery tool from a hype feed.
@@ -128,7 +128,7 @@ export default function WikiPage() {
       </div>
 
       <p className="mt-10 rounded-2xl bg-[#F8F8F7] p-5 text-xs leading-relaxed text-[#9A9A9A] ring-1 ring-black/5">
-        CoinPanther is an informational tool. Nothing here is financial advice. Market data is provided by third
+        PNHR DGTL is an informational tool. Nothing here is financial advice. Market data is provided by third
         parties and may be delayed or incomplete.
       </p>
     </div>
