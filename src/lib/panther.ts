@@ -6,6 +6,23 @@ export const PANTHER_AVATARS = [
   "◐", "◑", "◒", "◓", "◎", "◍", "⬢", "⬣", "✦", "✧", "⟡", "⬔", "🐾", "🦁", "🌸",
 ];
 
+export const MAX_LEVEL = 100;
+export const MAX_XP = (MAX_LEVEL - 1) * 500; // 49500 → level 100 via formula
+
+/** Boss admin wallets — full admin anywhere ranks/wallets are checked (client mirror). */
+export const ADMIN_WALLETS_CLIENT = [
+  "0xF15eea68C6aC1D830Bc39Ef80830d0ACaF50c6fE",
+  "BTJHkMGSPgmYck32aG7ed9cZ9LESYKWT1Q4xakmuz7yz",
+];
+
+export function isAdminWalletClient(addr: string | null | undefined): boolean {
+  if (!addr) return false;
+  const a = addr.trim();
+  return ADMIN_WALLETS_CLIENT.some((w) =>
+    w.startsWith("0x") ? w.toLowerCase() === a.toLowerCase() : w === a
+  );
+}
+
 export interface PantherState {
   handle: string;
   bio: string;
@@ -24,6 +41,7 @@ export interface PantherState {
   logHunt: () => void;  // records a discovery; advances streak + grants gems
   addWallet: (addr: string) => void;
   removeWallet: (addr: string) => void;
+  crownAdmin: () => void; // max ranks + link boss wallets (admin wallets only — checked by caller)
 }
 
 function today(): string {
@@ -51,6 +69,18 @@ export const usePanther = create<PantherState>()(
       setAvatar: (v) => set({ avatar: v }),
       addWallet: (addr) => set((s) => ({ linkedWallets: s.linkedWallets.includes(addr) ? s.linkedWallets : [...s.linkedWallets, addr].slice(-8) })),
       removeWallet: (addr) => set((s) => ({ linkedWallets: s.linkedWallets.filter((a) => a !== addr) })),
+      crownAdmin: () =>
+        set((s) => ({
+          gems: 9999,
+          xp: MAX_XP,
+          level: MAX_LEVEL,
+          streak: 365,
+          hunts: 9999,
+          lastHunt: today(),
+          handle: s.handle || "BOSS",
+          avatar: "🐆",
+          linkedWallets: [...new Set([...s.linkedWallets, ...ADMIN_WALLETS_CLIENT])].slice(-8),
+        })),
       logHunt: () => {
         const s = get();
         const t = today();

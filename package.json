@@ -35,6 +35,7 @@
   "build": {
     "appId": "com.pnhrdgtl.desktop",
     "productName": "PNHR DGTL",
+    "npmRebuild": false,
     "win": { "target": ["nsis"], "icon": "build/icon.ico" },
     "files": ["electron/**/*", "package.json"],
     "extraResources": [".next/standalone/**/*", ".next/static/**/*", "public/**/*"]

@@ -1,18 +1,29 @@
 /**
- * PNHR DGTL — admin-bearer auth.
- * Plain server-only helpers (imported by /api/bot/* routes). NOT server actions,
- * so no "use server" directive — that breaks route-handler imports.
- * Admin is whoever holds the current ADMIN_BEARER_TOKEN.
- * Priority: build-time hardcoded token > ADMIN_BEARER_TOKEN env var.
- * Tokens are stored as a SHA-256 hash so the raw value is never kept in memory.
- *
- * Build: vercel --prod --yes  (token baked into the server bundle at build)
- * Runtime override: set ADMIN_BEARER_TOKEN in Vercel env (System variable) to bypass.
+ * PNHR DGTL — admin auth.
+ * Two credentials, either unlocks the paper desk:
+ *  1. Bearer token (ADMIN_BEARER_TOKEN env or build-time hash) — header `Authorization: Bearer …`
+ *  2. Admin wallet — header `x-wallet: <address>` matching ADMIN_WALLETS below.
+ * Note: the wallet header is an address claim (paper-desk convenience, local trust),
+ * not a cryptographic signature proof. No real funds move through these routes.
  */
 
 import { createHash } from "node:crypto";
 
 const ALGO = "SHA-256";
+
+/** Boss wallets — full admin. EVM compared case-insensitively, Solana exact. */
+export const ADMIN_WALLETS = [
+  "0xF15eea68C6aC1D830Bc39Ef80830d0ACaF50c6fE",
+  "BTJHkMGSPgmYck32aG7ed9cZ9LESYKWT1Q4xakmuz7yz",
+];
+
+export function isAdminWallet(addr: string | null | undefined): boolean {
+  if (!addr) return false;
+  const a = addr.trim();
+  return ADMIN_WALLETS.some((w) =>
+    w.startsWith("0x") ? w.toLowerCase() === a.toLowerCase() : w === a
+  );
+}
 
 /** SHA-256 hash of the build-time token — baked into the server bundle at build time. */
 const BUILD_TOKEN_HASH =
@@ -55,11 +66,16 @@ export type AdminAuthResult =
 export function authFromRequest(request: Request): AdminAuthResult {
   const auth = request.headers.get("authorization") ?? "";
   const parts = auth.split(/\s+/);
-  if (parts.length !== 2 || parts[0].toLowerCase() !== "bearer") {
-    return { ok: false, status: 401, body: { error: "missing Authorization: Bearer <token>" } };
+  if (parts.length === 2 && parts[0].toLowerCase() === "bearer" && verifyAdminToken(parts[1])) {
+    return { ok: true, user: "admin" };
   }
-  if (!verifyAdminToken(parts[1])) {
-    return { ok: false, status: 403, body: { error: "invalid admin token" } };
+  // Wallet credential: x-wallet header matching the boss allowlist
+  const wallet = request.headers.get("x-wallet") ?? "";
+  if (wallet && isAdminWallet(wallet)) {
+    return { ok: true, user: "admin" };
   }
-  return { ok: true, user: "admin" };
+  if (!auth && !wallet) {
+    return { ok: false, status: 401, body: { error: "missing Authorization: Bearer <token> or x-wallet: <admin address>" } };
+  }
+  return { ok: false, status: 403, body: { error: "invalid admin credential" } };
 }

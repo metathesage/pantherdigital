@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
+import { usePanther, isAdminWalletClient } from "@/lib/panther";
 
 /* =========================================================
    PNHR DGTL — Trading Bot Waifu Dashboard · /bot
@@ -20,11 +21,22 @@ type Health = {
 };
 
 const TOKEN_KEY = "pnhr-bot-token";
+const WALLET_KEY = "pnhr-bot-wallet";
+
+function authHeaders(token: string): Record<string, string> {
+  const h: Record<string, string> = { "Content-Type": "application/json" };
+  if (token) h.Authorization = `Bearer ${token}`;
+  try {
+    const w = localStorage.getItem(WALLET_KEY);
+    if (w && isAdminWalletClient(w)) h["x-wallet"] = w;
+  } catch { /* ssr-safe */ }
+  return h;
+}
 
 async function call(path: string, token: string, init?: RequestInit) {
   const r = await fetch(path, {
     ...init,
-    headers: { ...(init?.headers || {}), Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    headers: { ...authHeaders(token), ...(init?.headers || {}) },
     cache: "no-store",
   });
   const j = await r.json().catch(() => ({}));
@@ -44,6 +56,62 @@ export default function BotDashboard() {
   const [walletKind, setWalletKind] = useState<"coinbase" | "phantom">("coinbase");
   const [walletAddr, setWalletAddr] = useState("");
   const [size, setSize] = useState("5");
+  const [walletErr, setWalletErr] = useState<string | null>(null);
+  const [adminWallet, setAdminWallet] = useState<string | null>(null);
+  const crownAdmin = usePanther((s) => s.crownAdmin);
+  const addWallet = usePanther((s) => s.addWallet);
+
+  const claimWallet = useCallback(async (addr: string) => {
+    if (!isAdminWalletClient(addr)) {
+      setWalletErr("not a boss wallet — access denied");
+      return;
+    }
+    setWalletErr(null);
+    setAdminWallet(addr);
+    try { localStorage.setItem(WALLET_KEY, addr); } catch {}
+    addWallet(addr);
+    crownAdmin(); // max ranks + link boss wallets
+    await refresh();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [addWallet, crownAdmin]);
+
+  const connectCoinbase = async () => {
+    setWalletErr(null);
+    const eth = (window as any).ethereum;
+    if (!eth) { setWalletErr("no EVM wallet found — install Coinbase Wallet"); return; }
+    try {
+      const accs: string[] = await eth.request({ method: "eth_requestAccounts" });
+      if (accs[0]) await claimWallet(accs[0]);
+    } catch (e: any) {
+      setWalletErr(e?.message || "wallet connection rejected");
+    }
+  };
+
+  const connectPhantom = async () => {
+    setWalletErr(null);
+    const sol = (window as any).phantom?.solana || (window as any).solana;
+    if (!sol?.isPhantom) { setWalletErr("Phantom not found — install from phantom.app"); return; }
+    try {
+      const r = await sol.connect();
+      const addr = r.publicKey.toString();
+      await claimWallet(addr);
+    } catch (e: any) {
+      setWalletErr(e?.message || "Phantom rejected");
+    }
+  };
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(WALLET_KEY);
+      if (saved && isAdminWalletClient(saved)) {
+        setAdminWallet(saved);
+        addWallet(saved);
+        crownAdmin();
+        refresh();
+      }
+    } catch {}
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     const saved = localStorage.getItem(TOKEN_KEY);
@@ -141,6 +209,16 @@ export default function BotDashboard() {
 
         {!unlocked && (
           <div className="mx-auto mt-6 max-w-[520px] rounded-[24px] border border-white/65 bg-white/75 p-5 backdrop-blur-2xl shadow-[0_12px_40px_rgba(0,0,0,0.07)]">
+            <div className="text-[11px] font-bold tracking-[0.18em] text-[#6B6B6B]">BOSS WALLET — INSTANT ADMIN</div>
+            <div className="mt-2 grid grid-cols-2 gap-2">
+              <button onClick={connectCoinbase} className="rounded-full bg-[#0052FF] px-4 py-2.5 text-[13px] font-bold text-white">Coinbase ↗</button>
+              <button onClick={connectPhantom} className="rounded-full bg-[#AB9FF2] px-4 py-2.5 text-[13px] font-bold text-white">Phantom 👻</button>
+            </div>
+            {adminWallet && <div className="mt-2 text-center font-mono text-[11px] text-emerald-600">👑 {adminWallet.slice(0, 10)}…{adminWallet.slice(-6)} crowned · LVL 100</div>}
+            {walletErr && <div className="mt-2 text-center text-[12px] font-semibold text-red-600">{walletErr}</div>}
+            <div className="my-3 flex items-center gap-2 text-[10px] font-bold tracking-[0.18em] text-[#9A9A9A]">
+              <span className="h-px flex-1 bg-[#E8E8E8]" /> OR ADMIN TOKEN <span className="h-px flex-1 bg-[#E8E8E8]" />
+            </div>
             <div className="text-[11px] font-bold tracking-[0.18em] text-[#6B6B6B]">ADMIN TOKEN</div>
             <input
               type="password"
