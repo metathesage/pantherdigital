@@ -51,3 +51,6 @@ public/panther-procedural.glb
 *.ply
 *.zip
 *.glb
+
+# electron build output (1.5GB, never commit)
+dist/
