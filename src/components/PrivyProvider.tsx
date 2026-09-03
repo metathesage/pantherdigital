@@ -5,9 +5,10 @@ try {
   RealPrivyProvider = require("@privy-io/react-auth").PrivyProvider;
 } catch {}
 export default function Providers({ children }: { children: React.ReactNode }) {
-  const appId = process.env.NEXT_PUBLIC_PRIVY_APP_ID;
-  // If no real app ID or provider not installed, just render children — keeps build working
-  if (!appId || appId === "clz-demo-privy-app-id" || !RealPrivyProvider) {
+  const raw = process.env.NEXT_PUBLIC_PRIVY_APP_ID;
+  const appId = raw?.trim();
+  // Demo mode — no banner, no hang, just render children (also covers empty string, whitespace, demo placeholder)
+  if (!appId || appId === "clz-demo-privy-app-id" || appId === "demo" || !RealPrivyProvider) {
     return <>{children}</>;
   }
   return (
