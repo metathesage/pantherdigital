@@ -47,3 +47,7 @@ next-env.d.ts
 .env*
 Hi3D_Untitled_allparts_20260831_235734.glb
 public/panther-procedural.glb
+*.mp4
+*.ply
+*.zip
+*.glb
