@@ -38,6 +38,7 @@ type Waifu = {
   status: "active" | "idle" | "working";
   cronName: string;
   role: string; // short role label
+  link?: string; // standalone deep-link (e.g. /bot) — rendered as a button
 };
 
 const BOSS = {
@@ -109,6 +110,22 @@ const WAIFUS: Waifu[] = [
     cronName: "79d57a7e9bb9",
     role: "AUTH",
   },
+  {
+    id: "trader",
+    name: "Sable",
+    title: "Paper Trader · Bot Desk",
+    emoji: "📈",
+    avatar: "/panther-icon.png",
+    accent: "#FF6B00",
+    job: "panther-paper-bot",
+    schedule: "on demand",
+    file: "src/lib/bot.ts + src/app/api/bot/* + src/app/bot/page.tsx",
+    goal: "Runs the paper-trading desk — $10 bankroll, $5 longs, +8% TP / −6% SL auto-sweep. Admin-only API, Coinbase + Phantom addresses, no real funds. Console lives at /bot.",
+    status: "active",
+    cronName: "paper-only",
+    role: "TRADER",
+    link: "/bot",
+  },
 ];
 
 export default function WaifuCommand() {
@@ -144,7 +161,7 @@ export default function WaifuCommand() {
             <span className="hidden sm:inline-flex items-center gap-1.5 rounded-full bg-[#0A0A0A] px-3 py-1.5 text-[11px] font-bold tracking-[0.14em] text-white shadow-sm">
               <span className="size-1.5 rounded-full bg-emerald-400 animate-[pulse_2s_ease-in-out_infinite]" /> BOSS WAIFU · ALINA
             </span>
-            <span className="hidden lg:inline text-[11px] tabular-nums text-[#6B6B6B]">{now} · 4 waifus · muse-spark</span>
+            <span className="hidden lg:inline text-[11px] tabular-nums text-[#6B6B6B]">{now} · 5 waifus · muse-spark</span>
           </div>
           <div className="flex items-center gap-2">
             <span className="hidden md:inline-flex items-center gap-2 rounded-full border border-white/60 bg-white/70 px-3 py-1.5 text-[11px] font-semibold text-[#6B6B6B] backdrop-blur">
@@ -262,7 +279,7 @@ export default function WaifuCommand() {
 
             {/* stats row */}
             <div className="grid grid-cols-3 divide-x divide-[#E8E8E8]/60 border-t border-white/60 bg-white/55 backdrop-blur text-center text-[11px] sm:text-[12px]">
-              <div className="px-4 py-3"><span className="font-black">4</span> <span className="text-[#6B6B6B]">waifus active</span></div>
+              <div className="px-4 py-3"><span className="font-black">5</span> <span className="text-[#6B6B6B]">waifus active</span></div>
               <div className="px-4 py-3"><span className="font-black">4</span> <span className="text-[#6B6B6B]">crons · gateway alive</span></div>
               <div className="px-4 py-3"><span className="hidden sm:inline text-[#6B6B6B]">continuity </span><span className="font-bold text-emerald-600">ON</span><span className="text-[#6B6B6B]"> · logs local</span></div>
             </div>
@@ -323,7 +340,11 @@ export default function WaifuCommand() {
                 {/* cron footer */}
                 <div className="mt-3 flex items-center gap-2">
                   <span className="flex-1 rounded-full border border-[#0A0A0A] bg-white px-3 py-2 text-center text-[11px] font-bold tracking-wide">cron {w.cronName.slice(0, 6)} · {w.cronName}</span>
-                  <span className="rounded-full border border-white/60 bg-white/70 px-3 py-2 text-[11px] font-semibold text-[#6B6B6B] backdrop-blur">free model ♡</span>
+                  {w.link ? (
+                    <Link href={w.link} className="rounded-full bg-[#0A0A0A] px-4 py-2 text-[11px] font-bold tracking-wide text-white shadow-sm hover:bg-black">Open {w.name}&apos;s desk ↗</Link>
+                  ) : (
+                    <span className="rounded-full border border-white/60 bg-white/70 px-3 py-2 text-[11px] font-semibold text-[#6B6B6B] backdrop-blur">free model ♡</span>
+                  )}
                 </div>
               </div>
 
@@ -358,7 +379,7 @@ export default function WaifuCommand() {
             <div className="mt-5 flex flex-wrap gap-2">
               <Link href="/app" className="rounded-full bg-[#0A0A0A] px-5 py-2.5 text-[12px] font-bold text-white shadow hover:bg-black">Open App</Link>
               <Link href="/" className="rounded-full border border-[#0A0A0A] bg-white px-5 py-2.5 text-[12px] font-bold hover:bg-[#F8F8F7]">Home (logo) ♡</Link>
-              <span className="inline-flex items-center rounded-full border border-white/60 bg-white/70 px-4 py-2 text-[11px] font-semibold text-[#6B6B6B] backdrop-blur">4 waifus · boss Alina → head Rias · pantherdigital</span>
+              <span className="inline-flex items-center rounded-full border border-white/60 bg-white/70 px-4 py-2 text-[11px] font-semibold text-[#6B6B6B] backdrop-blur">5 waifus · boss Alina → head Rias · pantherdigital</span>
               <span className="inline-flex items-center rounded-full border border-white/60 bg-white/70 px-3 py-2 text-[11px] font-mono text-[#9A9A9A] backdrop-blur">C:/emergent-matrix</span>
             </div>
           </div>
