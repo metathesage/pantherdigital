@@ -6,18 +6,9 @@ import { useEffect, useRef, useState } from "react";
 import SearchBar from "@/components/SearchBar";
 import AuthDialog from "@/components/AuthDialog";
 import { useAuthStore } from "@/lib/auth";
+import { TOP_NAV, ALL_PAGES } from "@/constants/pages";
 
-const NAV_LINKS = [
-  { href: "/", label: "Home" },
-  { href: "/sets", label: "Sets" },
-  { href: "/releases", label: "Releases" },
-  { href: "/search", label: "Cards" },
-  { href: "/decks", label: "Decks" },
-  { href: "/packs", label: "Packs" },
-  { href: "/collection", label: "Collection" },
-  { href: "/fan-art", label: "Fan Art" },
-  { href: "/wiki", label: "Wiki" },
-] as const;
+const NAV_LINKS = TOP_NAV;
 
 export default function NavBar() {
   const pathname = usePathname();
@@ -88,7 +79,8 @@ export default function NavBar() {
                   <Link
                     href={link.href}
                     aria-current={active ? "page" : undefined}
-                    className={`relative rounded-lg px-2.5 py-2 text-sm font-medium transition-colors hover:text-holo-blue focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-holo-blue ${
+                    title={link.desc}
+                    className={`group relative rounded-lg px-2.5 py-2 text-sm font-medium transition-colors hover:text-holo-blue focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-holo-blue ${
                       active ? "text-holo-blue" : "text-zinc-600"
                     }`}
                   >
@@ -99,6 +91,12 @@ export default function NavBar() {
                         className="absolute inset-x-2.5 -bottom-[13px] h-0.5 rounded-full bg-gradient-to-r from-holo-blue to-holo-pink"
                       />
                     )}
+                    <span
+                      aria-hidden
+                      className="absolute left-0 top-full mt-0.5 text-[10px] font-medium text-zinc-400 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10 whitespace-nowrap"
+                    >
+                      {link.desc}
+                    </span>
                   </Link>
                 </li>
               );
@@ -189,13 +187,18 @@ export default function NavBar() {
               <SearchBar />
             </div>
             <ul className="grid gap-1">
-              {[...NAV_LINKS, { href: "/about", label: "About" }].map((link) => (
+              {ALL_PAGES.map((link) => (
                 <li key={link.href}>
                   <Link
                     href={link.href}
                     className="block rounded-lg px-3 py-2.5 text-base font-medium text-zinc-700 hover:bg-black/5"
                   >
-                    {link.label}
+                    <span className="block">{link.label}</span>
+                    {link.desc && (
+                      <span className="block text-[11px] font-normal text-zinc-400 mt-0.5">
+                        {link.desc}
+                      </span>
+                    )}
                   </Link>
                 </li>
               ))}

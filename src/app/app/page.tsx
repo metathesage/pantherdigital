@@ -107,7 +107,7 @@ const NATIVE_CHAIN: Record<string, Chain> = {
 const HOOD_FICTIONAL = new Set(["cashcat","hood"]);
 function chainForCoin(c: GeckoCoin): Chain {
   const s=c.symbol.toLowerCase(), id=c.id.toLowerCase(), name=c.name.toLowerCase();
-  // 1) Robinhood desk: fictional tickers + verified-on-robinhood-chain only (explicit, never hash)
+  // 1) Robinhood desk: fictional tickers + verified-on-robinhood-chain only (explicit, never hash)// stronger visual: extra-bright ring + pulse for Robinhood desk on the UI
   if(s==="cashcat"||id==="cashcat"||id.includes("cashcat")||s==="hood"||id.includes("robinhood")||name.includes("cashcat")||HOOD_FICTIONAL.has(s)||HOOD_FICTIONAL.has(id)||(HOOD && HOOD[id])) return "Robinhood";
   // 2) Native L1 (no contract anywhere)
   if (NATIVE_CHAIN[id]) return NATIVE_CHAIN[id];

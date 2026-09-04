@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PNHR DGTL Bot Trading Terminal</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;600;700;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --foreground: #0A0A0A;
+      --muted-foreground: #6B6B6B;
+      --accent: #00C805;
+      --danger: #FF6B00;
+      --border: #E8E8E8;
+      --card: #F8F8F7;
+    }
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Geist', sans-serif;
+      background: #0A0A0A;
+      color: var(--foreground);
+      margin: 0;
+      min-height: 100vh;
+    }
+    .bg-marble {
+      background-image: url('/home-bg.jpg');
+      background-size: cover;
+      background-position: center;
+    }
+    .glass {
+      background: rgba(255, 255, 255, 0.75);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+    .border-custom {
+      border-color: #E8E8E8;
+    }
+    .accent-btn {
+      background: var(--accent);
+      color: white;
+    }
+    .danger-btn {
+      background: var(--danger);
+      color: white;
+    }
+    .terminal-pane {
+      background: #0A0A0A;
+      color: #00C805;
+    }
+    .terminal-pane .monospace {
+      font-family: 'SF Mono', 'Monaco', 'Inconsolata', monospace;
+    }
+    .pulse-anim {
+      animation: pulse 2s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    .glow-accent {
+      box-shadow: 0 0 20px rgba(0, 200, 5, 0.4);
+    }
+    .glow-danger {
+      box-shadow: 0 0 20px rgba(255, 107, 0, 0.45);
+    }
+  </style>
+</head>
+<body class="bg-marble min-h-screen">
+  <!-- Header -->
+  <header class="border-b border-[#E8E8E8] bg-[#0A0A0A] p-4 mb-6">
+    <div class="flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="waifu-card rounded-xl p-3">
+          <img src="/assets/mapped/alina.png" alt="Alina" class="size-10 rounded-full object-contain">
+        </div>
+        <div>
+          <div class="font-semibold text-lg">PNHR DGTL</div>
+          <div class="text-[10px] text-[#6B6B6B]">Bot Trading Terminal</div>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="rounded-full bg-[#0A0A0A] px-2 py-1 text-[9px] font-bold text-white">PAPER</span>
+        <span class="text-[9px] text-[#6B6B6B]">Trading</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="max-w-7xl mx-auto p-6">
+    <!-- Account Panel -->
+    <div class="glass rounded-2xl p-6 mb-6">
+      <div class="flex items-center justify-between mb-4">
+        <div>
+          <div class="text-[11px] font-bold">Balance</div>
+          <div class="text-[20px] font-bold text-[#00C805]">$9.53</div>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="rounded-full bg-[#0A0A0A] px-2 py-1 text-[8px] font-bold text-white">PAPER</span>
+        </div>
+      </div>
+      <div class="grid grid-cols-2 gap-3 text-[11px]">
+        <div>
+          <div class="font-medium text-[#6B6B6B]">Available</div>
+          <div class="text-[#00C805] font-medium">$9.53</div>
+        </div>
+        <div>
+          <div class="font-medium text-[#6B6B6B]">Locked</div>
+          <div class="text-[#6B6B6B] text-sm">$0.00</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Open Positions -->
+    <div class="glass rounded-2xl p-6 mb-6">
+      <div class="flex items-center justify-between mb-4">
+        <div>
+          <div class="text-[11px] font-bold">Open Positions</div>
+          <div class="text-sm text-[#6B6B6B]">0 active</div>
+        </div>
+        <span class="text-[10px] rounded-full bg-[#0A0A0A] px-2 py-1">Paper</span>
+      </div>
+      <div id="positions-list" class="space-y-3">
+        <div class="text-[10px] text-[#6B6B6B] text-center py-8">
+          No open positions
+        </div>
+      </div>
+    </div>
+
+    <!-- Trade Form -->
+    <div class="glass rounded-2xl p-6 mb-6">
+      <div class="flex items-center justify-between mb-4">
+        <div>
+          <div class="text-[11px] font-bold">New Trade</div>
+        </div>
+        <select class="rounded-full border border-[#E8E8E8] bg-white px-3 py-2 text-[10px] focus:outline-none focus:ring-2 focus:ring-[#0A0A0A]/10">
+          <option>Select coin</option>
+          <option>BTC</option>
+          <option>ETH</option>
+          <option>SOL</option>
+          <option>ARB</option>
+        </select>
+      </div>
+      
+      <div class="grid grid-cols-2 gap-3 mb-4">
+        <div>
+          <div class="text-[10px] font-medium text-[#6B6B6B]">Size (BTC)</div>
+          <input type="number" class="w-full rounded border border-[#E8E8E8] px-3 py-2 text-[11px] focus:outline-none focus:ring-2 focus:ring-[#0A0A0A]/10" placeholder="0.001">
+        </div>
+        <div>
+          <div class="text-[10px] font-medium text-[#6B6B6B]">Side</div>
+          <select class="rounded-full border border-[#E8E8E8] bg-white px-3 py-2 text-[10px] focus:outline-none focus:ring-2 focus:ring-[#0A0A0A]/10">
+            <option>Buy</option>
+            <option>Sell</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="mb-4">
+        <div class="text-[10px] font-medium text-[#6B6B6B]">Take Profit %</div>
+        <input type="number" class="w-full rounded border border-[#E8E8E8] px-3 py-2 text-[11px] focus:outline-none focus:ring-2 focus:ring-[#0A0A0A]/10" placeholder="8.0" step="0.1">
+      </div>
+      <div class="mb-4">
+        <div class="text-[10px] font-medium text-[#6B6B6B]">Stop Loss %</div>
+        <input type="number" class="w-full rounded border border-[#E8E8E8] px-3 py-2 text-[11px] focus:outline-none focus:ring-2 focus:ring-[#0A0A0A]/10" placeholder="4.0" step="0.1">
+      </div>
+
+      <button class="w-full accent-btn rounded-full py-3 font-semibold text-lg glow-accent">
+        Execute Trade
+      </button>
+    </div>
+
+    <!-- Trade History -->
+    <div class="glass rounded-2xl p-6">
+      <div class="flex items-center justify-between mb-4">
+        <div>
+          <div class="text-[11px] font-bold">Trade History</div>
+        </div>
+        <a href="#" class="text-[10px] rounded-full bg-[#0A0A0A] px-2 py-1 hover:text-[#00C805] transition">
+          View All
+        </a>
+      </div>
+      <div id="history-list" class="space-y-2 max-h-40 overflow-y-auto">
+        <div class="text-[10px] text-[#6B6B6B] text-center py-8">
+          No trade history
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="mt-6 text-center text-[10px] tracking-[0.2em] text-[#9A9A9A]">
+    © PANTHERDIGITAL — BOT TRADING TERMINAL · PAPER-TRADING ONLY
+  </footer>
+
+  <script>
+    // Initialize bot terminal
+    document.addEventListener('DOMContentLoaded', () => {
+      // Pulse animation for buttons
+      const pulseButtons = document.querySelectorAll('.pulse-anim');
+      pulseButtons.forEach(el => {
+        el.classList.add('pulse-anim');
+      });
+
+      // Execute trade button
+      const executeBtn = document.querySelector('.accent-btn');
+      if (executeBtn) {
+        executeBtn.addEventListener('click', () => {
+          const size = document.querySelector('input[placeholder="0.001"]')?.value;
+          const side = document.querySelector('select:nth-child(3)')?.value;
+          const tp = document.querySelector('input[placeholder="8.0"]')?.value;
+          const sl = document.querySelector('input[placeholder="4.0"]')?.value;
+          
+          if (!size || !side) {
+            alert('Please fill in size and side');
+            return;
+          }
+          
+          // Simulate trade execution
+          const trade = {
+            id: Math.random().toString(36).substr(2, 9),
+            symbol: 'BTC',
+            side,
+            size: parseFloat(size),
+            price: 78000,
+            takeProfit: parseFloat(tp) || 8,
+            stopLoss: parseFloat(sl) || 4,
+            timestamp: new Date().toISOString(),
+            status: 'executed'
+          };
+          
+          // Add to history
+          addToHistory(trade);
+          
+          // Reset form
+          document.querySelector('form')?.reset();
+          alert(`Trade executed: ${side} ${size} BTC at $78,000`);
+        });
+      }
+
+      // Add trade to history
+      function addToHistory(trade) {
+        const list = document.getElementById('history-list');
+        if (!list) return;
+        
+        const div = document.createElement('div');
+        div.className = 'flex items-center gap-3 p-3 rounded-border border-[#E8E8E8] bg-white';
+        div.innerHTML = `
+          <span class="text-[9px] font-mono">${trade.id}</span>
+          <span class="text-[10px] font-medium">${trade.side} ${trade.size} BTC</span>
+          <span class="text-[9px] ${trade.side === 'Buy' ? 'text-emerald-400' : 'text-red-400'}">${trade.status}</span>
+          <span class="text-[9px] text-[#6B6B6B]">${trade.timestamp}</span>
+        `;
+        list.prepend(div);
+      }
+    });
+  </script>
+</body>
+</html>
