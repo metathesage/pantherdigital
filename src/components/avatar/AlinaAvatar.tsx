@@ -97,7 +97,7 @@ export default function AlinaAvatar({
         let VRMLoaderPlugin: any = null;
         try {
           // three-vrm 3.x — keep dynamic so placeholder builds without dep
-          // @ts-expect-error optional peer, installed via npm install @pixiv/three-vrm
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const mod: any = await import("@pixiv/three-vrm");
           VRMLoaderPlugin = mod.VRMLoaderPlugin ?? mod.default?.VRMLoaderPlugin;
         } catch {
