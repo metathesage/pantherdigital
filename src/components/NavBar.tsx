@@ -10,6 +10,33 @@ import { TOP_NAV, ALL_PAGES } from "@/constants/pages";
 
 const NAV_LINKS = TOP_NAV;
 
+// Text enhancement: title case + emoji icons for nav labels
+const labelEnhance = (label: string) => {
+  const enhancements: Record<string, string> = {
+    Home: "🏠 Home",
+    Sets: "📦 Sets",
+    Releases: "⚡ Releases",
+    "Card Browser": "🔍 Card Browser",
+    Waifus: "🐱 Waifus",
+    Wiki: "📖 Wiki",
+    "Collecting Guide": "🎒 Collecting",
+    "Waifus Guide": "🐾 Waifus Guide",
+    App: "📱 App",
+    Avatar: "👤 Avatar",
+    Bios: "👥 Bios",
+    "Bot Desk": "🤖 Bot Desk",
+    Cards: "🃏 Cards",
+    Decks: "🗂️ Decks",
+    "Pack Simulator": "🎁 Pack Simulator",
+    Collection: "📥 Collection",
+    Product: "💰 Product",
+    "Desktop Apps": "💻 Desktop",
+    "Fan Art": "🎨 Fan Art",
+    About: "ℹ️ About",
+  };
+  return enhancements[label] || label;
+};
+
 export default function NavBar() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
@@ -37,7 +64,9 @@ export default function NavBar() {
 
   return (
     <>
-      <header className="sticky top-0 z-50 border-b border-sky-950/10 bg-white/70 backdrop-blur-md">
+      <header
+        className="sticky top-0 z-50 border-b border-sky-950/10 bg-white/70 backdrop-blur-md"
+      >
         <nav
           aria-label="Main navigation"
           className="mx-auto flex h-16 max-w-6xl items-center gap-4 px-4 sm:px-6"
@@ -85,7 +114,7 @@ export default function NavBar() {
                       active ? "text-holo-blue" : "text-zinc-600"
                     }`}
                   >
-                    {link.label}
+                    {labelEnhance(link.label)}
                     {active && (
                       <span
                         aria-hidden
@@ -96,7 +125,7 @@ export default function NavBar() {
                       aria-hidden
                       className="absolute left-0 top-full mt-0.5 text-[10px] font-medium text-zinc-400 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10 whitespace-nowrap"
                     >
-                      {link.desc}
+                      {labelEnhance(link.desc)}
                     </span>
                   </Link>
                 </li>
@@ -105,7 +134,7 @@ export default function NavBar() {
           </ul>
 
           {/* Auth area — hidden until session rehydrates so a saved
-              login never flashes as "signed out" (or vice versa) */}
+            login never flashes as "signed out" (or vice versa) */}
           <div className="relative ml-auto lg:ml-0" ref={menuRef}>
             {!hydrated ? (
               <span className="block h-9 w-24 animate-pulse rounded-xl bg-black/[0.06]" aria-hidden />
@@ -133,39 +162,51 @@ export default function NavBar() {
                 Sign in
               </button>
             )}
-
-            {user && menuOpen && (
-              <div
-                role="menu"
-                className="absolute right-0 top-12 z-50 w-52 overflow-hidden rounded-xl border border-sky-950/10 bg-white shadow-xl animate-pop"
-              >
-                <p className="border-b border-sky-950/5 px-4 py-2.5 text-xs text-zinc-400">
-                  Signed in via {user.provider === "x" ? "X" : "email"}
-                  <span className="block truncate font-medium text-zinc-500">{user.identifier}</span>
-                </p>
-                <Link href="/decks" role="menuitem" className="block px-4 py-2.5 text-sm font-medium text-zinc-700 hover:bg-holo-blue/5 hover:text-holo-blue">
-                  My Decks
-                </Link>
-                <Link href="/collection" role="menuitem" className="block px-4 py-2.5 text-sm font-medium text-zinc-700 hover:bg-holo-pink/5 hover:text-holo-pink">
-                  My Collection
-                </Link>
-                <Link href="/packs" role="menuitem" className="block px-4 py-2.5 text-sm font-medium text-zinc-700 hover:bg-holo-purple/5 hover:text-holo-purple">
-                  Pack Simulator
-                </Link>
-                <button
-                  role="menuitem"
-                  type="button"
-                  onClick={() => {
-                    signOut();
-                    setMenuOpen(false);
-                  }}
-                  className="block w-full border-t border-sky-950/5 px-4 py-2.5 text-left text-sm font-medium text-zinc-500 hover:bg-black/[0.03]"
-                >
-                  Sign out
-                </button>
-              </div>
-            )}
           </div>
+
+          {user && menuOpen && (
+            <div
+              role="menu"
+              className="absolute right-0 top-12 z-50 w-52 overflow-hidden rounded-xl border border-sky-950/10 bg-white shadow-xl animate-pop"
+            >
+              <p className="border-b border-sky-950/5 px-4 py-2.5 text-xs text-zinc-400">
+                Signed in via {user.provider === "x" ? "X" : "email"}
+                <span className="block truncate font-medium text-zinc-500">{user.identifier}</span>
+              </p>
+              <Link
+                href="/decks"
+                role="menuitem"
+                className="block px-4 py-2.5 text-sm font-medium text-zinc-700 hover:bg-holo-blue/5 hover:text-holo-blue"
+              >
+                My Decks
+              </Link>
+              <Link
+                href="/collection"
+                role="menuitem"
+                className="block px-4 py-2.5 text-sm font-medium text-zinc-700 hover:bg-holo-pink/5 hover:text-holo-pink"
+              >
+                My Collection
+              </Link>
+              <Link
+                href="/packs"
+                role="menuitem"
+                className="block px-4 py-2.5 text-sm font-medium text-zinc-700 hover:bg-holo-purple/5 hover:text-holo-purple"
+              >
+                Pack Simulator
+              </Link>
+              <button
+                role="menuitem"
+                type="button"
+                onClick={() => {
+                  signOut();
+                  setMenuOpen(false);
+                }}
+                className="block w-full border-t border-sky-950/5 px-4 py-2.5 text-left text-sm font-medium text-zinc-500 hover:bg-black/[0.03]"
+              >
+                Sign out
+              </button>
+            </div>
+          )}
 
           <button
             type="button"
@@ -175,41 +216,61 @@ export default function NavBar() {
             className="grid size-10 place-items-center rounded-lg text-zinc-700 hover:bg-black/5 lg:hidden"
           >
             <span className="sr-only">Toggle navigation</span>
-            <svg viewBox="0 0 24 24" fill="none" className="size-5">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              className="size-5"
+            >
               {open ? (
-                <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                <path
+                  d="M6 6l12 12M18 6L6 18"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                />
               ) : (
-                <path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                <path
+                  d="M4 7h16M4 12h16M4 17h16"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                />
               )}
             </svg>
           </button>
         </nav>
-
-        {open && (
-          <div id="mobile-nav" className="border-t border-sky-950/10 bg-white px-4 pb-4 pt-2 lg:hidden animate-fade-up">
-            <div className="mb-3">
-              <SearchBar />
-            </div>
-            <ul className="grid gap-1">
-              {ALL_PAGES.map((link) => (
-                <li key={link.href}>
-                  <Link
-                    href={link.href}
-                    className="block rounded-lg px-3 py-2.5 text-base font-medium text-zinc-700 hover:bg-black/5"
-                  >
-                    <span className="block">{link.label}</span>
-                    {link.desc && (
-                      <span className="block text-[11px] font-normal text-zinc-400 mt-0.5">
-                        {link.desc}
-                      </span>
-                    )}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
       </header>
+
+      {open && (
+        <div
+          id="mobile-nav"
+          className="border-t border-sky-950/10 bg-white px-4 pb-4 pt-2 lg:hidden animate-fade-up"
+        >
+          <div className="mb-3">
+            <SearchBar />
+          </div>
+          <ul className="grid gap-1">
+            {ALL_PAGES.map((link) => (
+              <li key={link.href}>
+                <Link
+                  href={link.href}
+                  className="block rounded-lg px-3 py-2.5 text-base font-medium text-zinc-700 hover:bg-black/5"
+                >
+                  <span className="block">{labelEnhance(link.label)}</span>
+                  {link.desc && (
+                    <span
+                      className="block text-[11px] font-normal text-zinc-400 mt-0.5"
+                    >
+                      {labelEnhance(link.desc)}
+                    </span>
+                  )}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       {authOpen && <AuthDialog onClose={() => setAuthOpen(false)} />}
     </>
   );
