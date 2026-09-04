@@ -1,5 +1,6 @@
 "use client";
 import React from "react";
+import AchievementHost from "@/components/AchievementHost";
 let RealPrivyProvider: any = null;
 try {
   RealPrivyProvider = require("@privy-io/react-auth").PrivyProvider;
@@ -9,7 +10,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
   const appId = raw?.trim();
   // Demo mode — no banner, no hang, just render children (also covers empty string, whitespace, demo placeholder)
   if (!appId || appId === "clz-demo-privy-app-id" || appId === "demo" || !RealPrivyProvider) {
-    return <>{children}</>;
+    return <>{children}<AchievementHost /></>;
   }
   return (
     <RealPrivyProvider
@@ -21,6 +22,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
       }}
     >
       {children}
+      <AchievementHost />
     </RealPrivyProvider>
   );
 }

@@ -1,5 +1,16 @@
 @import "tailwindcss";
 @theme inline { --font-sans: var(--font-geist-sans); --font-mono: var(--font-geist-mono); }
+/* PNTHR DGTL palette — generates text-/bg-/from-/to-/ring-/shadow-holo-* utilities */
+@theme {
+  --color-holo-blue: #38BDF8;
+  --color-holo-purple: #A78BFA;
+  --color-holo-pink: #F472B6;
+  --color-holo-cyan: #22D3EE;
+  --color-sol-purple: #9945FF;
+  --color-sol-green: #14F195;
+  --color-hood-green: #00C805;
+  --color-trophy-gold: #FFB800;
+}
 html { scroll-behavior: smooth; }
 body { background: #FFFFFF; color: #0A0A0A; font-family: var(--font-geist-sans), system-ui, -apple-system, sans-serif; font-size: 16px; line-height: 1.6; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
 .emergent-bg { background: #F8F8F7; }
@@ -222,4 +233,58 @@ body { background: #FFFFFF; color: #0A0A0A; font-family: var(--font-geist-sans),
   .launch-loader-ring, .launch-loader-bar { animation: none; }
   .radar-app .ticker-item img { animation: none !important; }
   .hallow-float, .hallow-glow { animation: none; }
+  .sol-glow, .hood-glow, .trophy-glow { animation: none; }
 }
+
+/* ========== PNTHR DGTL accent system (Solana · Hood · Trophy) ========== */
+:root {
+  --sol-purple: #9945FF;
+  --sol-green: #14F195;
+  --hood-green: #00C805;
+  --trophy-gold: #FFB800;
+  --holo-blue: #38BDF8;
+  --holo-purple: #A78BFA;
+  --holo-pink: #F472B6;
+  --holo-cyan: #22D3EE;
+}
+.text-gradient {
+  background: linear-gradient(100deg, var(--holo-blue), var(--holo-purple) 45%, var(--holo-pink));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.text-gradient-sol {
+  background: linear-gradient(100deg, var(--sol-purple), var(--sol-green));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+/* Solana glow ring for featured SOL elements */
+@keyframes solGlow { 0%,100% { box-shadow: 0 0 10px rgba(153,69,255,0.35), 0 0 0 1px rgba(153,69,255,0.25); } 50% { box-shadow: 0 0 20px rgba(20,241,149,0.45), 0 0 0 1px rgba(20,241,149,0.4); } }
+.sol-glow { animation: solGlow 2.6s ease-in-out infinite; }
+/* Robinhood desk glow */
+@keyframes hoodGlow { 0%,100% { box-shadow: 0 0 10px rgba(0,200,5,0.3); } 50% { box-shadow: 0 0 22px rgba(0,200,5,0.55); } }
+.hood-glow { animation: hoodGlow 2.2s ease-in-out infinite; }
+/* Trophy shimmer */
+@keyframes trophyShine { 0% { background-position: -160% 0; } 100% { background-position: 260% 0; } }
+.trophy-shine {
+  background-image: linear-gradient(105deg, transparent 30%, rgba(255,184,0,0.35) 50%, transparent 70%);
+  background-size: 220% 100%;
+  animation: trophyShine 3s ease-in-out infinite;
+}
+/* Gradient hairline dividers */
+.rule-sol { background: linear-gradient(to right, transparent, rgba(153,69,255,0.4), rgba(20,241,149,0.4), transparent); height: 1px; }
+.rule-hood { background: linear-gradient(to right, transparent, rgba(0,200,5,0.45), transparent); height: 1px; }
+/* Chart polish */
+.chart-line { stroke-linejoin: round; stroke-linecap: round; }
+@keyframes popIn { from { opacity: 0; transform: scale(0.92) translateY(6px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+.animate-pop { animation: popIn 0.25s cubic-bezier(0.16,1,0.3,1) both; }
+/* Button shine sweep (used by .btn-shine) */
+.btn-shine { position: relative; overflow: hidden; }
+.btn-shine::after {
+  content: ""; position: absolute; inset: 0;
+  background: linear-gradient(105deg, transparent 35%, rgba(255,255,255,0.45) 50%, transparent 65%);
+  background-size: 220% 100%; background-position: 140% 0;
+  transition: background-position 0.6s ease; pointer-events: none;
+}
+.btn-shine:hover::after { background-position: -40% 0; }

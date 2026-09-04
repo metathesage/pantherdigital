@@ -17,6 +17,7 @@ export default function NavBar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [prevPath, setPrevPath] = useState(pathname);
   const user = useAuthStore((s) => s.user);
+  const hydrated = useAuthStore((s) => s.hydrated);
   const signOut = useAuthStore((s) => s.signOut);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -71,7 +72,7 @@ export default function NavBar() {
           </div>
 
           <ul className="ml-auto hidden items-center gap-1 lg:flex">
-            {NAV_LINKS.map((link) => {
+            {TOP_NAV.map((link) => {
               const active =
                 link.href === "/" ? pathname === "/" : pathname.startsWith(link.href);
               return (
@@ -103,9 +104,12 @@ export default function NavBar() {
             })}
           </ul>
 
-          {/* Auth area */}
+          {/* Auth area — hidden until session rehydrates so a saved
+              login never flashes as "signed out" (or vice versa) */}
           <div className="relative ml-auto lg:ml-0" ref={menuRef}>
-            {user ? (
+            {!hydrated ? (
+              <span className="block h-9 w-24 animate-pulse rounded-xl bg-black/[0.06]" aria-hidden />
+            ) : user ? (
               <button
                 type="button"
                 onClick={() => setMenuOpen((v) => !v)}

@@ -1,5 +1,5 @@
 /**
- * PNHR DGTL — waifu squad source of truth.
+ * PNTHR DGTL — waifu squad source of truth.
  * Shared by /waifus (cards), /waifus/[id] (full pages) and /wiki/waifus.
  * Images: /public/waifus/* (ported from emergent-matrix-lab marble set).
  * Alina → /lucy-work.png · Rias → /rias-waifu.png (existing assets kept).

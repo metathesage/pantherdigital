@@ -6,6 +6,8 @@ import { cards, getSets } from "@/lib/data";
 import { useCollectionStore } from "@/lib/store";
 import CardImage from "@/components/CardImage";
 import { colorTokens } from "@/lib/meta";
+import { usePanther } from "@/lib/panther";
+import { playSfx } from "@/lib/sfx";
 
 import { RARITY_WEIGHTS } from "@/lib/deckRules";
 
@@ -61,10 +63,14 @@ export default function PacksPage() {
     setRipped(false);
     setTimeout(() => setRipped(true), 300);
     setHistory((h) => [...p, ...h].slice(0, 100));
+    const hot = p.some((c) => /UR|SSR|SP|SEC|OUR/i.test(c.rarity ?? ""));
+    playSfx(hot ? "fanfare" : "swoosh");
+    usePanther.getState().addXp(5);
   }
 
   function revealAll() {
     setRevealed(new Array(PACK_SIZE).fill(true));
+    playSfx("coins");
   }
 
   return (

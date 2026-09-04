@@ -1,6 +1,8 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { usePanther, ACHIEVEMENTS } from "@/lib/panther";
+import { playSfx } from "@/lib/sfx";
 
 /* =========================================================
    PANTHER WAIFU NAVI — /waifus
@@ -133,6 +135,9 @@ const WAIFUS: Waifu[] = [
 
 export default function WaifuCommand() {
   const [now, setNow] = useState<string>("");
+  const achievements = usePanther((s) => s.achievements);
+  const gems = usePanther((s) => s.gems);
+  const level = usePanther((s) => s.level);
   useEffect(() => {
     const fmt = () => new Date().toLocaleString("en-US", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false, month: "short", day: "2-digit" });
     const id = setInterval(() => setNow(fmt()), 1000);
@@ -355,6 +360,26 @@ export default function WaifuCommand() {
               <div className="pointer-events-none absolute -right-10 -top-10 size-24 rounded-full opacity-[0.07]" style={{ backgroundImage: "url('/home-bg.jpg')", backgroundSize: "cover" }} aria-hidden />
             </article>
           ))}
+        </div>
+
+        {/* trophies — your unlocked achievements, live from your profile */}
+        <div className="mx-auto mt-6 max-w-[860px] overflow-hidden rounded-[24px] border border-amber-200/70 bg-white/72 backdrop-blur-2xl shadow-[0_12px_40px_rgba(0,0,0,0.06)]">
+          <div className="flex items-center justify-between px-5 pt-4">
+            <h2 className="text-[11px] font-bold tracking-[0.18em] text-[#6B6B6B]">🏆 TROPHY CASE · LVL {level} · 💎 {gems}</h2>
+            <Link href="/portfolio" className="text-[11px] font-bold text-[#9945FF] hover:underline" onClick={() => playSfx("click")}>earn more →</Link>
+          </div>
+          <div className="flex gap-2 overflow-x-auto px-5 pb-5 pt-3">
+            {ACHIEVEMENTS.map((a) => {
+              const got = achievements.includes(a.id);
+              return (
+                <div key={a.id} title={got ? `${a.label} — unlocked (+${a.xp} XP)` : `${a.label} — ${a.desc}`} className={`shrink-0 rounded-2xl border px-3.5 py-2.5 text-center ${got ? "border-amber-300 bg-[#0A0A0A] text-white shadow-[0_0_16px_rgba(255,180,0,0.35)]" : "border-[#E8E8E8] bg-white/60 text-[#9A9A9A]"}`}>
+                  <div className="text-lg">{got ? "🏆" : "🔒"}</div>
+                  <div className="mt-0.5 text-[11px] font-bold whitespace-nowrap">{a.label}</div>
+                  <div className="text-[10px] whitespace-nowrap opacity-70">{got ? `+${a.xp} XP` : a.desc}</div>
+                </div>
+              );
+            })}
+          </div>
         </div>
 
         {/* how it works — glass */}

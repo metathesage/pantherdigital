@@ -16,29 +16,32 @@ export const ALL_PAGES = [
   { href: "/packs", label: "Pack Simulator", group: "Play", desc: "Simulate token pack openings" },
   { href: "/collection", label: "Collection", group: "Play", desc: "Your tracked tokens and performance" },
   { href: "/portfolio", label: "Portfolio", group: "Play", desc: "Real on-chain portfolio tracker" },
+  { href: "/product", label: "Product", group: "Info", desc: "Subscription plans and referral program" },
+  { href: "/desktop", label: "Desktop Apps", group: "Info", desc: "Waifu dashboard and bot trading terminal launchers" },
   { href: "/fan-art", label: "Fan Art", group: "Community", desc: "Community creations and submissions" },
   { href: "/about", label: "About", group: "Info", desc: "Project information and roadmap" },
 ] as const;
 
-export const NAV_GROUPS = ["Main", "Cards", "Content", "Play", "Community", "Info"] as const;
+export const NAV_GROUPS = [
+  "Main",
+  "Cards",
+  "Content",
+  "Play",
+  "Info",
+  "Community",
+] as const;
 
+// Desktop top-nav subset (mobile menu + footer use ALL_PAGES).
 export const TOP_NAV = ALL_PAGES.filter((p) =>
   [
     "/",
-    "/sets",
-    "/releases",
-    "/search",
-    "/waifus",
-    "/wiki",
-    "/decks",
-    "/packs",
-    "/collection",
-    "/fan-art",
     "/app",
-    "/avatar",
-    "/bio",
     "/bot",
-    "/cards",
+    "/waifus",
     "/portfolio",
+    "/collection",
+    "/product",
+    "/wiki",
+    "/about",
   ].includes(p.href)
 );

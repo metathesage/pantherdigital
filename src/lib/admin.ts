@@ -1,5 +1,5 @@
 /**
- * PNHR DGTL — admin auth.
+ * PNTHR DGTL — admin auth.
  * Two credentials, either unlocks the paper desk:
  *  1. Bearer token (ADMIN_BEARER_TOKEN env or build-time hash) — header `Authorization: Bearer …`
  *  2. Admin wallet — header `x-wallet: <address>` matching ADMIN_WALLETS below.

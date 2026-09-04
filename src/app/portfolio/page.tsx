@@ -31,6 +31,13 @@ type Txn = {
   counterparty: string | null;
   chain: "ETH" | "SOL";
 };
+type Nft = {
+  id: string;
+  name: string;
+  image: string;
+  collection: string;
+};
+type Snapshot = { total: number; at: number };
 type Stats = {
   txCount: number;
   successRate: number;
@@ -423,6 +430,69 @@ async function fetchEthereum(addr: string): Promise<{ holdings: Holding[]; txns:
 
 const DEMO_SOL = "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM"; // public, real, fully keyless
 
+// ---- Solana NFTs via Helius DAS (server proxy keeps the key off-client) ----
+async function fetchSolNfts(addr: string): Promise<{ nfts: Nft[]; unavailable: boolean }> {
+  try {
+    const r = await fetch("/api/helius", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        jsonrpc: "2.0",
+        id: 1,
+        method: "getAssetsByOwner",
+        params: { ownerAddress: addr, page: 1, limit: 100, displayOptions: { showCollectionMetadata: true } },
+      }),
+      cache: "no-store",
+    });
+    if (r.status === 503) return { nfts: [], unavailable: true };
+    if (!r.ok) return { nfts: [], unavailable: false };
+    const j = await r.json();
+    const items: unknown[] = j?.result?.items ?? [];
+    const nfts: Nft[] = items
+      .filter((a) => {
+        const x = a as { interface?: string; compression?: { compressed?: boolean }; content?: { metadata?: { name?: string } } };
+        return x.interface === "ProgrammableNFT" || x.interface === "MplCoreAsset" || x.compression?.compressed;
+      })
+      .slice(0, 48)
+      .map((a) => {
+        const x = a as {
+          id?: string;
+          content?: { metadata?: { name?: string }; links?: { image?: string } };
+          grouping?: { group_key: string; group_value: string }[];
+        };
+        const col = x.grouping?.find((g) => g.group_key === "collection")?.group_value ?? "";
+        return {
+          id: String(x.id ?? Math.random()),
+          name: x.content?.metadata?.name || "Unnamed NFT",
+          image: x.content?.links?.image || "",
+          collection: col ? `${col.slice(0, 4)}…${col.slice(-4)}` : "1/1",
+        };
+      });
+    return { nfts, unavailable: false };
+  } catch {
+    return { nfts: [], unavailable: false };
+  }
+}
+
+// ---- Session snapshots: honest tracked-PnL (first scan = baseline, no guessing) ----
+function loadSnapshots(addr: string): Snapshot[] {
+  try {
+    const v = JSON.parse(localStorage.getItem(`pnthr-snaps-${addr}`) || "[]");
+    return Array.isArray(v) ? v : [];
+  } catch { return []; }
+}
+function saveSnapshot(addr: string, total: number) {
+  try {
+    const snaps = loadSnapshots(addr);
+    const last = snaps[snaps.length - 1];
+    // one snapshot per hour max — keeps the sparkline meaningful
+    if (last && Date.now() - last.at < 3600_000) return snaps;
+    const next = [...snaps, { total, at: Date.now() }].slice(-60);
+    localStorage.setItem(`pnthr-snaps-${addr}`, JSON.stringify(next));
+    return next;
+  } catch { return []; }
+}
+
 export default function PortfolioPage() {
   const panther = usePanther();
   const [input, setInput] = useState("");
@@ -433,7 +503,10 @@ export default function PortfolioPage() {
   const [holdings, setHoldings] = useState<Holding[]>([]);
   const [txns, setTxns] = useState<Txn[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
-  const [activeTab, setActiveTab] = useState<"holdings" | "activity" | "stats">("holdings");
+  const [nfts, setNfts] = useState<Nft[]>([]);
+  const [nftsUnavailable, setNftsUnavailable] = useState(false);
+  const [snaps, setSnaps] = useState<Snapshot[]>([]);
+  const [activeTab, setActiveTab] = useState<"holdings" | "nfts" | "activity" | "stats">("holdings");
   const [recent, setRecent] = useState<string[]>([]);
   useEffect(()=>{ try{ const v=JSON.parse(localStorage.getItem("cp_recent_wallets")||"[]"); if(Array.isArray(v)) setRecent(v); }catch{} },[]);
 
@@ -464,11 +537,40 @@ export default function PortfolioPage() {
       setHoldings(result.holdings);
       setTxns(result.txns);
       setStats(result.stats);
-    } catch (e: any) {
-      setError(e?.message || "Failed to load wallet data. The public RPC may be rate-limited — try again shortly.");
+      // gamification: scan rewards + achievements (all from real data)
+      try {
+        const { playSfx } = await import("@/lib/sfx");
+        const { celebrate } = await import("@/components/AchievementHost");
+        const st = usePanther.getState();
+        st.addXp(10);
+        playSfx("success");
+        celebrate("first-scan", st.unlock("first-scan"));
+        if (result.stats.totalValueUsd >= 10_000) celebrate("whale-spotter", st.unlock("whale-spotter"));
+        if (result.stats.totalValueUsd >= 10_000) playSfx("fanfare");
+      } catch { /* gamification never blocks data */ }
+      setSnaps(saveSnapshot(target, result.stats.totalValueUsd));
+      if (c === "SOL") {
+        const { nfts: found, unavailable } = await fetchSolNfts(target);
+        setNfts(found);
+        setNftsUnavailable(unavailable);
+        if (found.length > 0) {
+          try {
+            const { celebrate } = await import("@/components/AchievementHost");
+            celebrate("nft-hunter", usePanther.getState().unlock("nft-hunter"));
+          } catch {}
+        }
+      } else {
+        setNfts([]);
+        setNftsUnavailable(false);
+      }
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Failed to load wallet data. The public RPC may be rate-limited — try again shortly.";
+      setError(msg);
+      try { (await import("@/lib/sfx")).playSfx("error"); } catch {}
       setHoldings([]);
       setTxns([]);
       setStats(null);
+      setNfts([]);
     } finally {
       setLoading(false);
     }
@@ -520,7 +622,7 @@ export default function PortfolioPage() {
         <div className="mx-auto flex max-w-[1200px] items-center justify-between gap-4 px-4 py-3">
           <div className="flex items-center gap-3">
             <a href="/" className="grid size-9 place-items-center rounded-xl border border-[#0A0A0A] bg-white p-1">
-            <img src="/assets/icon-wallet.png" alt="PNHR DGTL" className="h-7 w-7 object-contain" />
+            <img src="/assets/icon-wallet.png" alt="PNTHR DGTL" className="h-7 w-7 object-contain" />
             </a>
             <div>
               <div className="text-[16px] font-bold tracking-widest">PORTFOLIO</div>
@@ -528,7 +630,7 @@ export default function PortfolioPage() {
             </div>
           </div>
           <a href="/app" className="rounded-full border border-[#0A0A0A] bg-white px-4 py-2 text-xs font-semibold hover:bg-[#0A0A0A] hover:text-white transition-colors">
-            ← PNHR DGTL
+            ← PNTHR DGTL
           </a>
         </div>
       </div>
@@ -622,15 +724,103 @@ export default function PortfolioPage() {
               </div>
             </div>
 
+            {/* Tracked PnL + allocation + activity — all derived from real scans */}
+            {(() => {
+              const base = snaps.length > 0 ? snaps[0].total : null;
+              const cur = stats?.totalValueUsd ?? 0;
+              const pnl = base != null && base > 0 ? cur - base : null;
+              const pnlPct = base != null && base > 0 ? (pnl! / base) * 100 : null;
+              const top = holdings.slice(0, 6);
+              const topSum = top.reduce((a, h) => a + h.valueUsd, 0) || 1;
+              const PALETTE = ["#0A0A0A", "#9945FF", "#14F195", "#FF6B00", "#6B6B6B", "#C4B5FD"];
+              let acc = 0;
+              const segs = top.map((h, i) => {
+                const frac = h.valueUsd / topSum;
+                const s = { h, i, from: acc, to: acc + frac };
+                acc += frac;
+                return s;
+              });
+              const R = 54, C = 2 * Math.PI * R;
+              // activity per week (last 12 weeks, real tx timestamps)
+              const buckets = new Array(12).fill(0);
+              for (const t of txns) {
+                if (!t.time) continue;
+                const w = Math.floor((Date.now() - t.time) / (7 * 86400_000));
+                if (w >= 0 && w < 12) buckets[11 - w] += 1;
+              }
+              const maxB = Math.max(1, ...buckets);
+              const pts = buckets.map((b, i) => `${(i / 11) * 100},${28 - (b / maxB) * 26}`).join(" ");
+              return (
+                <div className="mt-4 grid grid-cols-12 gap-4">
+                  <div className="col-span-12 rounded-2xl border border-[#0A0A0A] bg-[#0A0A0A] p-5 text-white lg:col-span-4">
+                    <div className="text-xs font-bold tracking-widest text-white/70">TRACKED PNL</div>
+                    {pnl == null ? (
+                      <div className="mt-2 text-sm text-white/70">First scan saved as baseline — rescan later to track this wallet&apos;s PnL. No guessed buy prices, ever.</div>
+                    ) : (
+                      <>
+                        <div className={`mt-2 font-mono text-3xl font-bold ${pnl >= 0 ? "text-[#14F195]" : "text-red-400"}`}>
+                          {pnl >= 0 ? "+" : ""}{fmtUsd(pnl).replace("$-", "-$")} <span className="text-lg">({pnlPct! >= 0 ? "+" : ""}{pnlPct!.toFixed(1)}%)</span>
+                        </div>
+                        <div className="mt-1 text-xs text-white/60">since {new Date(snaps[0].at).toLocaleDateString()} · {snaps.length} snapshot{snaps.length === 1 ? "" : "s"}</div>
+                      </>
+                    )}
+                    {snaps.length > 1 && (
+                      <svg viewBox="0 0 100 30" className="mt-3 h-14 w-full" preserveAspectRatio="none" aria-hidden>
+                        <polyline points={snaps.map((s, i) => {
+                          const vals = snaps.map((x) => x.total);
+                          const mn = Math.min(...vals), mx = Math.max(...vals);
+                          const y = mx === mn ? 15 : 28 - ((s.total - mn) / (mx - mn)) * 26;
+                          return `${snaps.length === 1 ? 50 : (i / (snaps.length - 1)) * 100},${y}`;
+                        }).join(" ")} fill="none" stroke="#14F195" strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" />
+                      </svg>
+                    )}
+                  </div>
+                  <div className="col-span-12 rounded-2xl border border-[#E8E8E8] bg-white p-5 sm:col-span-6 lg:col-span-4">
+                    <div className="text-xs font-bold tracking-widest">ALLOCATION · TOP 6</div>
+                    <div className="mt-3 flex items-center gap-4">
+                      <svg viewBox="0 0 130 130" className="size-28 shrink-0" aria-hidden>
+                        <circle cx="65" cy="65" r={R} fill="none" stroke="#F1F1F0" strokeWidth="16" />
+                        {segs.map((s) => (
+                          <circle key={s.h.symbol} cx="65" cy="65" r={R} fill="none" stroke={PALETTE[s.i % PALETTE.length]} strokeWidth="16"
+                            strokeDasharray={`${(s.to - s.from) * C} ${C}`} strokeDashoffset={-s.from * C}
+                            transform="rotate(-90 65 65)" strokeLinecap="butt" />
+                        ))}
+                      </svg>
+                      <div className="min-w-0 space-y-1.5 text-[12px]">
+                        {segs.map((s) => (
+                          <div key={s.h.symbol} className="flex items-center gap-1.5">
+                            <span className="size-2.5 shrink-0 rounded-sm" style={{ background: PALETTE[s.i % PALETTE.length] }} />
+                            <span className="font-bold">{s.h.symbol}</span>
+                            <span className="ml-auto font-mono text-[#6B6B6B]">{((s.to - s.from) * 100).toFixed(0)}%</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="col-span-12 rounded-2xl border border-[#E8E8E8] bg-white p-5 sm:col-span-6 lg:col-span-4">
+                    <div className="text-xs font-bold tracking-widest">ACTIVITY · 12 WEEKS</div>
+                    <svg viewBox="0 0 100 30" className="mt-3 h-20 w-full" preserveAspectRatio="none" aria-hidden>
+                      <polyline points={pts} fill="none" stroke="#9945FF" strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" />
+                    </svg>
+                    <div className="mt-2 flex justify-between text-[11px] text-[#9A9A9A]">
+                      <span>{txns.length} txns tracked</span>
+                      <span>{stats?.defiSwaps ?? 0} swaps</span>
+                      <span>{stats?.successRate.toFixed(0)}% success</span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+
             {/* Tabs */}
             <div className="mt-6 flex gap-2 overflow-x-auto">
-              {(["holdings", "activity", "stats"] as const).map((t) => (
+              {(["holdings", "nfts", "activity", "stats"] as const).map((t) => (
                 <button
                   key={t}
                   onClick={() => setActiveTab(t)}
                   className={`whitespace-nowrap rounded-full px-4 py-2 text-sm font-semibold capitalize ${activeTab === t ? "bg-[#0A0A0A] text-white" : "border border-[#E8E8E8] bg-white text-[#0A0A0A] hover:border-[#0A0A0A]"}`}
                 >
-                  {t}
+                  {t === "nfts" ? `NFTs${nfts.length ? ` (${nfts.length})` : ""}` : t}
                 </button>
               ))}
             </div>
@@ -663,6 +853,44 @@ export default function PortfolioPage() {
                     ))}
                   </tbody>
                 </table>
+              </div>
+            )}
+
+            {activeTab === "nfts" && (
+              <div className="mt-6 rounded-2xl border border-[#E8E8E8] bg-white p-5">
+                <div className="flex items-center justify-between">
+                  <div className="text-xs font-bold tracking-widest">NFT COLLECTION {chain === "SOL" ? "· SOLANA" : ""}</div>
+                  {nfts.length > 0 && <span className="rounded-full bg-[#0A0A0A] px-3 py-1 text-[11px] font-bold text-white">{nfts.length} pieces</span>}
+                </div>
+                {chain !== "SOL" ? (
+                  <div className="grid place-items-center py-14 text-center text-sm text-[#6B6B6B]">
+                    NFT reveal is Solana-only for now — scan a SOL address to see its collection.
+                  </div>
+                ) : nftsUnavailable ? (
+                  <div className="grid place-items-center py-14 text-center text-sm text-[#6B6B6B]">
+                    NFT lookup needs a Helius key (set HELIUS_API_KEY in .env.local).<br />Holdings + activity above are fully keyless.
+                  </div>
+                ) : nfts.length === 0 ? (
+                  <div className="grid place-items-center py-14 text-center text-sm text-[#6B6B6B]">
+                    No NFTs found in this wallet — cNFTs, ProgrammableNFTs and MplCore assets show up here.
+                  </div>
+                ) : (
+                  <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+                    {nfts.map((n) => (
+                      <div key={n.id} className="group overflow-hidden rounded-2xl border border-[#E8E8E8] bg-white transition hover:-translate-y-1 hover:shadow-lg">
+                        {n.image ? (
+                          <img src={n.image} alt={n.name} loading="lazy" className="aspect-square w-full object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
+                        ) : (
+                          <div className="grid aspect-square w-full place-items-center bg-[#F8F8F7] text-3xl">🖼️</div>
+                        )}
+                        <div className="p-2.5">
+                          <div className="truncate text-[13px] font-bold">{n.name}</div>
+                          <div className="truncate font-mono text-[11px] text-[#9A9A9A]">{n.collection}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 

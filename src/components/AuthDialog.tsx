@@ -2,6 +2,9 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useAuthStore } from "@/lib/auth";
+import { usePanther } from "@/lib/panther";
+import { playSfx } from "@/lib/sfx";
+import { celebrate } from "@/components/AchievementHost";
 
 /**
  * Sign-in dialog with X / email options.
@@ -10,6 +13,7 @@ import { useAuthStore } from "@/lib/auth";
  */
 export default function AuthDialog({ onClose }: { onClose: () => void }) {
   const signIn = useAuthStore((s) => s.signIn);
+  const unlock = usePanther((s) => s.unlock);
   const [mode, setMode] = useState<"x" | "email">("x");
   const [handle, setHandle] = useState("");
   const [name, setName] = useState("");
@@ -30,6 +34,7 @@ export default function AuthDialog({ onClose }: { onClose: () => void }) {
     const clean = handle.trim().replace(/^@/, "");
     if (!/^[A-Za-z0-9_]{2,15}$/.test(clean)) {
       setError("Enter a valid X handle (letters, numbers, underscores).");
+      playSfx("error");
       return;
     }
     signIn({
@@ -38,6 +43,8 @@ export default function AuthDialog({ onClose }: { onClose: () => void }) {
       identifier: `x:${clean.toLowerCase()}`,
       provider: "x",
     });
+    playSfx("success");
+    celebrate("signed-in", unlock("signed-in"));
     onClose();
   }
 
@@ -45,10 +52,12 @@ export default function AuthDialog({ onClose }: { onClose: () => void }) {
     event.preventDefault();
     if (!name.trim()) {
       setError("Add a display name.");
+      playSfx("error");
       return;
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
       setError("That email doesn’t look right.");
+      playSfx("error");
       return;
     }
     signIn({
@@ -57,6 +66,8 @@ export default function AuthDialog({ onClose }: { onClose: () => void }) {
       identifier: email.trim().toLowerCase(),
       provider: "email",
     });
+    playSfx("success");
+    celebrate("signed-in", unlock("signed-in"));
     onClose();
   }
 
@@ -77,7 +88,7 @@ export default function AuthDialog({ onClose }: { onClose: () => void }) {
         onClick={(e) => e.stopPropagation()}
       >
         <h2 className="text-xl font-extrabold tracking-tight">
-          Join the <span className="text-gradient">stage</span>
+          Join the <span className="text-gradient">hunt</span>
         </h2>
         <p className="mt-1 text-xs leading-relaxed text-zinc-400">
           Save decks, checklists and your portfolio.{" "}
@@ -120,7 +131,7 @@ export default function AuthDialog({ onClose }: { onClose: () => void }) {
                   autoFocus
                   value={handle}
                   onChange={(e) => setHandle(e.target.value)}
-                  placeholder="hololivefan"
+                  placeholder="pantherhunter"
                   className={`${inputClass} pl-8`}
                 />
               </div>
@@ -144,7 +155,7 @@ export default function AuthDialog({ onClose }: { onClose: () => void }) {
               <input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="Pekora Enjoyer"
+                placeholder="Panther Hunter"
                 className={inputClass}
               />
             </label>

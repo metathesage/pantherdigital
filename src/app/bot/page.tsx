@@ -2,9 +2,11 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { usePanther, isAdminWalletClient } from "@/lib/panther";
+import { playSfx } from "@/lib/sfx";
+import { celebrate } from "@/components/AchievementHost";
 
 /* =========================================================
-   PNHR DGTL — Trading Bot Waifu Dashboard · /bot
+   PNTHR DGTL — Trading Bot Waifu Dashboard · /bot
    Paper-trading console (admin-only API, token stored locally).
    Same marble-jungle + glass language as /waifus.
    ========================================================= */
@@ -58,8 +60,10 @@ export default function BotDashboard() {
   const [size, setSize] = useState("5");
   const [walletErr, setWalletErr] = useState<string | null>(null);
   const [adminWallet, setAdminWallet] = useState<string | null>(null);
+  const [hoodPicks, setHoodPicks] = useState<{ id: string; symbol: string; contract: string; liquidityUsd: number }[]>([]);
   const crownAdmin = usePanther((s) => s.crownAdmin);
   const addWallet = usePanther((s) => s.addWallet);
+  const unlock = usePanther((s) => s.unlock);
 
   const claimWallet = useCallback(async (addr: string) => {
     if (!isAdminWalletClient(addr)) {
@@ -119,6 +123,14 @@ export default function BotDashboard() {
       setToken(saved);
       refresh(saved);
     }
+    // Robinhood desk quick-picks — verified on-chain contracts only
+    fetch("/api/hood", { cache: "force-cache" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => {
+        const v: { id: string; symbol: string; contract: string; liquidityUsd: number }[] = j?.verified ?? [];
+        setHoodPicks(v.filter((x) => x.contract !== "native").sort((a, b) => b.liquidityUsd - a.liquidityUsd).slice(0, 6));
+      })
+      .catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -132,8 +144,11 @@ export default function BotDashboard() {
       setData(h);
       setUnlocked(true);
       localStorage.setItem(TOKEN_KEY, tk);
-    } catch (e: any) {
-      setErr(e.message || "unlock failed");
+      playSfx("success");
+      celebrate("paper-pilot", unlock("paper-pilot"));
+    } catch (e: unknown) {
+      setErr(e instanceof Error ? e.message : "unlock failed");
+      playSfx("error");
       setUnlocked(false);
     } finally {
       setLoading(false);
@@ -153,9 +168,12 @@ export default function BotDashboard() {
           sizeUsd: Number(size) || undefined,
         }),
       });
+      playSfx("coins");
+      usePanther.getState().addXp(15);
       await refresh();
-    } catch (e: any) {
-      setErr(e.message);
+    } catch (e: unknown) {
+      setErr(e instanceof Error ? e.message : "open failed");
+      playSfx("error");
     }
   };
 
@@ -163,9 +181,12 @@ export default function BotDashboard() {
     setErr(null);
     try {
       await call("/api/bot/sign", token, { method: "POST", body: JSON.stringify({ action: "close", id }) });
+      playSfx("coins");
+      usePanther.getState().addXp(10);
       await refresh();
-    } catch (e: any) {
-      setErr(e.message);
+    } catch (e: unknown) {
+      setErr(e instanceof Error ? e.message : "close failed");
+      playSfx("error");
     }
   };
 
@@ -205,6 +226,22 @@ export default function BotDashboard() {
             <span className="font-bold text-[#0A0A0A]"> Phantom</span> by address, paper-trade $5–10 positions.
           </p>
           <div className="mx-auto mt-5 h-px w-full max-w-[520px] bg-gradient-to-r from-transparent via-[#0A0A0A]/15 to-transparent" />
+        </div>
+
+        {/* SABLE — featured trader hero */}
+        <div className="mx-auto mt-6 flex max-w-[860px] items-center gap-4 overflow-hidden rounded-[24px] border border-white/65 bg-white/75 p-4 backdrop-blur-2xl shadow-[0_12px_40px_rgba(0,0,0,0.07)]">
+          <img src="/waifus/sable.png" alt="Sable — Paper Trader" className="size-[72px] shrink-0 rounded-2xl border border-white bg-white object-cover object-top shadow-sm" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-[16px] font-black">Sable</span>
+              <span className="rounded-full bg-[#00C805] px-2 py-0.5 text-[10px] font-bold tracking-widest text-white">TRADER · FEATURED</span>
+            </div>
+            <p className="mt-1 text-[12.5px] leading-5 text-[#1A1A1A]">
+              Paper-trading prodigy — $10 bankroll, $5 longs, +8% TP / −6% SL auto-sweep.
+              Every open &amp; close earns XP. Unlock this desk to earn <span className="font-bold">Paper Pilot</span>.
+            </p>
+          </div>
+          <Link href="/waifus/trader" className="hidden shrink-0 rounded-full border border-[#0A0A0A] px-4 py-2 text-[11px] font-bold hover:bg-[#0A0A0A] hover:text-white sm:block">dossier →</Link>
         </div>
 
         {!unlocked && (
@@ -252,6 +289,25 @@ export default function BotDashboard() {
 
             <div className="mx-auto mt-4 max-w-[860px] rounded-[24px] border border-white/65 bg-white/75 p-5 backdrop-blur-2xl shadow-[0_12px_40px_rgba(0,0,0,0.07)]">
               <div className="text-[11px] font-bold tracking-[0.18em] text-[#6B6B6B]">OPEN PAPER POSITION · ${data.strategy.positionUsd}/trade · TP +{data.strategy.takeProfitPct}% · SL {data.strategy.stopLossPct}%</div>
+              {hoodPicks.length > 0 && (
+                <div className="mt-3">
+                  <div className="text-[10px] font-bold tracking-[0.16em] text-[#00C805]">🔥 HOOD DESK QUICK-PICK · VERIFIED ON ROBINHOOD CHAIN</div>
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {hoodPicks.map((h) => (
+                      <button
+                        key={h.id}
+                        type="button"
+                        onClick={() => { setCoinId(h.id); setSymbol(h.symbol); playSfx("click"); }}
+                        title={`${h.symbol} · $${(h.liquidityUsd / 1000).toFixed(0)}k liq on Hood chain`}
+                        className={`rounded-full border px-3 py-1.5 font-mono text-[12px] font-bold transition ${coinId === h.id ? "border-[#00C805] bg-[#00C805] text-white shadow-[0_0_12px_rgba(0,200,5,0.4)]" : "border-[#00C805]/30 bg-white hover:border-[#00C805] hover:bg-green-50"}`}
+                      >
+                        ${h.symbol}
+                      </button>
+                    ))}
+                    <Link href="/app" className="rounded-full border border-[#E8E8E8] px-3 py-1.5 text-[12px] font-semibold text-[#6B6B6B] hover:border-[#0A0A0A]">full Hood list ↗</Link>
+                  </div>
+                </div>
+              )}
               <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-6">
                 <input value={coinId} onChange={(e) => setCoinId(e.target.value)} placeholder="coin id" className="rounded-xl border border-[#E8E8E8] bg-white px-3 py-2 font-mono text-[12px] outline-none focus:border-[#0A0A0A]" />
                 <input value={symbol} onChange={(e) => setSymbol(e.target.value)} placeholder="SYM" className="rounded-xl border border-[#E8E8E8] bg-white px-3 py-2 font-mono text-[12px] outline-none focus:border-[#0A0A0A]" />

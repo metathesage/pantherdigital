@@ -1,5 +1,5 @@
 /**
- * PNHR DGTL paper-trading engine (admin-only).
+ * PNTHR DGTL paper-trading engine (admin-only).
  * Serverless-safe: state lives in-memory per instance. Good for $5–10 paper bankroll testing.
  * Prices: CoinGecko simple/price (server-side, uses COINGECKO_API_KEY if set).
  * Wallets: Coinbase + Phantom connect already exists client-side (app page) — bot records
