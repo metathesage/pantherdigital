@@ -8,33 +8,25 @@ import AuthDialog from "@/components/AuthDialog";
 import { useAuthStore } from "@/lib/auth";
 import { TOP_NAV, ALL_PAGES } from "@/constants/pages";
 
-const NAV_LINKS = TOP_NAV;
-
-// Text enhancement: title case + emoji icons for nav labels
 const labelEnhance = (label: string) => {
-  const enhancements: Record<string, string> = {
+  const m: Record<string, string> = {
     Home: "🏠 Home",
-    Sets: "📦 Sets",
-    Releases: "⚡ Releases",
-    "Card Browser": "🔍 Card Browser",
-    Waifus: "🐱 Waifus",
+    App: "📊 App",
+    "Bot Desk": "🤖 Bot Desk",
+    Waifus: "🐆 Waifus",
+    Portfolio: "💼 Portfolio",
+    Search: "🔍 Search",
     Wiki: "📖 Wiki",
     "Collecting Guide": "🎒 Collecting",
     "Waifus Guide": "🐾 Waifus Guide",
-    App: "📱 App",
-    Avatar: "👤 Avatar",
-    Bios: "👥 Bios",
-    "Bot Desk": "🤖 Bot Desk",
-    Cards: "🃏 Cards",
-    Decks: "🗂️ Decks",
-    "Pack Simulator": "🎁 Pack Simulator",
-    Collection: "📥 Collection",
-    Product: "💰 Product",
+    Product: "💎 Product",
     "Desktop Apps": "💻 Desktop",
     "Fan Art": "🎨 Fan Art",
     About: "ℹ️ About",
+    Avatar: "👤 Avatar",
+    Bios: "👥 Bios",
   };
-  return enhancements[label] || label;
+  return m[label] || label;
 };
 
 export default function NavBar() {
@@ -55,8 +47,8 @@ export default function NavBar() {
   }
 
   useEffect(() => {
-    function onPointerDown(event: PointerEvent) {
-      if (!menuRef.current?.contains(event.target as Node)) setMenuOpen(false);
+    function onPointerDown(e: PointerEvent) {
+      if (!menuRef.current?.contains(e.target as Node)) setMenuOpen(false);
     }
     window.addEventListener("pointerdown", onPointerDown);
     return () => window.removeEventListener("pointerdown", onPointerDown);
@@ -64,34 +56,16 @@ export default function NavBar() {
 
   return (
     <>
-      <header
-        className="sticky top-0 z-50 border-b border-sky-950/10 bg-white/70 backdrop-blur-md"
-      >
-        <nav
-          aria-label="Main navigation"
-          className="mx-auto flex h-16 max-w-6xl items-center gap-4 px-4 sm:px-6"
-        >
-          <Link href="/" className="flex items-center gap-2.5 shrink-0">
-            <span
-              aria-hidden
-              className="grid size-9 place-items-center rounded-xl bg-gradient-to-br from-holo-blue via-holo-purple to-holo-pink text-white shadow-lg shadow-holo-blue/30"
-            >
-              <svg viewBox="0 0 24 24" fill="none" className="size-5">
-                <path
-                  d="M12 3l7.5 4.2v9.6L12 21l-7.5-4.2V7.2L12 3z"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  strokeLinejoin="round"
-                />
-                <circle cx="12" cy="12" r="3.2" stroke="currentColor" strokeWidth="1.8" />
-              </svg>
-            </span>
+      <header className="sticky top-0 z-50 border-b border-[#00FF88]/15 bg-[#080C0B]/85 backdrop-blur-xl">
+        <nav aria-label="Main navigation" className="mx-auto flex h-16 max-w-6xl items-center gap-4 px-4 sm:px-6">
+          <Link href="/" className="flex items-center gap-3 shrink-0 group">
+            <img src="/p_monogram_icon.png" alt="PNTHR DGTL" className="size-9 rounded-xl object-contain bg-black border border-white/10 shadow-lg group-hover:shadow-[#00FF88]/20 transition-shadow" />
             <span className="leading-tight">
-              <span className="block text-lg font-bold tracking-tight">
-                PNTHR<span className="text-gradient">DGTL</span>
+              <span className="block text-[17px] font-black tracking-tight" style={{ fontFamily: "Space Grotesk, sans-serif" }}>
+                PNTHR<span className="text-[#00FF88]">DGTL</span>
               </span>
-              <span className="hidden text-[10px] font-medium uppercase tracking-wider text-zinc-400 lg:block">
-                Panther Digital crypto radar
+              <span className="hidden text-[10px] font-medium uppercase tracking-[0.18em] text-white/40 lg:block">
+                Panther Digital
               </span>
             </span>
           </Link>
@@ -100,56 +74,41 @@ export default function NavBar() {
             <SearchBar />
           </div>
 
-          <ul className="ml-auto hidden items-center gap-1 lg:flex">
+          <ul className="ml-auto hidden items-center gap-0.5 lg:flex">
             {TOP_NAV.map((link) => {
-              const active =
-                link.href === "/" ? pathname === "/" : pathname.startsWith(link.href);
+              const active = link.href === "/" ? pathname === "/" : pathname.startsWith(link.href);
               return (
                 <li key={link.href}>
                   <Link
                     href={link.href}
                     aria-current={active ? "page" : undefined}
                     title={link.desc}
-                    className={`group relative rounded-lg px-2.5 py-2 text-sm font-medium transition-colors hover:text-holo-blue focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-holo-blue ${
-                      active ? "text-holo-blue" : "text-zinc-600"
+                    className={`relative rounded-lg px-3 py-2 text-[13px] font-semibold tracking-wide transition-colors ${
+                      active ? "text-[#00FF88] bg-[#00FF88]/10" : "text-white/60 hover:text-white hover:bg-white/5"
                     }`}
                   >
                     {labelEnhance(link.label)}
-                    {active && (
-                      <span
-                        aria-hidden
-                        className="absolute inset-x-2.5 -bottom-[13px] h-0.5 rounded-full bg-gradient-to-r from-holo-blue to-holo-pink"
-                      />
-                    )}
-                    <span
-                      aria-hidden
-                      className="absolute left-0 top-full mt-0.5 text-[10px] font-medium text-zinc-400 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10 whitespace-nowrap"
-                    >
-                      {labelEnhance(link.desc)}
-                    </span>
                   </Link>
                 </li>
               );
             })}
           </ul>
 
-          {/* Auth area — hidden until session rehydrates so a saved
-            login never flashes as "signed out" (or vice versa) */}
           <div className="relative ml-auto lg:ml-0" ref={menuRef}>
             {!hydrated ? (
-              <span className="block h-9 w-24 animate-pulse rounded-xl bg-black/[0.06]" aria-hidden />
+              <span className="block h-9 w-20 animate-pulse rounded-full bg-white/10" aria-hidden />
             ) : user ? (
               <button
                 type="button"
                 onClick={() => setMenuOpen((v) => !v)}
                 aria-expanded={menuOpen}
                 aria-haspopup="menu"
-                className="flex items-center gap-2 rounded-full border border-sky-950/10 bg-white py-1 pl-1 pr-3 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+                className="flex items-center gap-2 rounded-full border border-white/10 bg-white py-1 pl-1 pr-3 shadow-sm transition hover:bg-white"
               >
-                <span className="grid size-8 place-items-center rounded-full bg-gradient-to-br from-holo-cyan to-holo-purple text-sm font-black text-white">
+                <span className="grid size-8 place-items-center rounded-full bg-[#080C0B] text-sm font-black text-[#00FF88] border border-[#00FF88]/20">
                   {(user.name.replace(/^@/, "")[0] ?? "?").toUpperCase()}
                 </span>
-                <span className="hidden max-w-[110px] truncate text-sm font-semibold text-zinc-700 sm:block">
+                <span className="hidden max-w-[110px] truncate text-sm font-semibold text-zinc-800 sm:block">
                   {user.name}
                 </span>
               </button>
@@ -157,120 +116,46 @@ export default function NavBar() {
               <button
                 type="button"
                 onClick={() => setAuthOpen(true)}
-                className="btn-shine rounded-xl bg-gradient-to-r from-holo-blue to-holo-purple px-4 py-2 text-sm font-bold text-white shadow-md shadow-holo-blue/30 transition-transform duration-200 hover:-translate-y-0.5"
+                className="rounded-full bg-[#00FF88] px-5 py-2 text-sm font-black text-black shadow-lg shadow-[#00FF88]/20 hover:bg-[#B6FFBB] transition-colors"
               >
                 Sign in
               </button>
             )}
+            {user && menuOpen && (
+              <div role="menu" className="absolute right-0 top-12 z-50 w-52 overflow-hidden rounded-2xl border border-white/10 bg-[#0F1A18] shadow-xl">
+                <p className="border-b border-white/5 px-4 py-3 text-xs text-white/40">
+                  via {user.provider === "x" ? "X" : "email"}
+                  <span className="block truncate font-medium text-white/70">{user.identifier}</span>
+                </p>
+                <Link href="/portfolio" role="menuitem" className="block px-4 py-2.5 text-sm font-medium text-white/70 hover:bg-white/5 hover:text-[#00FF88]">Portfolio</Link>
+                <Link href="/waifus" role="menuitem" className="block px-4 py-2.5 text-sm font-medium text-white/70 hover:bg-white/5 hover:text-[#00FF88]">Waifus</Link>
+                <button role="menuitem" type="button" onClick={() => { signOut(); setMenuOpen(false); }} className="block w-full border-t border-white/5 px-4 py-2.5 text-left text-sm font-medium text-white/40 hover:bg-white/5">Sign out</button>
+              </div>
+            )}
           </div>
 
-          {user && menuOpen && (
-            <div
-              role="menu"
-              className="absolute right-0 top-12 z-50 w-52 overflow-hidden rounded-xl border border-sky-950/10 bg-white shadow-xl animate-pop"
-            >
-              <p className="border-b border-sky-950/5 px-4 py-2.5 text-xs text-zinc-400">
-                Signed in via {user.provider === "x" ? "X" : "email"}
-                <span className="block truncate font-medium text-zinc-500">{user.identifier}</span>
-              </p>
-              <Link
-                href="/decks"
-                role="menuitem"
-                className="block px-4 py-2.5 text-sm font-medium text-zinc-700 hover:bg-holo-blue/5 hover:text-holo-blue"
-              >
-                My Decks
-              </Link>
-              <Link
-                href="/collection"
-                role="menuitem"
-                className="block px-4 py-2.5 text-sm font-medium text-zinc-700 hover:bg-holo-pink/5 hover:text-holo-pink"
-              >
-                My Collection
-              </Link>
-              <Link
-                href="/packs"
-                role="menuitem"
-                className="block px-4 py-2.5 text-sm font-medium text-zinc-700 hover:bg-holo-purple/5 hover:text-holo-purple"
-              >
-                Pack Simulator
-              </Link>
-              <button
-                role="menuitem"
-                type="button"
-                onClick={() => {
-                  signOut();
-                  setMenuOpen(false);
-                }}
-                className="block w-full border-t border-sky-950/5 px-4 py-2.5 text-left text-sm font-medium text-zinc-500 hover:bg-black/[0.03]"
-              >
-                Sign out
-              </button>
-            </div>
-          )}
-
-          <button
-            type="button"
-            onClick={() => setOpen((v) => !v)}
-            aria-expanded={open}
-            aria-controls="mobile-nav"
-            className="grid size-10 place-items-center rounded-lg text-zinc-700 hover:bg-black/5 lg:hidden"
-          >
+          <button type="button" onClick={() => setOpen((v) => !v)} aria-expanded={open} aria-controls="mobile-nav" className="grid size-10 place-items-center rounded-xl bg-white/5 text-white lg:hidden">
             <span className="sr-only">Toggle navigation</span>
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              className="size-5"
-            >
-              {open ? (
-                <path
-                  d="M6 6l12 12M18 6L6 18"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                />
-              ) : (
-                <path
-                  d="M4 7h16M4 12h16M4 17h16"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                />
-              )}
-            </svg>
+            <svg viewBox="0 0 24 24" fill="none" className="size-5">{open ? <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /> : <path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />}</svg>
           </button>
         </nav>
       </header>
 
       {open && (
-        <div
-          id="mobile-nav"
-          className="border-t border-sky-950/10 bg-white px-4 pb-4 pt-2 lg:hidden animate-fade-up"
-        >
-          <div className="mb-3">
-            <SearchBar />
-          </div>
+        <div id="mobile-nav" className="border-t border-white/10 bg-[#080C0B] px-4 pb-4 pt-2 lg:hidden">
+          <div className="mb-3"><SearchBar /></div>
           <ul className="grid gap-1">
             {ALL_PAGES.map((link) => (
               <li key={link.href}>
-                <Link
-                  href={link.href}
-                  className="block rounded-lg px-3 py-2.5 text-base font-medium text-zinc-700 hover:bg-black/5"
-                >
-                  <span className="block">{labelEnhance(link.label)}</span>
-                  {link.desc && (
-                    <span
-                      className="block text-[11px] font-normal text-zinc-400 mt-0.5"
-                    >
-                      {labelEnhance(link.desc)}
-                    </span>
-                  )}
+                <Link href={link.href} className="flex items-center justify-between rounded-xl px-3 py-2.5 text-[15px] font-medium text-white/80 hover:bg-white/5 hover:text-white">
+                  <span>{labelEnhance(link.label)}</span>
+                  <span className="text-[11px] text-white/30">{link.group}</span>
                 </Link>
               </li>
             ))}
           </ul>
         </div>
       )}
-
       {authOpen && <AuthDialog onClose={() => setAuthOpen(false)} />}
     </>
   );

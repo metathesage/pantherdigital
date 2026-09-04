@@ -4,9 +4,8 @@ import SearchResults from "@/components/SearchResults";
 import { GridSkeleton } from "@/components/Skeleton";
 
 export const metadata: Metadata = {
-  title: "Search",
-  description:
-    "Search every hololive TCG card and set by name, talent, trait, or set code.",
+  title: "Search — PNTHR DGTL",
+  description: "Search every crypto via Panther Digital radar — coins, chains, and signals.",
 };
 
 export default function SearchPage() {

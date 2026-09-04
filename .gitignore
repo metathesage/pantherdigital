@@ -54,3 +54,18 @@ public/panther-procedural.glb
 
 # electron build output (1.5GB, never commit)
 dist/
+# local html previews / branding drafts
+Coin-Panther-Brand-Ui.html
+Pnthr-Dgtl-Icon-Pack.html
+Pnthr-Dgtl-Theme-Ui.html
+cyber_panther_editorial.jpg
+lucy-panther-logo*.png
+lucy-panther-logo*.jpeg
+lucy_chibi_icon.png
+lucy_transparent_main.png
+p_monogram_icon.png
+public/cyber_panther_editorial.jpg
+public/lucy-*.png
+public/lucy-*.jpeg
+public/waifus/
+radar_*.png

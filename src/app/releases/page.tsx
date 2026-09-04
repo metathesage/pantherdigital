@@ -5,9 +5,8 @@ import { getSets } from "@/lib/data";
 import { formatDate, todayIso } from "@/lib/meta";
 
 export const metadata: Metadata = {
-  title: "Releases",
-  description:
-    "Every hololive OFFICIAL CARD GAME (EN) product and its release date — past drops and upcoming releases.",
+  title: "Releases — PNTHR DGTL",
+  description: "Panther Digital releases and product updates.",
 };
 
 function groupKey(iso: string | null): string {
