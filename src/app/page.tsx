@@ -17,7 +17,7 @@ export default function HomePage() {
 
   return (
     <main className="launch-root relative flex min-h-screen flex-col overflow-hidden bg-black text-white">
-      <h1 className="sr-only">PNHR DGTL{"\u2014"}Panther Digital crypto discovery radar</h1>
+      <h1 className="sr-only">PNTHR DGTL — Panther Digital crypto discovery radar</h1>
 
       <img
         src="/black-marble-panther.jpg"
@@ -86,7 +86,7 @@ export default function HomePage() {
       </div>
 
       <footer className="launch-footer relative z-10 flex items-center justify-center pb-7">
-        <span>{"\u00A9"} PANTHER DIGITAL</span>
+        <span>{"\u00A9"} PNTHR DGTL — PANTHER DIGITAL</span>
         <span className="launch-dot" aria-hidden="true">
           {"\u00B7"}
         </span>

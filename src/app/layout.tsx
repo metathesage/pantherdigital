@@ -5,8 +5,8 @@ import Providers from "@/components/PrivyProvider";
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin", "latin-ext"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin", "latin-ext"] });
 export const metadata: Metadata = {
-  title: { default: "PNHR DGTL - Crypto Discovery Radar", template: "%s | PNHR DGTL" },
-  description: "PNHR DGTL - minimal, luxury crypto discovery. Real CoinGecko prices, AI wallet analysis, NFT gallery, and X-ray radar for 1000+ coins.",
+  title: { default: "PNTHR DGTL — Emergent Crypto Radar", template: "%s | PNTHR DGTL" },
+  description: "PNTHR DGTL — crypto discovery radar powered by AI. Real CoinGecko prices, Kimi K3 analysis, Solana NFT portfolio, Robinhood Chain data, and gamified hunting.",
   icons: { icon: "/panther-icon.png", apple: "/panther-icon.png" },
 };
 export default function RootLayout({ children }: LayoutProps<"/">) {
