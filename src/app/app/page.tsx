@@ -61,6 +61,25 @@ let PLATFORMS: Record<string, string[]> | null = null;
 let PLATFORMS_LOADED_AT = 0;
 export type HoodEntry = { id: string; symbol: string; contract: string; dex: string; pairUrl: string; liquidityUsd: number };
 let HOOD: Record<string, HoodEntry> | null = null;
+let HOOD_REQUESTED = false;
+function persistPlatforms() {
+  if (!PLATFORMS) return;
+  try { localStorage.setItem("pnhr-platforms", JSON.stringify({ ts: PLATFORMS_LOADED_AT, map: PLATFORMS, hood: HOOD })); } catch {}
+}
+// Robinhood contract verification hits DexScreener per token and takes ~9s — never block the feed on it.
+async function loadHood(): Promise<void> {
+  if (HOOD || HOOD_REQUESTED) return;
+  HOOD_REQUESTED = true;
+  try {
+    const hr = await fetch("/api/hood", { cache: "force-cache" });
+    if (!hr.ok) return;
+    const hj = await hr.json();
+    const hm: Record<string, HoodEntry> = {};
+    for (const v of hj.verified || []) hm[v.id] = v;
+    HOOD = hm;
+    persistPlatforms();
+  } catch { /* hood desk stays fictional-only */ }
+}
 async function loadPlatforms(): Promise<void> {
   if (PLATFORMS && Date.now() - PLATFORMS_LOADED_AT < 24*3600*1000) return;
   try {
@@ -81,16 +100,7 @@ async function loadPlatforms(): Promise<void> {
     }
     PLATFORMS = map;
     PLATFORMS_LOADED_AT = Date.now();
-    try {
-      const hr = await fetch("/api/hood", { cache: "force-cache" });
-      if (hr.ok) {
-        const hj = await hr.json();
-        const hm: Record<string, HoodEntry> = {};
-        for (const v of hj.verified || []) hm[v.id] = v;
-        HOOD = hm;
-      }
-    } catch { /* hood desk stays fictional-only */ }
-    try { localStorage.setItem("pnhr-platforms", JSON.stringify({ ts: Date.now(), map, hood: HOOD })); } catch {}
+    persistPlatforms();
   } catch { /* keep guessing from natives only */ }
 }
 // Native L1 coins have NO platforms entry — map them explicitly (never hash-guess)
@@ -348,29 +358,38 @@ export default function EmergentMinimal(){
     }
     return r.json() as Promise<GeckoCoin[]>;
   };
+  const rawCoins = useRef<GeckoCoin[]>([]);
+  const publish = (all: GeckoCoin[], withLogs: boolean) => {
+    const mapped: Coin[] = all.map(g=>{
+        const ch=chainForCoin(g); const c1=g.price_change_percentage_1h_in_currency??0; const c24=g.price_change_percentage_24h??0; const vol=g.total_volume||0; const mcap=g.market_cap||0; const volMcap=vol/(mcap||1); const raw=52 + c24*1.4 + c1*0.6 + Math.min(18,volMcap*280) - Math.max(0,(g.market_cap_rank-50)*0.08); const score=Math.max(12,Math.min(98,Math.round(raw))); const trend=trendFor(c24); const risk=riskFor(score,vol,mcap); const spark=g.sparkline_in_7d?.price?.slice(-28) || Array.from({length:14},(_,i)=> g.current_price*(1+(Math.sin(i)*0.02)));
+        const category=categoryForCoin(g,ch); const description=descriptionForCoin(g,category); const top10HoldersPct=Math.max(8, Math.min(78, Math.round(18 + (100-score)*0.42 + (volMcap<0.06?18:0) + (g.market_cap_rank%5)*3)));
+        return { id:g.id, name:g.name, symbol:g.symbol.toUpperCase(), chain:ch, price: g.current_price<1?`$${g.current_price.toFixed(g.current_price<0.01?6:4)}`:`$${g.current_price.toLocaleString(undefined,{maximumFractionDigits:2})}`, priceNum:g.current_price, change1h:c1, change24h:c24, marketCap:formatMoney(mcap), marketCapNum:mcap, volume:formatMoney(vol), volumeNum:vol, emergentScore:score, risk, trend, reason: c24>12?`Breakout — +${c24.toFixed(1)}% in 24h, volume ${formatMoney(vol)}.` : c24<-8?`Cooling after surge — AI flags mean reversion.` : volMcap>0.18?`High turnover — dex flow ${formatMoney(vol)} on ${formatMoney(mcap)} mcap.` : `Steady accumulation — low volatility, watch for trigger.`, spark, timeAgo:timeAgoFor(g.market_cap_rank), liquidity:formatMoney(vol*0.22), holders:(800+g.market_cap_rank*31+Math.floor(Math.random()*400)).toLocaleString(), sentiment:Math.max(18,Math.min(94,Math.round(58+c24*1.2+(volMcap*100)))), riskScore:Math.max(12,Math.min(92,Math.round(42+(100-score)*0.55+(volMcap<0.04?18:0)))), mentions:Math.floor(6+Math.abs(c24)*2.2+volMcap*420), dexPool:`${g.symbol.toUpperCase()}/USD`, image:g.image, rank:g.market_cap_rank, category, description, top10HoldersPct, platforms: platformsForCoin(g.id), hood: (HOOD && HOOD[g.id]) || null };
+    });
+    setCoins(mapped); setLastUpdated(new Date()); setLoading(false);
+    if(withLogs) setLogs(mapped.slice(0,6).map(c=>({t:new Date().toLocaleTimeString([],{hour12:false}), msg:`[init] ${c.symbol} ${c.change24h>=0?"↗":"↘"} ${c.change24h.toFixed(2)}%  ${c.price}`})));
+  };
   const fetchCoins=async()=>{
     try{
       setErr(null);
       if(!coins.length) setLoading(true);
-      await loadPlatforms(); // verify chains before mapping
-      const pages: GeckoCoin[][] = [];
+      const platformsReady = loadPlatforms(); // chains need platform data, but fetch pages meanwhile
+      const all: GeckoCoin[] = [];
+      let firstBatch = true;
       for (let pg = 1; pg <= 10; pg++) {
         try {
-          pages.push(await fetchGeckoPage(pg));
+          all.push(...await fetchGeckoPage(pg));
         } catch (e: any) {
-          if (pg <= 3) throw e; // first 3 pages are mandatory
+          if (pg === 1) throw e; // nothing to show without page 1
           break; // deeper pages best-effort (rate limits)
         }
+        await platformsReady; // resolved during the page fetch in the common case
+        publish(all, firstBatch);
+        firstBatch = false;
         if (pg < 10) await new Promise((res) => setTimeout(res, 350)); // stay under CG rate limit
       }
-      const all: GeckoCoin[] = pages.flat();
-      const mapped: Coin[] = all.map(g=>{
-        const ch=chainForCoin(g); const c1=g.price_change_percentage_1h_in_currency??0; const c24=g.price_change_percentage_24h??0; const vol=g.total_volume||0; const mcap=g.market_cap||0; const volMcap=vol/(mcap||1); const raw=52 + c24*1.4 + c1*0.6 + Math.min(18,volMcap*280) - Math.max(0,(g.market_cap_rank-50)*0.08); const score=Math.max(12,Math.min(98,Math.round(raw))); const trend=trendFor(c24); const risk=riskFor(score,vol,mcap); const spark=g.sparkline_in_7d?.price?.slice(-28) || Array.from({length:14},(_,i)=> g.current_price*(1+(Math.sin(i)*0.02)));
-        const category=categoryForCoin(g,ch); const description=descriptionForCoin(g,category); const top10HoldersPct=Math.max(8, Math.min(78, Math.round(18 + (100-score)*0.42 + (volMcap<0.06?18:0) + (g.market_cap_rank%5)*3)));
-        return { id:g.id, name:g.name, symbol:g.symbol.toUpperCase(), chain:ch, price: g.current_price<1?`$${g.current_price.toFixed(g.current_price<0.01?6:4)}`:`$${g.current_price.toLocaleString(undefined,{maximumFractionDigits:2})}`, priceNum:g.current_price, change1h:c1, change24h:c24, marketCap:formatMoney(mcap), marketCapNum:mcap, volume:formatMoney(vol), volumeNum:vol, emergentScore:score, risk, trend, reason: c24>12?`Breakout — +${c24.toFixed(1)}% in 24h, volume ${formatMoney(vol)}.` : c24<-8?`Cooling after surge — AI flags mean reversion.` : volMcap>0.18?`High turnover — dex flow ${formatMoney(vol)} on ${formatMoney(mcap)} mcap.` : `Steady accumulation — low volatility, watch for trigger.`, spark, timeAgo:timeAgoFor(g.market_cap_rank), liquidity:formatMoney(vol*0.22), holders:(800+g.market_cap_rank*31+Math.floor(Math.random()*400)).toLocaleString(), sentiment:Math.max(18,Math.min(94,Math.round(58+c24*1.2+(volMcap*100)))), riskScore:Math.max(12,Math.min(92,Math.round(42+(100-score)*0.55+(volMcap<0.04?18:0)))), mentions:Math.floor(6+Math.abs(c24)*2.2+volMcap*420), dexPool:`${g.symbol.toUpperCase()}/USD`, image:g.image, rank:g.market_cap_rank, category, description, top10HoldersPct, platforms: platformsForCoin(g.id), hood: (HOOD && HOOD[g.id]) || null };
-      });
-      setCoins(mapped); setLastUpdated(new Date());
-      setLogs(mapped.slice(0,6).map(c=>({t:new Date().toLocaleTimeString([],{hour12:false}), msg:`[init] ${c.symbol} ${c.change24h>=0?"↗":"↘"} ${c.change24h.toFixed(2)}%  ${c.price}`})));
+      rawCoins.current = all;
+      // hood badges arrive late (~9s) — re-map once they land instead of blocking the feed
+      void loadHood().then(()=>{ if(rawCoins.current.length) publish(rawCoins.current, false); });
     }catch(e:any){
       // Only surface if we have no prior data — otherwise keep last-good feed and retry silently.
       if(!coins.length) setErr(e.message||"Failed to fetch CoinGecko");

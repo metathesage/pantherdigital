@@ -95,11 +95,14 @@ export default function AlinaAvatar({
       try {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         let VRMLoaderPlugin: any = null;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        let VRMUtils: any = null;
         try {
           // three-vrm 3.x — keep dynamic so placeholder builds without dep
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const mod: any = await import("@pixiv/three-vrm");
           VRMLoaderPlugin = mod.VRMLoaderPlugin ?? mod.default?.VRMLoaderPlugin;
+          VRMUtils = mod.VRMUtils ?? mod.default?.VRMUtils;
         } catch {
           throw new Error("three-vrm not installed — falling back to 2D");
         }
@@ -121,8 +124,8 @@ export default function AlinaAvatar({
         // sanity — vrm humanoid may be null on placeholder gltf
         if (!vrm.scene) throw new Error("VRM scene missing");
 
-        // place model
-        vrm.scene.rotation.y = Math.PI; // face camera
+        // place model — VRM 0.x faces -Z and needs the half turn, VRM 1.0 already faces the camera
+        VRMUtils?.rotateVRM0?.(vrm);
         vrm.scene.position.y = 0;
         scene.add(vrm.scene);
 
