@@ -10,11 +10,10 @@ export default function Footer() {
         {/* Brand */}
         <div className="lg:col-span-1">
           <p className="text-lg font-bold tracking-tight">
-            Holo<span className="text-gradient">Hub</span>
+            PNTHR<span className="text-gradient">DGTL</span>
           </p>
           <p className="mt-2 max-w-xs text-sm leading-relaxed text-zinc-500">
-            A fast, fan-made database and visual index for the hololive
-            OFFICIAL CARD GAME.
+            Crypto discovery radar powered by AI and on-chain data
           </p>
           <p className="mt-4 text-[11px] text-zinc-400 leading-relaxed">
             Curious where to start? Hover any nav link for a quick description,
@@ -57,28 +56,28 @@ export default function Footer() {
           </h2>
           <ul className="mt-3 space-y-2 text-xs leading-relaxed text-zinc-500">
             <li>
-              <strong>Home</strong> — landing, latest releases & highlights
+              <strong>Home</strong> — AI-powered crypto radar with real-time data
             </li>
             <li>
-              <strong>Sets</strong> — card game expansions & packs
+              <strong>Sets</strong> — Token categories and classification
             </li>
             <li>
-              <strong>Card Browser</strong> — search & browse every card
+              <strong>Card Browser</strong> — Search and filter all cryptocurrencies
             </li>
             <li>
-              <strong>Waifus</strong> — character gallery & stats
+              <strong>Waifus</strong> — Panther Digital AI agent squad
             </li>
             <li>
-              <strong>Wiki</strong> — rules, talents, collecting guide
+              <strong>Wiki</strong> — Trading guides, DeFi explained, alpha strategies
             </li>
             <li>
-              <strong>Decks / Packs / Collection</strong> — play & track
+              <strong>Decks / Packs / Collection</strong> — Portfolio tracking and analytics
             </li>
             <li>
-              <strong>App</strong> — main dashboard entry point
+              <strong>App</strong> — Main dashboard with AI analysis and alerts
             </li>
             <li>
-              <strong>Bot Desk</strong> — bot utilities & tools
+              <strong>Bot Desk</strong> — Paper trading console and strategy tester
             </li>
           </ul>
         </div>
@@ -89,12 +88,11 @@ export default function Footer() {
             Disclaimer
           </h2>
           <p className="mt-3 text-xs leading-relaxed text-zinc-500">
-            Fan-made project for demonstration purposes. Not affiliated with
-            or endorsed by Cover Corp or hololive production. Card data is
-            placeholder sample content.
+            Experimental project for educational purposes. Not financial advice.
+            Crypto involves risk — DYOR and never invest more than you can afford to lose.
           </p>
           <p className="mt-4 text-[11px] text-zinc-400">
-            PNHR DGTL — Panther Digital. All rights reserved.
+            PNTHR DGTL — Panther Digital. All rights reserved.
           </p>
         </div>
       </div>

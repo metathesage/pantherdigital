@@ -58,10 +58,10 @@ export default function NavBar() {
             </span>
             <span className="leading-tight">
               <span className="block text-lg font-bold tracking-tight">
-                Holo<span className="text-gradient">Hub</span>
+                PNTHR<span className="text-gradient">DGTL</span>
               </span>
               <span className="hidden text-[10px] font-medium uppercase tracking-wider text-zinc-400 lg:block">
-                Fan-made hololive TCG hub
+                Panther Digital crypto radar
               </span>
             </span>
           </Link>
