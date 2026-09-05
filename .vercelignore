@@ -3,15 +3,26 @@ node_modules
 out
 .netlify
 .git
+.cache
+.bak
+.vercel
+dist
+_archive
 *.log
 .env*
-_archive
 packages
 vault-wallet
 WEB APP
+assets
+build
+sample_*
+cropped-images
+marble_icons_pack
 public/panther-procedural.glb
 public/panther.glb
 public/panther-meshy-8192.jpg
+public/panther-meshy-2048.jpg
+public/panther-meshy-1024.jpg
 src/app/cards
 src/app/sets
 src/app/wiki

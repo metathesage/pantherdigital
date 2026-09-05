@@ -214,7 +214,7 @@ export default function BotDashboard() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-[1120px] px-4 pb-14 pt-6 sm:px-6 sm:pt-8">
+      <main id="main" className="mx-auto max-w-[1120px] px-4 pb-14 pt-6 sm:px-6 sm:pt-8">
         <div className="mx-auto max-w-[860px] text-center">
           <p className="text-[11px] font-bold tracking-[0.28em] text-[#6B6B6B]">PANTHER DIGITAL · PAPER TRADING</p>
           <h1 className="mt-2 text-[30px] font-black tracking-[-0.04em] sm:text-[38px] leading-[0.95]">

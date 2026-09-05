@@ -36,7 +36,7 @@ const WAIFUS = [
 
 export default function WaifuBioPage() {
   return (
-    <main className="min-h-screen bg-black text-white">
+    <main id="main" className="min-h-screen bg-black text-white">
       <section className="mx-auto max-w-[1600px] px-4 py-8 sm:px-6">
         <div className="mb-2 flex items-center gap-3">
           <span className="rounded-full bg-[#0A0A0A] px-3 py-1 text-[11px] font-bold text-white tracking-widest">BOSS</span>

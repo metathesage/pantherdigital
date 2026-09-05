@@ -9,6 +9,32 @@ const PROD_PORT = process.env.PORT || "3100";
 
 let serverProc = null;
 
+// Load .env.local for the bundled Next server (keys like NVAPI_KEY),
+// no matter the launch cwd. Packaged: .next/standalone/.env.local (bundle script)
+// or <resources>/.env.local. Dev: project root. Silent if absent.
+function loadEnvFile() {
+  const fs = require("node:fs");
+  const res = process.resourcesPath || "";
+  const candidates = [
+    res ? path.join(res, ".next", "standalone", ".env.local") : "",
+    res ? path.join(res, ".env.local") : "",
+    path.join(__dirname, "..", ".env.local"),
+  ];
+  for (const f of candidates) {
+    try {
+      if (!f || !fs.existsSync(f)) continue;
+      for (const line of fs.readFileSync(f, "utf8").split("\n")) {
+        const m = line.match(/^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)\s*$/);
+        if (!m || process.env[m[1]] !== undefined || m[2].trim().startsWith("#")) continue;
+        let v = m[2].trim();
+        if ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'"))) v = v.slice(1, -1);
+        process.env[m[1]] = v;
+      }
+      return;
+    } catch {}
+  }
+}
+
 function waitForPort(port, host = "127.0.0.1", timeoutMs = 30000) {
   const start = Date.now();
   return new Promise((resolve, reject) => {
@@ -77,6 +103,7 @@ function createWindow() {
 }
 
 app.whenReady().then(() => {
+  loadEnvFile();
   if (!isDev) startPackagedServer();
   createWindow();
   app.on("activate", () => {

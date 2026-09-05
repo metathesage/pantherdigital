@@ -19,7 +19,7 @@ export default function WaifuWiki() {
           <span className="rounded-full bg-[#0A0A0A] px-3 py-1.5 text-[11px] font-bold tracking-[0.14em] text-white">WIKI · WAIFU SQUAD</span>
         </div>
       </header>
-      <main className="mx-auto max-w-[860px] px-4 pb-14 pt-8 sm:px-6">
+      <main id="main" className="mx-auto max-w-[860px] px-4 pb-14 pt-8 sm:px-6">
         <p className="text-[11px] font-bold tracking-[0.28em] text-[#6B6B6B]">PANTHER DIGITAL · WIKI</p>
         <h1 className="mt-2 text-[30px] font-black tracking-[-0.04em] sm:text-[38px]">Waifu Squad</h1>
         <p className="mt-3 max-w-[620px] text-[13px] leading-6 text-[#4A4A4A]">

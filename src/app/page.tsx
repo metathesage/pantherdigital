@@ -16,7 +16,7 @@ export default function HomePage() {
   }, []);
 
   return (
-    <main className="launch-root relative flex min-h-screen flex-col overflow-hidden bg-black text-white">
+    <main id="main" className="launch-root relative flex min-h-screen flex-col overflow-hidden bg-black text-white">
       <h1 className="sr-only">PNTHR DGTL — Panther Digital crypto discovery radar</h1>
 
       <img
@@ -37,16 +37,16 @@ export default function HomePage() {
         >
           <div className="flex flex-col items-center gap-6">
             <div className="relative">
-              <div className="absolute inset-0 rounded-full bg-white/10 blur-xl" />
+              <div className="absolute inset-0 rounded-full bg-[#00C805]/20 blur-xl" />
               <div className="relative grid size-[4.5rem] place-items-center rounded-full border border-white/20 bg-white/5 backdrop-blur-sm">
                 <img src="/panther-icon.png" alt="" className="h-10 w-10 object-contain" />
               </div>
-              <div className="launch-loader-ring absolute inset-0 rounded-full border border-white/25" />
+              <div className="launch-loader-ring absolute inset-0 rounded-full border border-[#00C805]/60 shadow-[0_0_18px_rgba(0,200,5,0.45)]" />
             </div>
             <div className="flex flex-col items-center gap-2">
               <span className="text-[11px] font-medium tracking-[0.42em] text-white/55">PANTHER DIGITAL</span>
               <div className="h-px w-28 overflow-hidden rounded bg-white/10">
-                <div className="launch-loader-bar h-full w-1/2 bg-white" />
+                <div className="launch-loader-bar h-full w-1/2 bg-[#00C805]" />
               </div>
             </div>
           </div>

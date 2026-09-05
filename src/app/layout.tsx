@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" data-scroll-behavior="smooth" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col emergent-bg"><Providers><SiteChrome>{children}</SiteChrome></Providers><IridescentCursor /><ThemeToggle /></body>
+      <body className="min-h-full flex flex-col emergent-bg"><a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[100] focus:rounded-full focus:bg-[#0A0A0A] focus:px-4 focus:py-2 focus:text-[13px] focus:font-bold focus:text-white">Skip to content</a><Providers><SiteChrome>{children}</SiteChrome></Providers><IridescentCursor /><ThemeToggle /></body>
     </html>
   );
 }

@@ -14,7 +14,7 @@ export default function SiteChrome({ children }: { children: React.ReactNode }) 
   return (
     <>
       <NavBar />
-      {children}
+      <main id="main">{children}</main>
       <Footer />
     </>
   );

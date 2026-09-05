@@ -26,4 +26,17 @@ if (!fs.existsSync(standalone)) {
 console.log("⏳ Bundling static assets into standalone…");
 copyDir(path.join(root, "public"), path.join(standalone, "public"));
 copyDir(path.join(root, ".next", "static"), path.join(standalone, ".next", "static"));
+// Ship local env (keys) alongside the server; main.js loads it. Skipped if absent.
+try {
+  const envFrom = path.join(root, ".env.local");
+  const envTo = path.join(standalone, ".env.local");
+  if (fs.existsSync(envFrom)) {
+    fs.copyFileSync(envFrom, envTo);
+    console.log("✓ .env.local → .next/standalone/.env.local");
+  } else {
+    console.log("⚠  skip (.env.local missing — app runs keyless)");
+  }
+} catch (e) {
+  console.error(`⚠  env copy failed: ${e.message}`);
+}
 console.log("✓ standalone ready for electron-builder.");

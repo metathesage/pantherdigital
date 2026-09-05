@@ -68,7 +68,7 @@ function Shell(p: {
           </span>
         </div>
       </header>
-      <main className="mx-auto max-w-[860px] px-4 pb-14 pt-8 sm:px-6">
+      <main id="main" className="mx-auto max-w-[860px] px-4 pb-14 pt-8 sm:px-6">
         <div className="overflow-hidden rounded-[28px] border border-white/60 bg-white/72 backdrop-blur-2xl shadow-[0_20px_60px_rgba(0,0,0,0.08)]">
           <div className="h-2 w-full" style={{ background: p.accent }} />
           <div className="flex flex-col gap-5 p-6 sm:flex-row sm:p-8">

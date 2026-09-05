@@ -181,7 +181,7 @@ export default function WaifuCommand() {
       </header>
 
       {/* ---------- centered Meta-share container ---------- */}
-      <main className="mx-auto max-w-[1120px] px-4 pb-14 pt-6 sm:px-6 sm:pt-8">
+      <main id="main" className="mx-auto max-w-[1120px] px-4 pb-14 pt-6 sm:px-6 sm:pt-8">
         {/* share meta bar — like Meta AI "Shared conversation" */}
         <div className="mx-auto max-w-[860px]">
           <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/60 bg-white/65 px-4 py-3 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.7)]">
