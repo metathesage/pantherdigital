@@ -17,7 +17,7 @@ const PALETTE = [
 
 const SOURCES = [
   ["CoinGecko", "Live prices, images, market cap, volume, sparklines, tickers, official links — no API key required."],
-  ["Dexscreener", "Trading pairs, liquidity, and contract-level price discovery (incl. Robinhood pair pages)."],
+  ["Dexscreener", "Trading pairs, liquidity, and contract-level price discovery (incl. Robinhood Chain pair pages)."],
   ["Solana Mainnet RPC", "Keyless public RPC — balances, SPL token accounts, and full transaction history."],
   ["Etherscan V2", "Optional API key enriches ETH wallets with ERC-20 holdings + complete tx history."],
   ["CoinMarketCap", "Cross-reference links and market context."],
@@ -33,7 +33,7 @@ const ROADMAP = [
   ["Live", "Hunt & gems", "Gamified discovery streaks, gem drops, panther-themed profile + avatars."],
   ["Live", "Top 10 PnL", "Real 24h leaderboard linking out to gmgn.ai / fomo.app / phantom."],
   ["Next", "Watchlists & alerts", "Cross-device saved lists with price / trend alerts."],
-  ["Next", "Multi-chain depth", "Sui, Base, and Robinhood surfaces with native pair data."],
+  ["Next", "Multi-chain depth", "Sui, Base, and Robinhood Chain surfaces with native pair data."],
   ["Next", "AI insights", "Per-coin narrative + risk summaries generated from live signals."],
   ["Planned", "Public API & embed", "PNTHR DGTL data API + radar widget for builders."],
   ["Planned", "Mobile app", "Native iOS / Android companion to the radar."],
@@ -44,9 +44,9 @@ export default function WikiPage() {
     <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
       <div className="flex items-center gap-3">
         <Link href="/"><img src="/panther-icon.png" alt="PNTHR DGTL" className="h-9 w-9 rounded object-contain" /></Link>
-        <span className="text-[12px] font-semibold tracking-[0.3em] text-[#6B6B6B]">COINPANTHER · WIKI</span>
+        <span className="text-[12px] font-semibold tracking-[0.3em] text-[#6B6B6B]">PANTHER DIGITAL · WIKI</span>
       </div>
-      <h1 className="mt-4 text-3xl font-extrabold tracking-tight sm:text-4xl">Why we dominate</h1>
+      <h1 className="kinetic mt-4 text-3xl font-extrabold tracking-tight sm:text-4xl">Why we dominate</h1>
       <p className="mt-4 leading-relaxed text-[#4A4A4A]">
         PNTHR DGTL is a minimal, luxury discovery engine built on one principle: <strong>real data, no theater.</strong>{" "}
         Every price, image, wallet balance, and transaction is pulled live from primary sources. We never invent

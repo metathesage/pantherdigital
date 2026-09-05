@@ -5,12 +5,12 @@ import { usePanther, PANTHER_AVATARS } from "@/lib/panther";
 const _hasPrivyEnv = !!process.env.NEXT_PUBLIC_PRIVY_APP_ID && process.env.NEXT_PUBLIC_PRIVY_APP_ID !== "clz-demo-privy-app-id";
 let _usePrivy: any = null;
 if (_hasPrivyEnv) { try { _usePrivy = require("@privy-io/react-auth").usePrivy; } catch {} }
-type Chain = "Solana" | "Ethereum" | "Base" | "Robinhood" | "Sui" | "Multi"; // Multi = native L1 / L2 / alt-chain asset, verified via CoinGecko platforms
+type Chain = "Solana" | "Ethereum" | "Base" | "Robinhood Chain" | "Sui" | "Multi"; // Multi = native L1 / L2 / alt-chain asset, verified via CoinGecko platforms
 type Trend = "Breaking" | "Heating" | "Stealth" | "Cooling" | "Volatile";
 type Risk = "Low" | "Medium" | "High" | "Critical";
 type Coin = { id:string; name:string; symbol:string; chain:Chain; price:string; priceNum:number; change1h:number; change24h:number; marketCap:string; marketCapNum:number; volume:string; volumeNum:number; emergentScore:number; risk:Risk; trend:Trend; reason:string; spark:number[]; timeAgo:string; liquidity:string; holders:string; sentiment:number; riskScore:number; mentions:number; dexPool:string; image:string; rank:number; category:string; description:string; top10HoldersPct:number; platforms:string[]; hood?:HoodEntry|null; };
 type GeckoCoin = { id:string; symbol:string; name:string; image:string; current_price:number; market_cap:number; total_volume:number; price_change_percentage_1h_in_currency?:number; price_change_percentage_24h?:number; market_cap_rank:number; sparkline_in_7d?:{price:number[]}; };
-const CHAINS: (Chain | "All")[] = ["All","Solana","Ethereum","Base","Sui","Multi","Robinhood"];
+const CHAINS: (Chain | "All")[] = ["All","Solana","Ethereum","Base","Sui","Multi","Robinhood Chain"];
 const TRENDS = ["All","Breaking","Heating","Stealth","Volatile","Cooling"] as const;
 const BUCKETS = ["All","Layer 1","DeFi","Meme","AI","Gaming","Stable","RWA","Infrastructure"] as const;
 // accurate coin categorization — explicit allowlists + rank/name guards, no random bucketing
@@ -64,7 +64,7 @@ let HOOD: Record<string, HoodEntry> | null = null;
 async function loadPlatforms(): Promise<void> {
   if (PLATFORMS && Date.now() - PLATFORMS_LOADED_AT < 24*3600*1000) return;
   try {
-    const raw = localStorage.getItem("pnhr-platforms");
+    const raw = localStorage.getItem("pnhr-platforms-v2");
     if (raw) {
       const j = JSON.parse(raw);
       if (j.ts && Date.now() - j.ts < 24*3600*1000 && j.map) { PLATFORMS = j.map; PLATFORMS_LOADED_AT = j.ts; if (j.hood) HOOD = j.hood; return; }
@@ -90,7 +90,7 @@ async function loadPlatforms(): Promise<void> {
         HOOD = hm;
       }
     } catch { /* hood desk stays fictional-only */ }
-    try { localStorage.setItem("pnhr-platforms", JSON.stringify({ ts: Date.now(), map, hood: HOOD })); } catch {}
+    try { localStorage.setItem("pnhr-platforms-v2", JSON.stringify({ ts: Date.now(), map, hood: HOOD })); } catch {}
   } catch { /* keep guessing from natives only */ }
 }
 // Native L1 coins have NO platforms entry — map them explicitly (never hash-guess)
@@ -104,11 +104,11 @@ const NATIVE_CHAIN: Record<string, Chain> = {
 };
 // Robinhood desk = Panther fictional tickers + coins VERIFIED with a contract on Robinhood chain
 // (via /api/hood → DexScreener chainId === "robinhood"). ARB and friends have no pair there → excluded.
-const HOOD_FICTIONAL = new Set(["cashcat","hood"]);
+const HOOD_FICTIONAL = new Set(["cashcat","pnhr"]);
 function chainForCoin(c: GeckoCoin): Chain {
   const s=c.symbol.toLowerCase(), id=c.id.toLowerCase(), name=c.name.toLowerCase();
   // 1) Robinhood desk: fictional tickers + verified-on-robinhood-chain only (explicit, never hash)// stronger visual: extra-bright ring + pulse for Robinhood desk on the UI
-  if(s==="cashcat"||id==="cashcat"||id.includes("cashcat")||s==="hood"||id.includes("robinhood")||name.includes("cashcat")||HOOD_FICTIONAL.has(s)||HOOD_FICTIONAL.has(id)||(HOOD && HOOD[id])) return "Robinhood";
+  if(s==="cashcat"||id==="cashcat"||id.includes("cashcat")||s==="pnhr"||id==="pnhr"||id.includes("robinhood")||name.includes("cashcat")||HOOD_FICTIONAL.has(s)||HOOD_FICTIONAL.has(id)||(HOOD && HOOD[id])) return "Robinhood Chain";
   // 2) Native L1 (no contract anywhere)
   if (NATIVE_CHAIN[id]) return NATIVE_CHAIN[id];
   // 3) Verified via CoinGecko asset platforms (contract chains)
@@ -128,12 +128,12 @@ function riskFor(s:number,v:number,m:number): Risk { const r=v/(m||1); if(s<55||
 function formatMoney(n:number){ if(n>=1e12) return `$${(n/1e12).toFixed(2)}T`; if(n>=1e9) return `$${(n/1e9).toFixed(2)}B`; if(n>=1e6) return `$${(n/1e6).toFixed(2)}M`; if(n>=1e3) return `$${(n/1e3).toFixed(0)}K`; return `$${n.toFixed(2)}`; }
 function timeAgoFor(r:number){ const m=(r*7)%120+2; return m<60?`${m}m ago`:`${Math.floor(m/60)}h ${m%60}m ago`; }
 function getDexscreenerUrl(coin: Coin, detail: any): string {
-  const chainLower = coin.chain === "Robinhood" ? "robinhood" : coin.chain.toLowerCase();
+  const chainLower = coin.chain === "Robinhood Chain" ? "robinhood" : coin.chain.toLowerCase();
   const platforms = detail?.platforms || {};
-  const chainKey = coin.chain === "Solana" ? "solana" : coin.chain === "Ethereum" ? "ethereum" : coin.chain === "Base" ? "base" : coin.chain === "Sui" ? "sui" : coin.chain === "Robinhood" ? "ethereum" : "ethereum"; // Robinhood + Multi resolve via ethereum tooling
+  const chainKey = coin.chain === "Solana" ? "solana" : coin.chain === "Ethereum" ? "ethereum" : coin.chain === "Base" ? "base" : coin.chain === "Sui" ? "sui" : coin.chain === "Robinhood Chain" ? "ethereum" : "ethereum"; // Robinhood + Multi resolve via ethereum tooling
   const contract = platforms[chainKey];
   if (contract) return `https://dexscreener.com/${chainLower}/${contract}`;
-  if (coin.chain === "Robinhood") return `https://dexscreener.com/robinhood`;
+  if (coin.chain === "Robinhood Chain") return `https://dexscreener.com/robinhood`;
   return `https://dexscreener.com/${chainLower}?q=${coin.symbol}`;
 }
 function getHoneypotUrl(coin: Coin, detail: any): string | null {
@@ -472,7 +472,7 @@ export default function EmergentMinimal(){
   const sorted=useMemo(()=>{ const arr=[...filtered]; const k=sortKey; if(k==="trend"){ const order:Trend[]=["Breaking","Heating","Volatile","Stealth","Cooling"]; arr.sort((a,b)=>order.indexOf(a.trend)-order.indexOf(b.trend)); } else { arr.sort((a:any,b:any)=>(b[k]??0)-(a[k]??0)); } return arr; },[filtered,sortKey]);
   const radarSorted=useMemo(()=>[...coins].sort((a,b)=>b.emergentScore-a.emergentScore).slice(0,6),[coins]);
   const rwaCoins=useMemo(()=>coins.filter(c=>c.category==="RWA").slice(0,12),[coins]);
-  const rhCoins=useMemo(()=>coins.filter(c=>c.chain==="Robinhood").sort((a,b)=>b.change24h-a.change24h),[coins]);
+  const rhCoins=useMemo(()=>coins.filter(c=>c.chain==="Robinhood Chain").sort((a,b)=>b.change24h-a.change24h),[coins]);
   const rhAvg=useMemo(()=>rhCoins.length?rhCoins.reduce((a,c)=>a+c.change24h,0)/rhCoins.length:0,[rhCoins]);
   const aiPicks=useMemo(()=>{ if(!coins.length) return []; const top=[...coins].sort((a,b)=>b.change24h-a.change24h).slice(0,6); return top.map(c=>({ symbol:c.symbol, name:c.name, image:c.image, change24:c.change24h, score:c.emergentScore, entry:`$${(c.priceNum/(1+c.change24h/100)).toFixed(c.priceNum<1?6:3)}`, current:c.price, pnl:`${c.change24h>=0?"+" :""}${c.change24h.toFixed(2)}%`, status: c.change24h>12?"Take Profit":c.change24h<-6?"Stop Hit":"Active" as const, time:c.timeAgo })); },[coins]);
   const topPnl=useMemo(()=>[...coins].slice().sort((a,b)=>b.change24h-a.change24h).slice(0,10),[coins]);
@@ -575,11 +575,11 @@ export default function EmergentMinimal(){
               <span className="radar-label mr-1 flex items-center gap-1.5"><IconOrbit className="size-3.5"/> Ecosystem</span>
               <div className="mb-2 flex flex-wrap items-center gap-1.5 text-[11px] font-bold">
               <span className="mr-1 tracking-[0.14em] text-[#6B6B6B]">JUMP ↓</span>
-              {[["pulse","Pulse"],["hood","🔥 Hood"],["spotlight","AI"],["news","News"],["coins","Coins"]].map(([id,label])=>(
+              {[["pulse","Pulse"],["hood","⛓️ Chain"],["spotlight","AI"],["news","News"],["coins","Coins"]].map(([id,label])=>(
                 <button key={id} onClick={()=>document.getElementById(id)?.scrollIntoView({behavior:"smooth"})} className="rounded-full border border-[#E8E8E8] bg-white px-3 py-1 hover:border-[#0A0A0A] hover:bg-[#0A0A0A] hover:text-white transition-colors">{label}</button>
               ))}
             </div>
-            {CHAINS.map(ch=>{ const active=chainFilter===ch; const count=ch==="All"?coins.length:coins.filter(c=>c.chain===ch).length; const iconMap: Record<string,string> = { Solana:"/assets/mapped/solana.png", Ethereum:"/assets/mapped/ethereum.png", Base:"/assets/mapped/base.png", Robinhood:"/assets/mapped/robinhood.png", Sui:"/assets/mapped/sui.png", Multi:"/assets/mapped/layer-1.png" }; const icon = iconMap[ch]; const isPulsing = filterPulse===`chain-${ch}`; const isRH = ch==="Robinhood"; return (<button key={ch} onClick={()=>{setChainFilter(ch as any); setFilterPulse(`chain-${ch}`); setTimeout(()=>setFilterPulse(null),700);}} className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-[14px] font-semibold transition-all duration-200 ${active ? (isRH ? "bg-[#00C805] text-white shadow-[0_0_14px_rgba(0,200,5,0.5)] scale-[1.06] ring-2 ring-[#00C805]/30" : "bg-[#0A0A0A] text-white shadow-lg scale-[1.02]") : "border bg-white text-[#0A0A0A] hover:scale-[1.02]"} ${!active ? (isRH ? "border-[#00C805]/30 hover:border-[#00C805] hover:bg-green-50" : "border-[#E8E8E8] hover:border-[#0A0A0A]") : ""} ${isPulsing?"animate-[ping_0.7s_ease-out_1] ring-2 ring-[#00C805]/40":""}`}>{icon && <img src={icon} alt="" className={`size-4 rounded-full bg-white object-contain border ${active && isRH?"border-white/30":"border-[#E8E8E8]"} ${isRH && active?"animate-[pulse_1.6s_ease-in-out_infinite]":""}`}/>}{ch==="All"?"All":ch} <span className={`ml-1 text-[11px] ${active?"text-white/80":"text-[#6B6B6B]"}`}>{count}</span>{isRH && active && <span className="ml-1 size-2 rounded-full bg-white animate-pulse"/>}</button>); })}
+            {CHAINS.map(ch=>{ const active=chainFilter===ch; const count=ch==="All"?coins.length:coins.filter(c=>c.chain===ch).length; const iconMap: Record<string,string> = { Solana:"/assets/mapped/solana.png", Ethereum:"/assets/mapped/ethereum.png", Base:"/assets/mapped/base.png", "Robinhood Chain":"/assets/mapped/robinhood.png", Sui:"/assets/mapped/sui.png", Multi:"/assets/mapped/layer-1.png" }; const icon = iconMap[ch]; const isPulsing = filterPulse===`chain-${ch}`; const isRH = ch==="Robinhood Chain"; return (<button key={ch} onClick={()=>{setChainFilter(ch as any); setFilterPulse(`chain-${ch}`); setTimeout(()=>setFilterPulse(null),700);}} className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-[14px] font-semibold transition-all duration-200 ${active ? (isRH ? "bg-[#00C805] text-white shadow-[0_0_14px_rgba(0,200,5,0.5)] scale-[1.06] ring-2 ring-[#00C805]/30" : "bg-[#0A0A0A] text-white shadow-lg scale-[1.02]") : "border bg-white text-[#0A0A0A] hover:scale-[1.02]"} ${!active ? (isRH ? "border-[#00C805]/30 hover:border-[#00C805] hover:bg-green-50" : "border-[#E8E8E8] hover:border-[#0A0A0A]") : ""} ${isPulsing?"animate-[ping_0.7s_ease-out_1] ring-2 ring-[#00C805]/40":""}`}>{icon && <img src={icon} alt="" className={`size-4 rounded-full bg-white object-contain border ${active && isRH?"border-white/30":"border-[#E8E8E8]"} ${isRH && active?"animate-[pulse_1.6s_ease-in-out_infinite]":""}`}/>}{ch==="All"?"All":ch} <span className={`ml-1 text-[11px] ${active?"text-white/80":"text-[#6B6B6B]"}`}>{count}</span>{isRH && active && <span className="ml-1 size-2 rounded-full bg-white animate-pulse"/>}</button>); })}
               <button onClick={fetchCoins} className="ml-auto hidden items-center gap-1.5 rounded-full border border-[#0A0A0A] bg-white px-3 py-2 text-[12px] font-semibold hover:bg-[#F8F8F7] sm:flex"><IconClock className="size-3.5"/> Refresh</button>
             </div>
             {chainFilter!=="All" && (
@@ -665,16 +665,16 @@ export default function EmergentMinimal(){
             )}
             {news.length>4 && <a href="#trending-news-full" onClick={(e)=>{e.preventDefault(); document.getElementById('trending-news-full')?.scrollIntoView({behavior:'smooth'});}} className="mt-2 inline-flex text-[11px] font-semibold underline hover:text-[#0A0A0A]">See all {news.length} → full feed at bottom</a>}
           </div>
-          {/* ROBINHOOD SPOTLIGHT — dedicated Hood desk */}
+          {/* ROBINHOOD CHAIN SPOTLIGHT */}
           <div id="hood" className="card mt-4 overflow-hidden border-[#00C805] scroll-mt-24">
-            <div className="flex items-center justify-between bg-[#00C805] px-4 py-2.5 text-white"><span className="flex items-center gap-2 text-[11px] font-bold tracking-[0.14em]"><img src="/assets/mapped/robinhood.png" alt="" className="size-4 rounded-full bg-white object-contain"/> HOOD LIST · ROBINHOOD SPOTLIGHT</span><span className="flex items-center gap-2 text-[11px] font-bold"><span className={`rounded-full px-2 py-0.5 ${rhAvg>=0?"bg-emerald-500":"bg-red-500"}`}>{rhAvg>=0?"+":""}{rhAvg.toFixed(1)}% avg</span><span className="rounded-full bg-white/20 px-2 py-0.5">{rhCoins.length} verified on-chain</span></span></div>
+            <div className="flex items-center justify-between bg-[#00C805] px-4 py-2.5 text-white"><span className="flex items-center gap-2 text-[11px] font-bold tracking-[0.14em]"><img src="/assets/mapped/robinhood.png" alt="" className="size-4 rounded-full bg-white object-contain"/> ROBINHOOD CHAIN SPOTLIGHT</span><span className="flex items-center gap-2 text-[11px] font-bold"><span className={`rounded-full px-2 py-0.5 ${rhAvg>=0?"bg-emerald-500":"bg-red-500"}`}>{rhAvg>=0?"+":""}{rhAvg.toFixed(1)}% avg</span><span className="rounded-full bg-white/20 px-2 py-0.5">{rhCoins.length} verified on-chain</span></span></div>
             <div className="grid grid-cols-2 gap-2 p-3 sm:grid-cols-4">
-              {rhCoins.length===0?<div className="col-span-full text-center text-[12px] text-[#6B6B6B]">Verifying Hood chain contracts…</div>:rhCoins.slice(0,8).map((c)=>(
+              {rhCoins.length===0?<div className="col-span-full text-center text-[12px] text-[#6B6B6B]">Verifying Robinhood Chain contracts…</div>:rhCoins.slice(0,8).map((c)=>(
                 <div key={c.id} className="rounded-xl border border-[#00C805]/30 bg-white px-2.5 py-2 hover:border-[#00C805]">
                   <button onClick={()=>setSelected(c)} className="flex w-full items-center gap-2 text-left">
                     <img src={c.image} alt={c.symbol} className="size-8 shrink-0 rounded-full border border-[#E8E8E8] bg-white object-cover"/>
                     <span className="min-w-0 flex-1"><span className="block font-mono text-[12px] font-bold leading-none">${c.symbol}</span><span className={`block text-[11px] font-semibold ${c.change24h>=0?"text-emerald-600":"text-red-600"}`}>{c.change24h>=0?"↗ +":"↘ "}{c.change24h.toFixed(1)}%</span></span>
-                    <span className="rounded-full bg-[#00C805] px-1.5 py-0.5 text-[9px] font-bold text-white" title={c.hood?.contract==="native"?"Panther-native Hood ticker":"Verified contract on Robinhood chain"}>✓ HOOD</span>
+                    <span className="rounded-full bg-[#00C805] px-1.5 py-0.5 text-[9px] font-bold text-white" title={c.hood?.contract==="native"?"Panther-native ticker":"Verified contract on Robinhood Chain"}>✓ VERIFIED</span>
                   </button>
                   <div className="mt-1 truncate font-mono text-[10px] text-[#6B6B6B]" title={c.hood?.contract||""}>{c.hood?.contract==="native"?"native ticker":c.hood?.contract?`${c.hood.contract.slice(0,10)}…${c.hood.contract.slice(-6)} · ${c.hood.dex}`:"unverified"}</div>
                   {c.hood?.pairUrl && c.hood.contract!=="native" && <a href={c.hood.pairUrl} target="_blank" rel="noreferrer" className="text-[10px] font-semibold text-[#00C805] underline">pair ↗</a>}
@@ -682,9 +682,9 @@ export default function EmergentMinimal(){
               ))}
             </div>
             <div className="flex flex-wrap items-center gap-2 border-t border-[#E8E8E8] bg-[#F8F8F7] px-3 py-2.5">
-              <button onClick={()=>{setChainFilter("Robinhood"); setTimeout(()=>document.getElementById("coins")?.scrollIntoView({behavior:"smooth"}),50);}} className="rounded-full bg-[#0A0A0A] px-4 py-1.5 text-[11px] font-bold text-white">View all {rhCoins.length} Hood coins →</button>
-              <a href="https://dexscreener.com/robinhood" target="_blank" rel="noreferrer" className="rounded-full border border-[#E8E8E8] bg-white px-3 py-1.5 text-[11px] font-semibold hover:border-[#00C805]">Dexscreener Hood ↗</a>
-              <span className="text-[11px] text-[#6B6B6B]">Only contracts with live pairs on Robinhood chain — ARB & co. excluded · Panther exclusives (CashCat, HOOD)</span>
+              <button onClick={()=>{setChainFilter("Robinhood Chain"); setTimeout(()=>document.getElementById("coins")?.scrollIntoView({behavior:"smooth"}),50);}} className="rounded-full bg-[#0A0A0A] px-4 py-1.5 text-[11px] font-bold text-white">View all {rhCoins.length} Robinhood Chain coins →</button>
+              <a href="https://dexscreener.com/robinhood" target="_blank" rel="noreferrer" className="rounded-full border border-[#E8E8E8] bg-white px-3 py-1.5 text-[11px] font-semibold hover:border-[#00C805]">Dexscreener ↗</a>
+              <span className="text-[11px] text-[#6B6B6B]">Only contracts with live pairs on Robinhood Chain — ARB & co. excluded · Panther exclusives (CashCat, PNHR)</span>
             </div>
           </div>
           {/* AI SPOTLIGHT — latest AI suggested */}
@@ -746,7 +746,7 @@ export default function EmergentMinimal(){
                   const is90 = coin.emergentScore>=90;
                   return (
                     <div role="button" tabIndex={0} key={coin.id} onClick={()=>setSelected(coin)} onKeyDown={(e)=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();setSelected(coin);}}} className={`card card-hover coin-card flex flex-col p-3 text-left cursor-pointer sm:p-3.5 ${surging?"surge-glow surge-ring":""} ${is90?"surge-90":""}`}>
-                      <div className="flex items-start justify-between gap-3"><div className="flex items-center gap-3"><img src={coin.image} alt={coin.name} className="size-11 rounded-xl border border-[#E8E8E8] bg-white object-cover"/><div><div className="flex items-center gap-2"><span className="text-[15px] font-semibold leading-none">{coin.name}</span><span className="inline-flex items-center gap-1 rounded-full border border-[#0A0A0A] px-1.5 py-0.5 text-[10px] font-semibold"><img src={coin.chain==="Solana"?"/assets/mapped/solana.png":coin.chain==="Ethereum"?"/assets/mapped/ethereum.png":coin.chain==="Base"?"/assets/mapped/base.png":coin.chain==="Robinhood"?"/assets/mapped/robinhood.png":coin.chain==="Multi"?"/assets/mapped/layer-1.png":"/assets/mapped/sui.png"} alt={coin.chain} className="size-3.5 rounded-full object-contain"/>{coin.chain.slice(0,4).toUpperCase()}</span></div><div className="text-[13px] text-[#6B6B6B]">#{coin.rank} · ${coin.symbol} · {coin.timeAgo}</div></div></div><ScoreRing score={coin.emergentScore}/></div>
+                      <div className="flex items-start justify-between gap-3"><div className="flex items-center gap-3"><img src={coin.image} alt={coin.name} className="size-11 rounded-xl border border-[#E8E8E8] bg-white object-cover"/><div><div className="flex items-center gap-2"><span className="text-[15px] font-semibold leading-none">{coin.name}</span><span className="inline-flex items-center gap-1 rounded-full border border-[#0A0A0A] px-1.5 py-0.5 text-[10px] font-semibold"><img src={coin.chain==="Solana"?"/assets/mapped/solana.png":coin.chain==="Ethereum"?"/assets/mapped/ethereum.png":coin.chain==="Base"?"/assets/mapped/base.png":coin.chain==="Robinhood Chain"?"/assets/mapped/robinhood.png":coin.chain==="Multi"?"/assets/mapped/layer-1.png":"/assets/mapped/sui.png"} alt={coin.chain} className="size-3.5 rounded-full object-contain"/>{coin.chain==="Robinhood Chain"?"ROBINHOOD CHAIN":coin.chain.slice(0,4).toUpperCase()}</span></div><div className="text-[13px] text-[#6B6B6B]">#{coin.rank} · ${coin.symbol} · {coin.timeAgo}</div></div></div><ScoreRing score={coin.emergentScore}/></div>
                       <div className="mt-4 flex items-end justify-between"><div><div className="font-mono text-[18px] font-bold">{coin.price}</div><div className={`text-[13px] font-semibold ${coin.change24h>=0?"text-[#0A0A0A]":"text-[#6B6B6B]"}`}>{coin.change24h>=0?"↗":"↘"} {coin.change24h>=0?"+":""}{coin.change24h.toFixed(2)}% <span className="font-normal text-[#6B6B6B]">/ 1h {coin.change1h>=0?"+":""}{coin.change1h.toFixed(2)}%</span></div></div><div className="w-[96px]"><Sparkline data={coin.spark} color={coin.change24h>=0?"#0A0A0A":"#6B6B6B"}/></div></div>
                       <div className="mt-4 grid grid-cols-2 gap-2 rounded-xl bg-[#F8F8F7] p-3"><div><div className="text-[11px] tracking-wide text-[#6B6B6B]">Market cap</div><div className="text-[14px] font-semibold">{coin.marketCap}</div></div><div><div className="text-[11px] tracking-wide text-[#6B6B6B]">Volume 24h</div><div className="text-[14px] font-semibold">{coin.volume}</div></div></div>
                       {/* Top 10 holders tiny box — incredibly useful stat */}
@@ -943,7 +943,7 @@ export default function EmergentMinimal(){
               {/* CMC-style rich header: contracts + chain icon (like coinmarketcap.com/currencies/cash-cat/) */}
               <div className="mt-4 rounded-2xl border border-[#0A0A0A] bg-white p-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-bold tracking-[0.12em] text-[#6B6B6B] flex items-center gap-1.5"><img src={selected.chain==="Solana"?"/assets/mapped/solana.png":selected.chain==="Ethereum"?"/assets/mapped/ethereum.png":selected.chain==="Base"?"/assets/mapped/base.png":selected.chain==="Robinhood"?"/assets/mapped/robinhood.png":selected.chain==="Multi"?"/assets/mapped/layer-1.png":"/assets/mapped/sui.png"} alt={selected.chain} className="size-4 rounded-full object-contain border border-[#E8E8E8] bg-white"/>{selected.chain.toUpperCase()} · CONTRACTS</span>
+                  <span className="text-[11px] font-bold tracking-[0.12em] text-[#6B6B6B] flex items-center gap-1.5"><img src={selected.chain==="Solana"?"/assets/mapped/solana.png":selected.chain==="Ethereum"?"/assets/mapped/ethereum.png":selected.chain==="Base"?"/assets/mapped/base.png":selected.chain==="Robinhood Chain"?"/assets/mapped/robinhood.png":selected.chain==="Multi"?"/assets/mapped/layer-1.png":"/assets/mapped/sui.png"} alt={selected.chain} className="size-4 rounded-full object-contain border border-[#E8E8E8] bg-white"/>{selected.chain.toUpperCase()} · CONTRACTS</span>
                   <span className="text-[11px] text-[#6B6B6B]">Rank #{selected.rank} · {selected.category}</span>
                 </div>
                 {detail?.platforms && Object.keys(detail.platforms).length>0 ? (
@@ -959,12 +959,12 @@ export default function EmergentMinimal(){
                     <div className="flex gap-1.5 pt-1">
                       <a href={getDexscreenerUrl(selected, detail)} target="_blank" rel="noreferrer" className="flex-1 rounded-full bg-[#0A0A0A] py-1.5 text-center text-[11px] font-bold text-white">Dexscreener ↗</a>
                       {(selected.chain==="Ethereum"||selected.chain==="Base") && <a href={`https://www.dextools.io/app/${selected.chain.toLowerCase()}/pair-explorer/${Object.values(detail.platforms)[0]}`} target="_blank" rel="noreferrer" className="flex-1 rounded-full border border-[#E8E8E8] bg-white py-1.5 text-center text-[11px] font-semibold hover:border-[#0A0A0A]">DexTools ↗</a>}
-                      {selected.chain==="Robinhood" && <a href="https://www.dextools.io/app/robinhood/pairs" target="_blank" rel="noreferrer" className="rounded-full border border-[#0A0A0A] bg-white px-3 py-1.5 text-[11px] font-semibold">Robinhood Pairs ↗</a>}
+                      {selected.chain==="Robinhood Chain" && <a href="https://www.dextools.io/app/robinhood/pairs" target="_blank" rel="noreferrer" className="rounded-full border border-[#0A0A0A] bg-white px-3 py-1.5 text-[11px] font-semibold">Robinhood Chain Pairs ↗</a>}
                     </div>
                   </div>
                 ) : (
                   <div className="mt-2 rounded-xl border border-dashed border-[#E8E8E8] bg-[#F8F8F7] px-3 py-3 text-[11px] text-[#6B6B6B]">
-                    {selected.chain==="Robinhood" ? "Robinhood listing — tradeable on Robinhood, see Dexscreener Robinhood for pairs" : selected.platforms?.length ? `Verified contracts on ${selected.platforms.join(", ")} — see CoinGecko for full list` : "Native L1 asset — no contract, verified via CoinGecko."} <a href={`https://www.coingecko.com/en/coins/${selected.id}#info`} target="_blank" rel="noreferrer" className="ml-1 underline">View on CoinGecko ↗</a>
+                    {selected.chain==="Robinhood Chain" ? "Robinhood Chain listing — tradeable on Robinhood Chain, see Dexscreener for pairs" : selected.platforms?.length ? `Verified contracts on ${selected.platforms.join(", ")} — see CoinGecko for full list` : "Native L1 asset — no contract, verified via CoinGecko."} <a href={`https://www.coingecko.com/en/coins/${selected.id}#info`} target="_blank" rel="noreferrer" className="ml-1 underline">View on CoinGecko ↗</a>
                   </div>
                 )}
               </div>

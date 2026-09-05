@@ -27,3 +27,12 @@ SPECS:
 
 Keep 100% free — no paid APIs, creditmax muse-spark. Document to docs/BUILD.md with overview/stack/waifus+crons/ComfyUI+Ollama/avis/patch-notes+1240 build/file map, and this REBUILD_PROMPT.md.
 ```
+
+---
+## 2026-09-05 refresh (preserving everything)
+- Share pack: `docs/SITE_GUIDE_FOR_AGENTS.md` — paste THAT + preview URL to any agent, no source zip, no keys.
+- Fixes baked in: `/bot` dossier → `/waifus/sable`; `/waifus` IDs = rias/kuro/hikari/mio/sable (source: `src/lib/waifus.ts`); `ADMIN_BEARER_TOKEN` documented in `.env.example`.
+- Squad: Lucy boss → Rias head (6h) → Kuro market (30m) / Hikari ticker (2h) / Mio auth (6h) / Sable paper-bot (on-demand). Models: muse-spark free for crons, Kimi K3 → DeepSeek via `/api/ai` server-only.
+- LIVE don't-regress: 300-coin radar, ticker gainers/surging + Score sort + 90 glow, logo-home, no Privy banner, Sable desk ($10/$5 TP+8/SL−6), NVIDIA AI.
+- NEXT: wallet route → radar page → extension page → wiki rewrite (`/wiki` stale hololive → PNTHR; `/about` + Sable/AI stack).
+- Deploy: Vercel primary, Netlify secondary, Electron standalone shell. Env names only, never values.

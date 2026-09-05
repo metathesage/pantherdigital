@@ -17,6 +17,7 @@
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "three": "^0.185.1",
+    "threejs-components": "^0.0.19",
     "zustand": "^5.0.15"
   },
   "devDependencies": {

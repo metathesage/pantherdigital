@@ -71,7 +71,7 @@ const WAIFUS: Waifu[] = [
     role: "HEAD",
   },
   {
-    id: "market",
+    id: "kuro",
     name: "Kuro",
     title: "Market Panther",
     emoji: "🐆",
@@ -86,7 +86,7 @@ const WAIFUS: Waifu[] = [
     role: "MARKET",
   },
   {
-    id: "ticker",
+    id: "hikari",
     name: "Hikari",
     title: "Surge Huntress",
     emoji: "⚡",
@@ -101,7 +101,7 @@ const WAIFUS: Waifu[] = [
     role: "TICKER",
   },
   {
-    id: "auth",
+    id: "mio",
     name: "Mio",
     title: "Auth Guardian",
     emoji: "🔐",
@@ -116,7 +116,7 @@ const WAIFUS: Waifu[] = [
     role: "AUTH",
   },
   {
-    id: "trader",
+    id: "sable",
     name: "Sable",
     title: "Paper Trader · Bot Desk",
     emoji: "📈",

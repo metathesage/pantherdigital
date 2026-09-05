@@ -241,7 +241,7 @@ export default function BotDashboard() {
               Every open &amp; close earns XP. Unlock this desk to earn <span className="font-bold">Paper Pilot</span>.
             </p>
           </div>
-          <Link href="/waifus/trader" className="hidden shrink-0 rounded-full border border-[#0A0A0A] px-4 py-2 text-[11px] font-bold hover:bg-[#0A0A0A] hover:text-white sm:block">dossier →</Link>
+          <Link href="/waifus/sable" className="hidden shrink-0 rounded-full border border-[#0A0A0A] px-4 py-2 text-[11px] font-bold hover:bg-[#0A0A0A] hover:text-white sm:block">dossier →</Link>
         </div>
 
         {!unlocked && (
@@ -291,20 +291,20 @@ export default function BotDashboard() {
               <div className="text-[11px] font-bold tracking-[0.18em] text-[#6B6B6B]">OPEN PAPER POSITION · ${data.strategy.positionUsd}/trade · TP +{data.strategy.takeProfitPct}% · SL {data.strategy.stopLossPct}%</div>
               {hoodPicks.length > 0 && (
                 <div className="mt-3">
-                  <div className="text-[10px] font-bold tracking-[0.16em] text-[#00C805]">🔥 HOOD DESK QUICK-PICK · VERIFIED ON ROBINHOOD CHAIN</div>
+                  <div className="text-[10px] font-bold tracking-[0.16em] text-[#00C805]">🔥 PANTHER DESK QUICK-PICK · VERIFIED ON ROBINHOOD CHAIN</div>
                   <div className="mt-2 flex flex-wrap gap-1.5">
                     {hoodPicks.map((h) => (
                       <button
                         key={h.id}
                         type="button"
                         onClick={() => { setCoinId(h.id); setSymbol(h.symbol); playSfx("click"); }}
-                        title={`${h.symbol} · $${(h.liquidityUsd / 1000).toFixed(0)}k liq on Hood chain`}
+                        title={`${h.symbol} · $${(h.liquidityUsd / 1000).toFixed(0)}k liq on Robinhood Chain`}
                         className={`rounded-full border px-3 py-1.5 font-mono text-[12px] font-bold transition ${coinId === h.id ? "border-[#00C805] bg-[#00C805] text-white shadow-[0_0_12px_rgba(0,200,5,0.4)]" : "border-[#00C805]/30 bg-white hover:border-[#00C805] hover:bg-green-50"}`}
                       >
                         ${h.symbol}
                       </button>
                     ))}
-                    <Link href="/app" className="rounded-full border border-[#E8E8E8] px-3 py-1.5 text-[12px] font-semibold text-[#6B6B6B] hover:border-[#0A0A0A]">full Hood list ↗</Link>
+                    <Link href="/app" className="rounded-full border border-[#E8E8E8] px-3 py-1.5 text-[12px] font-semibold text-[#6B6B6B] hover:border-[#0A0A0A]">full Chain list ↗</Link>
                   </div>
                 </div>
               )}

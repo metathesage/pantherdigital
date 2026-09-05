@@ -5,6 +5,10 @@ out
 .git
 *.log
 .env*
+_archive
+packages
+vault-wallet
+WEB APP
 public/panther-procedural.glb
 public/panther.glb
 public/panther-meshy-8192.jpg

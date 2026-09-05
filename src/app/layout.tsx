@@ -3,6 +3,8 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Providers from "@/components/PrivyProvider";
 import SiteChrome from "@/components/SiteChrome";
+import IridescentCursor from "@/components/IridescentCursor";
+import ThemeToggle from "@/components/ThemeToggle";
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin", "latin-ext"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin", "latin-ext"] });
 export const metadata: Metadata = {
@@ -13,7 +15,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" data-scroll-behavior="smooth" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col emergent-bg"><Providers><SiteChrome>{children}</SiteChrome></Providers></body>
+      <body className="min-h-full flex flex-col emergent-bg"><Providers><SiteChrome>{children}</SiteChrome></Providers><IridescentCursor /><ThemeToggle /></body>
     </html>
   );
 }

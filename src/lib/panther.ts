@@ -138,6 +138,6 @@ export const usePanther = create<PantherState>()(
         });
       },
     }),
-    { name: "coinpanther-profile" }
+    { name: "panther-digital-profile" }
   )
 );

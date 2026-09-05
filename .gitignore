@@ -54,6 +54,11 @@ public/panther-procedural.glb
 
 # electron build output (1.5GB, never commit)
 dist/
+# labs graveyard — dead prototypes, never import/build/ship (see _archive/README.md)
+_archive/
+packages/
+vault-wallet/
+WEB APP/
 # local html previews / branding drafts
 Coin-Panther-Brand-Ui.html
 Pnthr-Dgtl-Icon-Pack.html

@@ -8,7 +8,7 @@
 
 ## 1 — Current Build Overview
 
-**Panther Digital (CoinPanther)** — minimal luxury crypto discovery radar.
+**Panther Digital** — minimal luxury crypto discovery radar.
 
 - **Live feed:** CoinGecko `/coins/markets` proxied server-side (`/api/coins/markets`) — **300 coins** across 3 pages × 100, `sparkline=true`, `price_change_percentage=1h,24h,7d`. Refresh 120s, 429-aware with exponential backoff, `stale-while-revalidate` + CORS headers, keeps last-good feed on error.
 - **Scoring:** `emergentScore` 0–100 per coin — volume/mcap ratio + momentum + volatility + trend weighting. **ScoreRing** SVG ring (r=17) with `90+` elite state: orange `#FF6B00` stroke, outer dashed ring `r+4`, glow `drop-shadow(0 0 8px rgba(255,107,0,0.55))`, `animate-[pulse_1.6s]` + `ping` border, star `★`.
@@ -292,7 +292,7 @@ e36a802 Market pulse + show more + AI spotlight + X scans: top3 volume, meme ind
 - `0a5f439` 3D: Hi3D 62MB sculpt → PantherBackground progressive 3D
 - `a43e0c2` Add 429 retry + last-good feed on refresh; `.vercelignore`
 - `7868417` Cleanup: remove Privy warning, logo→home, ticker highlights, trim nav, roadmap
-- `aed9520` CoinPanther: start-menu homepage, /app sort+category+Top10 PnL, portfolio scanner, wiki, icon pack
+- `aed9520` Panther Digital: start-menu homepage, /app sort+category+Top10 PnL, portfolio scanner, wiki, icon pack
 
 **Files changed since last build**
 

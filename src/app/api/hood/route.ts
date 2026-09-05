@@ -5,7 +5,7 @@ export const revalidate = 86400;
 // GET /api/hood — verify which coins REALLY have contracts on Robinhood chain.
 // Queries DexScreener search per candidate and keeps only pairs with chainId === "robinhood"
 // (Uniswap / swaphood / flapsh on Robinhood Chain). Cached 24h server-side.
-// Example: ARB has pairs only on arbitrum/solana/ethereum → excluded. HOOD → verified.
+// Example: ARB has pairs only on arbitrum/solana/ethereum → excluded.
 const CANDIDATES: { id: string; symbol: string }[] = [
   { id: "bitcoin", symbol: "BTC" }, { id: "ethereum", symbol: "ETH" }, { id: "solana", symbol: "SOL" },
   { id: "dogecoin", symbol: "DOGE" }, { id: "shiba-inu", symbol: "SHIB" }, { id: "pepe", symbol: "PEPE" },
@@ -21,7 +21,7 @@ const CANDIDATES: { id: string; symbol: string }[] = [
   { id: "stellar", symbol: "XLM" }, { id: "litecoin", symbol: "LTC" }, { id: "bitcoin-cash", symbol: "BCH" },
   { id: "compound", symbol: "COMP" }, { id: "the-graph", symbol: "GRT" }, { id: "lido-dao", symbol: "LDO" },
   { id: "curve-dao-token", symbol: "CRV" }, { id: "synthetix", symbol: "SNX" }, { id: "sushi", symbol: "SUSHI" },
-  { id: "pudgy-penguins", symbol: "PENGU" }, { id: "cashcat", symbol: "CASHCAT" }, { id: "hood", symbol: "HOOD" },
+  { id: "pudgy-penguins", symbol: "PENGU" }, { id: "cashcat", symbol: "CASHCAT" }, { id: "pnhr", symbol: "PNHR" },
   { id: "virtual-protocol", symbol: "VIRTUAL" },
 ];
 
@@ -31,9 +31,9 @@ export async function GET() {
   const verified: HoodEntry[] = [];
   const unverified: string[] = [];
   for (const c of CANDIDATES) {
-    // fictional Panther tickers pass through (native to the Hood desk)
-    if (c.id === "cashcat" || c.id === "hood") {
-      verified.push({ id: c.id, symbol: c.symbol, contract: "native", dex: "hood-desk", pairUrl: "https://dexscreener.com/robinhood", liquidityUsd: 0 });
+    // fictional Panther tickers pass through (native to the Panther desk)
+    if (c.id === "cashcat" || c.id === "pnhr") {
+      verified.push({ id: c.id, symbol: c.symbol, contract: "native", dex: "panther-desk", pairUrl: "https://dexscreener.com/robinhood", liquidityUsd: 0 });
       continue;
     }
     try {
