@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
-import MatrixField from "@/components/MatrixField";
+import GlowStars from "@/components/GlowStars";
+import LiquidOrb from "@/components/LiquidOrb";
 
 const FEATURES = [
   { tag: "01", title: "Live Markets", body: "Real CoinGecko prices, sparklines, and momentum for 300+ coins." },
@@ -14,19 +15,11 @@ export default function HomePage() {
     <main className="launch-root relative flex min-h-screen flex-col overflow-hidden bg-black text-white">
       <h1 className="sr-only">CoinPanther — Panther Digital crypto discovery radar</h1>
 
-      <Image
-        src="/black-marble-panther.jpg"
-        alt=""
-        fill
-        priority
-        sizes="100vw"
-        aria-hidden="true"
-        className="pointer-events-none object-cover object-[center_35%] opacity-[0.92]"
-      />
-      <MatrixField />
+      <LiquidOrb />
       <div aria-hidden="true" className="launch-veil pointer-events-none fixed inset-0" />
       <div aria-hidden="true" className="launch-vignette pointer-events-none fixed inset-0" />
       <div aria-hidden="true" className="launch-grid pointer-events-none fixed inset-0" />
+      <GlowStars />
 
       {/* Top bar */}
       <header className="relative z-10 flex items-center justify-between px-6 pt-6 sm:px-10 anim-fade-in">

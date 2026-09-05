@@ -553,9 +553,15 @@ export default function EmergentMinimal(){
   const rwaCoins=useMemo(()=>coins.filter(c=>c.category==="RWA").slice(0,12),[coins]);
   const aiPicks=useMemo(()=>{ if(!coins.length) return []; const top=[...coins].sort((a,b)=>b.change24h-a.change24h).slice(0,6); return top.map(c=>({ symbol:c.symbol, name:c.name, image:c.image, change24:c.change24h, score:c.emergentScore, entry:`$${(c.priceNum/(1+c.change24h/100)).toFixed(c.priceNum<1?6:3)}`, current:c.price, pnl:`${c.change24h>=0?"+" :""}${c.change24h.toFixed(2)}%`, status: c.change24h>12?"Take Profit":c.change24h<-6?"Stop Hit":"Active" as const, time:c.timeAgo })); },[coins]);
   const topPnl=useMemo(()=>[...coins].slice().sort((a,b)=>b.change24h-a.change24h).slice(0,10),[coins]);
-  const pnlUrl=(c:any)=> c.chain==="Solana"
-    ? `https://gmgn.ai/sol/token/${c.id}`
-    : `https://fomo.app/token/${c.id}`;
+  const pnlUrl=(c:any)=>{
+    if (c.tokenAddress) return c.chain==="Solana"
+      ? `https://gmgn.ai/sol/token/${c.tokenAddress}`
+      : `https://fomo.app/token/${c.tokenAddress}`;
+    if (c.pairUrl) return c.pairUrl;
+    if (c.source==="coingecko") return `https://www.coingecko.com/en/coins/${c.id}`;
+    if (c.id?.startsWith("cl-")) return `https://www.coinlore.com/coin/${c.id.slice(3)}/`;
+    return `https://dexscreener.com/search?q=${encodeURIComponent(c.symbol)}`;
+  };
   const claimDaily=()=>{ if(claimedToday) return; setXp(x=>x+25); setStreak(s=>s+1); if(xp+25>1500) setLevel(l=>l+1); setClaimedToday(true); };
   if(!ready) return <div className="grid min-h-screen place-items-center bg-[#F8F8F7] text-[14px] text-[#6B6B6B]">Initializing Privy…</div>;
   return (

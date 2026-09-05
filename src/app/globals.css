@@ -274,3 +274,44 @@ body { background: #FFFFFF; color: #0A0A0A; font-family: var(--font-geist-sans),
   .radar-app .ticker-item img { animation: none !important; }
   .hallow-float, .hallow-glow { animation: none; }
 }
+
+/* ========== Glow stars + comet (dark start menu background) ========== */
+.glow-stars { position: fixed; inset: 0; overflow: hidden; }
+.glow-star {
+  position: absolute; width: 3px; height: 3px; border-radius: 50%;
+  background: rgba(255,255,255,0.7);
+  box-shadow: 0 0 40px 0 rgba(255,255,255,0.25), 0 0 20px 0 rgba(255,255,255,0.5);
+  animation: glow-star-pulse 5s ease-in-out infinite;
+}
+.glow-star--medium { width: 6px; height: 6px; }
+.glow-star--big { width: 9px; height: 9px; box-shadow: 0 0 40px 0 rgba(255,255,255,0.35), 0 0 20px 0 #fff, inset 0 0 4px #fff; }
+.glow-comet {
+  position: absolute; top: 8%; left: 80%; width: 6px; height: 6px; border-radius: 50%;
+  background: rgba(255,255,255,0.6);
+  box-shadow: 0 0 40px 0 rgba(255,255,255,0.4), 0 0 20px 0 #fff;
+  opacity: 0; transform: rotate(-45deg);
+  animation: glow-comet 7s linear infinite;
+}
+.glow-comet::after {
+  content: ""; position: absolute; top: 0; left: 0; width: 20vw; height: 6px; border-radius: 50%;
+  background: linear-gradient(to left, rgba(255,255,255,0.25), transparent);
+}
+@keyframes glow-star-pulse { 0%,100% { opacity: 0.9; } 50% { opacity: 0.2; } }
+@keyframes glow-comet {
+  0% { transform: rotate(-45deg) translateX(0); opacity: 0; }
+  6% { opacity: 0.7; }
+  20% { transform: rotate(-45deg) translateX(-100vw); opacity: 0; }
+  100% { transform: rotate(-45deg) translateX(-100vw); opacity: 0; }
+}
+
+/* ========== Animated gradient border (accent cards) ========== */
+.gradient-border { --gb: 3px; position: relative; border-radius: calc(var(--gb) * 2); }
+.gradient-border::after {
+  content: ""; position: absolute; inset: calc(-1 * var(--gb)); border-radius: inherit;
+  background: linear-gradient(60deg, #f79533, #f37055, #ef4e7b, #a166ab, #5073b8, #1098ad, #07b39b, #6fba82);
+  background-size: 300% 300%; animation: gradient-border-spin 3s ease alternate infinite; z-index: -1;
+}
+@keyframes gradient-border-spin { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+@media (prefers-reduced-motion: reduce) {
+  .glow-comet, .glow-star, .gradient-border::after { animation: none !important; }
+}

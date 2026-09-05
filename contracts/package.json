@@ -1,0 +1,23 @@
+{
+  "name": "pnthr-contracts",
+  "version": "0.1.0",
+  "private": true,
+  "description": "PNTHR DGTL onchain studio — LucyID (SBT), PnthrPack (ERC1155), CoinPanther (ERC20), WikiIndex. Deployable to Robinhood Chain (4663) or any EVM.",
+  "scripts": {
+    "compile": "hardhat compile",
+    "clean": "hardhat clean",
+    "deploy": "hardhat run scripts/deploy.ts --network robinhood",
+    "deploy:local": "hardhat run scripts/deploy.ts --network localhost",
+    "node": "hardhat node"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-ethers": "^3.0.8",
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "@openzeppelin/contracts": "^5.1.0",
+    "@types/node": "^20.19.43",
+    "dotenv": "^16.4.7",
+    "ethers": "^6.13.5",
+    "hardhat": "^2.22.17",
+    "typescript": "^5.5.4"
+  }
+}
