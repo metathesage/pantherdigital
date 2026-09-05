@@ -5,7 +5,7 @@
 const fs = require("node:fs");
 const path = require("node:path");
 
-const root = path.resolve(__dirname); // repo root (this file lives in scripts/)
+const root = path.resolve(__dirname, ".."); // repo root (this file lives in scripts/)
 const standalone = path.join(root, ".next", "standalone");
 
 function copyDir(from, to) {
