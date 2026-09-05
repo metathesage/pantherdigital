@@ -1,17 +1,24 @@
 "use client";
 import React from "react";
-let RealPrivyProvider: any = null;
-try {
-  RealPrivyProvider = require("@privy-io/react-auth").PrivyProvider;
-} catch {}
+import { PrivyProvider, type PrivyProviderProps } from "@privy-io/react-auth";
 export default function Providers({ children }: { children: React.ReactNode }) {
   const appId = process.env.NEXT_PUBLIC_PRIVY_APP_ID;
-  // If no real app ID or provider not installed, just render children — keeps build working
-  if (!appId || appId === "clz-demo-privy-app-id" || !RealPrivyProvider) {
-    return <>{children}</>;
+  const noPrivy = !appId || appId === "clz-demo-privy-app-id";
+  // If no real app ID, just render children — keeps build working without credentials
+  if (noPrivy) {
+    return (
+      <>
+        <div className="pointer-events-none fixed top-0 inset-x-0 z-[60] flex justify-center">
+          <div className="mt-2 rounded-full border border-amber-300 bg-amber-50 px-3 py-1 text-[11px] font-medium text-amber-900 opacity-90">
+            Sign-in disabled — NEXT_PUBLIC_PRIVY_APP_ID not set
+          </div>
+        </div>
+        {children}
+      </>
+    );
   }
   return (
-    <RealPrivyProvider
+    <PrivyProvider
       appId={appId}
       config={{
         loginMethods: ["wallet", "email", "twitter"],
@@ -20,6 +27,6 @@ export default function Providers({ children }: { children: React.ReactNode }) {
       }}
     >
       {children}
-    </RealPrivyProvider>
+    </PrivyProvider>
   );
 }

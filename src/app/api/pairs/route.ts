@@ -16,6 +16,41 @@ type ChainQ = "all" | GtNet;
 
 type Socials = { twitter?: string; telegram?: string; website?: string };
 
+type GtIncludedRow = { id?: unknown; attributes?: Record<string, unknown> };
+type GtPoolRow = {
+  id?: unknown;
+  attributes?: Record<string, unknown>;
+  relationships?: Record<string, { data?: { id?: unknown } }>;
+};
+type GtPayload = { data?: GtPoolRow[]; included?: GtIncludedRow[] };
+
+type DsLink = { url?: unknown; type?: unknown; label?: unknown };
+type DsBoost = {
+  chainId?: unknown;
+  tokenAddress?: unknown;
+  icon?: unknown;
+  description?: unknown;
+  links?: DsLink[];
+};
+type DsProfile = DsBoost & { name?: unknown };
+type DsPair = {
+  pairAddress?: unknown;
+  chainId?: unknown;
+  dexId?: unknown;
+  url?: unknown;
+  baseToken?: { address?: unknown; name?: unknown; symbol?: unknown };
+  quoteToken?: { address?: unknown; name?: unknown; symbol?: unknown };
+  priceUsd?: unknown;
+  txns?: { h24?: { buys?: unknown; sells?: unknown } };
+  volume?: { h24?: unknown };
+  priceChange?: { h1?: unknown; h24?: unknown };
+  liquidity?: { usd?: unknown };
+  fdv?: unknown;
+  marketCap?: unknown;
+  pairCreatedAt?: unknown;
+  info?: { imageUrl?: unknown; socials?: DsLink[]; websites?: DsLink[] };
+};
+
 export type UnifiedPair = {
   id: string;
   source: "geckoterminal" | "dexscreener";
@@ -100,13 +135,13 @@ function jsonHeaders() {
   return { "Cache-Control": "public, s-maxage=60, stale-while-revalidate=120" };
 }
 
-async function fetchJson(url: string, timeoutMs = 12000): Promise<any> {
+async function fetchJson(url: string, timeoutMs = 12000): Promise<unknown> {
   const ctrl = new AbortController();
   const t = setTimeout(() => ctrl.abort(), timeoutMs);
   try {
     const r = await fetch(url, { headers: UA, cache: "no-store", signal: ctrl.signal });
     if (!r.ok) {
-      const err: any = new Error(`HTTP ${r.status}`);
+      const err = new Error(`HTTP ${r.status}`) as Error & { status?: number };
       err.status = r.status;
       throw err;
     }
@@ -116,20 +151,20 @@ async function fetchJson(url: string, timeoutMs = 12000): Promise<any> {
   }
 }
 
-function includedIndex(included: any[]): Map<string, any> {
-  const m = new Map<string, any>();
+function includedIndex(included: GtIncludedRow[]): Map<string, GtIncludedRow> {
+  const m = new Map<string, GtIncludedRow>();
   for (const row of included || []) {
-    if (row?.id) m.set(row.id, row);
+    if (row?.id) m.set(String(row.id), row);
   }
   return m;
 }
 
-function relId(row: any, key: string): string {
-  return row?.relationships?.[key]?.data?.id || "";
+function relId(row: GtPoolRow, key: string): string {
+  return String(row?.relationships?.[key]?.data?.id || "");
 }
 
-function normalizeGtPool(row: any, inc: Map<string, any>, fallbackNet: GtNet, feed: Feed): UnifiedPair | null {
-  const attr = row?.attributes || {};
+function normalizeGtPool(row: GtPoolRow, inc: Map<string, GtIncludedRow>, fallbackNet: GtNet, feed: Feed): UnifiedPair | null {
+  const attr = (row?.attributes ?? {}) as Record<string, unknown>;
   const pairAddress = str(attr.address);
   if (!pairAddress) return null;
   const network = networkFromPoolId(str(row?.id), fallbackNet);
@@ -137,16 +172,16 @@ function normalizeGtPool(row: any, inc: Map<string, any>, fallbackNet: GtNet, fe
   const base = inc.get(relId(row, "base_token"));
   const quote = inc.get(relId(row, "quote_token"));
   const dex = inc.get(relId(row, "dex"));
-  const ba = base?.attributes || {};
-  const qa = quote?.attributes || {};
+  const ba = (base?.attributes ?? {}) as Record<string, unknown>;
+  const qa = (quote?.attributes ?? {}) as Record<string, unknown>;
   const tokenSymbol = str(ba.symbol) || str(attr.name).split("/")[0].trim() || "???";
   const quoteSymbol = str(qa.symbol) || str(attr.name).split("/")[1]?.trim() || "";
   const tokenName = str(ba.name) || tokenSymbol;
   const tokenAddress = str(ba.address);
-  const pc = attr.price_change_percentage || {};
-  const vol = attr.volume_usd || {};
-  const tx = attr.transactions || {};
-  const txh = tx.h24 || {};
+  const pc = (attr.price_change_percentage ?? {}) as Record<string, unknown>;
+  const vol = (attr.volume_usd ?? {}) as Record<string, unknown>;
+  const tx = (attr.transactions ?? {}) as { h24?: Record<string, unknown> };
+  const txh = (tx.h24 ?? {}) as Record<string, unknown>;
   const txns24h = num(txh.buys) + num(txh.sells);
   const priceUsd = num(attr.base_token_price_usd);
   const liquidityUsd = num(attr.reserve_in_usd);
@@ -185,10 +220,11 @@ function normalizeGtPool(row: any, inc: Map<string, any>, fallbackNet: GtNet, fe
   };
 }
 
-function normalizeGtPayload(json: any, fallbackNet: GtNet, feed: Feed): UnifiedPair[] {
-  const inc = includedIndex(json?.included || []);
+function normalizeGtPayload(json: unknown, fallbackNet: GtNet, feed: Feed): UnifiedPair[] {
+  const payload = (json ?? {}) as GtPayload;
+  const inc = includedIndex(payload.included ?? []);
   const out: UnifiedPair[] = [];
-  for (const row of json?.data || []) {
+  for (const row of payload.data ?? []) {
     const p = normalizeGtPool(row, inc, fallbackNet, feed);
     if (p) out.push(p);
     if (out.length >= PER_NETWORK) break;
@@ -228,14 +264,14 @@ async function fetchGtFeed(feed: "trending" | "new", chain: ChainQ): Promise<{ p
   return { pairs: deduped, degraded: ok < nets.length };
 }
 
-function unwrapPairs(json: any): any[] {
-  if (Array.isArray(json)) return json;
-  if (Array.isArray(json?.pairs)) return json.pairs;
-  if (json && typeof json === "object" && json.pairAddress) return [json];
+function unwrapPairs(json: unknown): DsPair[] {
+  if (Array.isArray(json)) return json as DsPair[];
+  if (Array.isArray((json as { pairs?: unknown } | null)?.pairs)) return (json as { pairs: DsPair[] }).pairs;
+  if (json && typeof json === "object" && (json as { pairAddress?: unknown }).pairAddress) return [json as DsPair];
   return [];
 }
 
-function pickBestPair(pairs: any[], chainId?: string): any | null {
+function pickBestPair(pairs: DsPair[], chainId?: string): DsPair | null {
   const filtered = chainId
     ? pairs.filter((p) => String(p?.chainId || "").toLowerCase() === chainId.toLowerCase())
     : pairs;
@@ -243,9 +279,9 @@ function pickBestPair(pairs: any[], chainId?: string): any | null {
   return pool[0] || null;
 }
 
-function socialsFromBoostAndPair(boost: any, pair: any, profile: any): Socials {
+function socialsFromBoostAndPair(boost: DsBoost, pair: DsPair, profile?: DsProfile): Socials {
   const s: Socials = {};
-  const consider = (url?: string, type?: string, label?: string) => {
+  const consider = (url?: unknown, type?: unknown, label?: unknown) => {
     const u = str(url);
     if (!u) return;
     const t = `${type || ""} ${label || ""} ${u}`.toLowerCase();
@@ -262,7 +298,7 @@ function socialsFromBoostAndPair(boost: any, pair: any, profile: any): Socials {
   return s;
 }
 
-function imageFrom(boost: any, pair: any, profile: any): string {
+function imageFrom(boost: DsBoost, pair: DsPair, profile?: DsProfile): string {
   const candidates = [
     pair?.info?.imageUrl,
     profile?.icon,
@@ -288,7 +324,7 @@ function createdIso(v: unknown): string | null {
   return Number.isNaN(d.getTime()) ? null : d.toISOString();
 }
 
-function normalizeDsPair(pair: any, boost: any, profile: any, feed: Feed): UnifiedPair | null {
+function normalizeDsPair(pair: DsPair, boost: DsBoost, profile: DsProfile | undefined, feed: Feed): UnifiedPair | null {
   const pairAddress = str(pair?.pairAddress);
   const chainIdRaw = str(pair?.chainId || boost?.chainId).toLowerCase();
   const network = gtNetFromDs(chainIdRaw);
@@ -337,7 +373,7 @@ function normalizeDsPair(pair: any, boost: any, profile: any, feed: Feed): Unifi
   };
 }
 
-async function hydrateToken(chainId: string, address: string): Promise<any[]> {
+async function hydrateToken(chainId: string, address: string): Promise<DsPair[]> {
   try {
     const a = await fetchJson(`${DS_BASE}/tokens/v1/${chainId}/${address}`);
     const pairs = unwrapPairs(a);
@@ -368,9 +404,9 @@ async function fetchBoostsFeed(chain: ChainQ): Promise<{ pairs: UnifiedPair[]; d
     fetchJson(`${DS_BASE}/token-boosts/latest/v1`),
     fetchJson(`${DS_BASE}/token-profiles/latest/v1`).catch(() => []),
   ]);
-  const boosts: any[] = Array.isArray(boostsJson) ? boostsJson : [];
-  const profiles: any[] = Array.isArray(profilesJson) ? profilesJson : [];
-  const profIdx = new Map<string, any>();
+  const boosts: DsBoost[] = Array.isArray(boostsJson) ? (boostsJson as DsBoost[]) : [];
+  const profiles: DsProfile[] = Array.isArray(profilesJson) ? (profilesJson as DsProfile[]) : [];
+  const profIdx = new Map<string, DsProfile>();
   for (const p of profiles) {
     const key = `${str(p.chainId).toLowerCase()}:${str(p.tokenAddress).toLowerCase()}`;
     if (key !== ":") profIdx.set(key, p);
@@ -382,7 +418,7 @@ async function fetchBoostsFeed(chain: ChainQ): Promise<{ pairs: UnifiedPair[]; d
     if (want && dsChain(net) !== want) return false;
     return true;
   });
-  const uniq: any[] = [];
+  const uniq: DsBoost[] = [];
   const seen = new Set<string>();
   for (const b of filtered) {
     const key = `${str(b.chainId).toLowerCase()}:${str(b.tokenAddress).toLowerCase()}`;
@@ -429,7 +465,7 @@ export async function GET(req: Request) {
     };
     cacheSet(key, payload);
     return NextResponse.json(payload, { headers: jsonHeaders() });
-  } catch (e: any) {
+  } catch (e: unknown) {
     const stale = cacheGet(key, true);
     if (stale) {
       return NextResponse.json(
@@ -437,9 +473,10 @@ export async function GET(req: Request) {
         { headers: jsonHeaders() }
       );
     }
-    const status = e?.status === 429 ? 429 : 502;
+    const err = e instanceof Error ? e : null;
+    const status = err && "status" in err && (err as { status?: number }).status === 429 ? 429 : 502;
     return NextResponse.json(
-      { error: e?.message || "pairs upstream failed", feed, chain, pairs: [] },
+      { error: err?.message || "pairs upstream failed", feed, chain, pairs: [] },
       { status, headers: jsonHeaders() }
     );
   }

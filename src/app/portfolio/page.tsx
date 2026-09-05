@@ -1,12 +1,13 @@
 "use client";
 import { useState, useEffect, useMemo } from "react";
+import Link from "next/link";
 import { usePanther } from "@/lib/panther";
 
 /* ----------------------------------------------------------------------------
  * Real on-chain data only. No mocked balances, prices, tokens, or P&L.
  *  - Solana: public mainnet RPC (keyless) + Jupiter token list/price (keyless).
  *  - Ethereum: public LlamaRPC (keyless) for native balance; Etherscan V2
- *    (optional NEXT_PUBLIC_ETHERSCAN_API_KEY) for ERC-20 holdings + history.
+ *    via server proxy /api/etherscan (ETHERSCAN_API_KEY) for ERC-20 holdings + history.
  * Cost-basis / missed-gains is intentionally NOT shown — it would require
  * guessing buy prices, which is mock data.
  * ------------------------------------------------------------------------- */
@@ -97,10 +98,9 @@ async function rpcPost(url: string, method: string, params: any[]) {
 
 async function fetchNativePrices(): Promise<{ eth: number; sol: number }> {
   try {
-    const r = await fetch(
-      "https://api.coingecko.com/api/v3/simple/price?ids=ethereum,solana&vs_currencies=usd",
-      { cache: "no-store" }
-    ).then((x) => x.json());
+    const r = await fetch("/api/simple-price?ids=ethereum,solana&vs_currencies=usd", {
+      cache: "no-store",
+    }).then((x) => x.json());
     return { eth: r?.ethereum?.usd ?? 0, sol: r?.solana?.usd ?? 0 };
   } catch {
     return { eth: 0, sol: 0 };
@@ -151,7 +151,7 @@ async function fetchSolana(addr: string): Promise<{ holdings: Holding[]; txns: T
       { programId: "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA" },
       { encoding: "jsonParsed" },
     ]),
-    fetch("https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd", { cache: "no-store" })
+    fetch("/api/simple-price?ids=solana&vs_currencies=usd", { cache: "no-store" })
       .then((r) => r.json())
       .catch(() => null),
   ]);
@@ -207,8 +207,8 @@ async function fetchSolana(addr: string): Promise<{ holdings: Holding[]; txns: T
   let defiSwaps = 0;
   let totalFees = 0;
   let largest = 0;
-  // Pull full tx detail for the first 12 to classify swaps / counterparties
-  const detailSlice = sigs.slice(0, 12);
+  // Pull full tx detail for the first 40 to classify swaps / counterparties
+  const detailSlice = sigs.slice(0, 40);
   await Promise.all(
     detailSlice.map(async (s: any) => {
       const txRes = await rpcPost(SOL_RPC, "getTransaction", [
@@ -251,7 +251,7 @@ async function fetchSolana(addr: string): Promise<{ holdings: Holding[]; txns: T
     })
   );
   // Fill remaining signatures without full detail
-  for (const s of sigs.slice(12)) {
+  for (const s of sigs.slice(40)) {
     txns.push({
       hash: s.signature,
       time: (s.blockTime ?? 0) * 1000,
@@ -288,7 +288,7 @@ async function fetchSolana(addr: string): Promise<{ holdings: Holding[]; txns: T
 }
 
 async function fetchEthereum(addr: string): Promise<{ holdings: Holding[]; txns: Txn[]; stats: Stats }> {
-  const key = process.env.NEXT_PUBLIC_ETHERSCAN_API_KEY;
+  const ping = await fetch("/api/etherscan?action=ping").then((r) => r.json()).catch(() => null);
   const prices = await fetchNativePrices();
   const balRes = await rpcPost(ETH_RPC, "eth_getBalance", [addr, "latest"]);
   const wei = balRes?.result ? Number(balRes.result) : 0;
@@ -305,15 +305,15 @@ async function fetchEthereum(addr: string): Promise<{ holdings: Holding[]; txns:
     },
   ];
 
-  let txns: Txn[] = [];
+  const txns: Txn[] = [];
   let enriched = false;
   let tokenCount = 1;
 
-  if (key) {
+  if (ping?.ok) {
     enriched = true;
     const [txlistRes, tokRes] = await Promise.all([
-      fetch(`https://api.etherscan.io/v2/api?chainid=1&module=account&action=txlist&address=${addr}&startblock=0&endblock=99999999&sort=asc&apikey=${key}`, { cache: "no-store" }).then((r) => r.json()).catch(() => null),
-      fetch(`https://api.etherscan.io/v2/api?chainid=1&module=account&action=tokenlist&address=${addr}&apikey=${key}`, { cache: "no-store" }).then((r) => r.json()).catch(() => null),
+      fetch(`/api/etherscan?action=txlist&address=${addr}`, { cache: "no-store" }).then((r) => r.json()).catch(() => null),
+      fetch(`/api/etherscan?action=tokenlist&address=${addr}`, { cache: "no-store" }).then((r) => r.json()).catch(() => null),
     ]);
     const txs: any[] = txlistRes?.status === "1" ? txlistRes.result : [];
     const toks: any[] = tokRes?.status === "1" ? tokRes.result : [];
@@ -323,7 +323,7 @@ async function fetchEthereum(addr: string): Promise<{ holdings: Holding[]; txns:
       const contract: string = t.contractAddress;
       let meta: any = null;
       try {
-        meta = await fetch(`https://api.coingecko.com/api/v3/coins/ethereum/contract/${contract}`, { cache: "no-store" }).then((r) => (r.ok ? r.json() : null));
+        meta = await fetch(`/api/coins/contract?chain=ethereum&address=${contract}`, { cache: "no-store" }).then((r) => (r.ok ? r.json() : null));
       } catch { meta = null; }
       const bal = Number(t.balance) / Math.pow(10, Number(t.tokenDecimal || 18));
       const price = meta?.market_data?.current_price?.usd ?? 0;
@@ -519,17 +519,17 @@ export default function PortfolioPage() {
       <div className="sticky top-0 z-30 border-b border-[#E8E8E8] bg-white/95 backdrop-blur">
         <div className="mx-auto flex max-w-[1200px] items-center justify-between gap-4 px-4 py-3">
           <div className="flex items-center gap-3">
-            <a href="/" className="grid size-9 place-items-center rounded-xl border border-[#0A0A0A] bg-white p-1">
+            <Link href="/" className="grid size-9 place-items-center rounded-xl border border-[#0A0A0A] bg-white p-1">
             <img src="/assets/icon-wallet.png" alt="CoinPanther" className="h-7 w-7 object-contain" />
-            </a>
+            </Link>
             <div>
               <div className="text-[16px] font-bold tracking-widest">PORTFOLIO</div>
               <div className="text-[11px] tracking-widest text-[#6B6B6B]">REAL ON-CHAIN DATA</div>
             </div>
           </div>
-          <a href="/app" className="rounded-full border border-[#0A0A0A] bg-white px-4 py-2 text-xs font-semibold hover:bg-[#0A0A0A] hover:text-white transition-colors">
-            ← CoinPanther
-          </a>
+           <Link href="/app" className="rounded-full border border-[#0A0A0A] bg-white px-4 py-2 text-xs font-semibold hover:bg-[#0A0A0A] hover:text-white transition-colors">
+             ← CoinPanther
+           </Link>
         </div>
       </div>
 
@@ -543,7 +543,7 @@ export default function PortfolioPage() {
               <input
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder="Paste 0x… (ETH) or So111… (SOL)"
+                placeholder="Paste 0x… (ETH) or a Solana address"
                 className="h-[56px] w-full rounded-full border border-[#E8E8E8] bg-white px-5 pr-24 text-[15px] font-medium text-[#0A0A0A] placeholder:text-[#9A9A9A] focus:border-[#0A0A0A] focus:outline-none"
               />
               <span className={`pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 rounded-full px-3 py-1.5 text-xs font-bold ${chain === "ETH" ? "bg-[#0A0A0A] text-white" : chain === "SOL" ? "bg-[#0A0A0A] text-white" : "bg-[#F8F8F7] text-[#9A9A9A]"}`}>
@@ -585,7 +585,7 @@ export default function PortfolioPage() {
               <span className="rounded-full border border-[#0A0A0A] bg-white px-3 py-1.5 font-mono font-bold">{short(address)}</span>
               <span className="rounded-full border border-[#E8E8E8] bg-[#F8F8F7] px-3 py-1.5">{chain} · {stats.tokenCount} tokens</span>
               <span className="rounded-full border border-[#E8E8E8] bg-[#F8F8F7] px-3 py-1.5">{stats.txCount} txns</span>
-              {!stats.enriched && <span className="rounded-full border border-[#0A0A0A] bg-white px-3 py-1.5">Add NEXT_PUBLIC_ETHERSCAN_API_KEY for ERC-20 + history</span>}
+              {!stats.enriched && <span className="rounded-full border border-[#0A0A0A] bg-white px-3 py-1.5">Add ETHERSCAN_API_KEY server env for ERC-20 + history</span>}
             </div>
           )}
         </div>
@@ -670,7 +670,7 @@ export default function PortfolioPage() {
               <div className="mt-6 rounded-2xl border border-[#E8E8E8] bg-white">
                 {txns.length === 0 ? (
                   <div className="grid place-items-center py-16 text-sm text-[#6B6B6B]">
-                    {stats?.enriched ? "No transactions found for this address." : "Transaction history needs an Etherscan API key (set NEXT_PUBLIC_ETHERSCAN_API_KEY). Solana history loads automatically."}
+                    {stats?.enriched ? "No transactions found for this address." : "Transaction history needs a server-side Etherscan key (ETHERSCAN_API_KEY). Solana history loads automatically."}
                   </div>
                 ) : (
                   <div className="divide-y divide-[#E8E8E8]">
@@ -724,7 +724,7 @@ export default function PortfolioPage() {
                     </div>
                   </div>
                   <div className="mt-4 rounded-xl border border-white/20 bg-white/5 p-3 text-[12px] leading-5 text-white/70">
-                    All figures are derived from live on-chain data — balances, token accounts, and transaction history. Cost-basis P&L and "missed gains" are intentionally omitted because they would require guessing buy prices.
+                    All figures are derived from live on-chain data — balances, token accounts, and transaction history. Cost-basis P&amp;L and &quot;missed gains&quot; are intentionally omitted because they would require guessing buy prices.
                   </div>
                 </div>
               </div>

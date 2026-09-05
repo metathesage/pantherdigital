@@ -151,14 +151,25 @@ body { background: #FFFFFF; color: #0A0A0A; font-family: var(--font-geist-sans),
   color: rgba(255,255,255,0.32);
   gap: 0;
 }
-@keyframes launchSpin { to { transform: rotate(360deg); } }
-@keyframes launchShimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(220%); } }
-.launch-loader-ring {
-  border-top-color: transparent;
-  border-right-color: transparent;
-  animation: launchSpin 1.15s linear infinite;
+.launch-grid {
+  background-image: linear-gradient(rgba(255,255,255,0.045) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.045) 1px, transparent 1px);
+  background-size: 52px 52px;
+  mask-image: radial-gradient(ellipse 75% 60% at 50% 42%, black 10%, transparent 72%);
 }
-.launch-loader-bar { animation: launchShimmer 0.95s ease-in-out infinite; }
+.launch-card {
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 16px;
+  background: rgba(255,255,255,0.04);
+  backdrop-filter: blur(10px);
+  padding: 0.9rem 1rem 1rem;
+  transition: border-color 0.2s ease, background-color 0.2s ease, transform 0.2s ease;
+}
+.launch-card:hover {
+  border-color: rgba(255,255,255,0.28);
+  background: rgba(255,255,255,0.07);
+  transform: translateY(-2px);
+}
+.launch-card h2 { letter-spacing: 0.06em; }
 
 .radar-app { font-optical-sizing: auto; }
 .radar-app header.sticky {
@@ -216,10 +227,50 @@ body { background: #FFFFFF; color: #0A0A0A; font-family: var(--font-geist-sans),
   .coin-card { padding: 0.85rem; }
 }
 
+/* ========== EMERGENT MATRIX — readable luxury + subtle jungle hologram ========== */
+/* Light, luxury base (matches /app) with jungle as accent — high readability */
+.matrix-root { --neon: #0A0A0A; --neon-2: #00C78A; --jungle-accent: #00C78A; --glass-border: #E8E8E8; background: #F8F8F7; color: #0A0A0A; overflow-x: hidden; }
+.matrix-grid-bg { position: fixed; inset: 0; pointer-events: none; background-image: linear-gradient(rgba(10,10,10,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(10,10,10,0.03) 1px, transparent 1px); background-size: 40px 40px; mask-image: radial-gradient(ellipse 90% 70% at 50% 30%, black 22%, transparent 78%); opacity: 0.6; }
+.matrix-scanlines { position: fixed; inset: 0; pointer-events: none; background-image: repeating-linear-gradient(to bottom, rgba(0,199,138,0.03) 0px, rgba(0,199,138,0.03) 1px, transparent 1px, transparent 7px); opacity: 0.35; }
+.matrix-vignette { position: fixed; inset: 0; pointer-events: none; background: radial-gradient(ellipse 110% 85% at 50% 0%, rgba(0,199,138,0.06), transparent 42%), linear-gradient(to bottom, rgba(255,255,255,0.0), rgba(248,248,247,1) 85%); }
+@keyframes matrixPulse { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.9; transform: scale(1.04); } }
+@keyframes matrixScan { 0% { transform: translateY(-100%); } 100% { transform: translateY(500%); } }
+@keyframes matrixGlyphFall { 0% { transform: translateY(-16px); opacity: 0; } 12% { opacity: 0.18; } 88% { opacity: 0.12; } 100% { transform: translateY(110px); opacity: 0; } }
+@keyframes matrixDecode { 0% { opacity: 0; filter: blur(3px); } 100% { opacity: 1; filter: blur(0); } }
+@keyframes matrixPingRing { 0% { transform: scale(0.7); opacity: 0.7; } 100% { transform: scale(2.1); opacity: 0; } }
+.matrix-pulse { animation: matrixPulse 2.2s ease-in-out infinite; }
+.matrix-scan-beam { position: absolute; left: 0; right: 0; height: 1.5px; background: linear-gradient(90deg, transparent, rgba(10,10,10,0.18), transparent); opacity: 0.9; animation: matrixScan 4s linear infinite; }
+.matrix-glyph { position: absolute; font-family: var(--font-geist-mono), monospace; font-size: 9px; color: rgba(0,199,138,0.55); opacity: 0.22; animation: matrixGlyphFall 5s linear infinite; pointer-events: none; }
+.jungle-glass { background: #FFFFFF; border: 1px solid #E8E8E8; border-radius: 18px; box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 4px 18px rgba(0,0,0,0.04); position: relative; overflow: hidden; transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease; }
+.jungle-glass::before { content: ""; position: absolute; left: 0; top: 0; right: 0; height: 2px; background: linear-gradient(90deg, var(--jungle-accent), #0A0A0A00); opacity: 0; transition: opacity 0.25s ease; pointer-events: none; }
+.jungle-glass:hover { border-color: #0A0A0A; box-shadow: 0 8px 30px rgba(0,0,0,0.08); }
+.jungle-glass:hover::before { opacity: 1; }
+.jungle-holo-border { position: relative; }
+.jungle-holo-border::after { display: none; }
+.matrix-decode { animation: matrixDecode 0.35s ease both; }
+.matrix-tilt { transform-style: preserve-3d; transition: transform 0.28s cubic-bezier(0.16,1,0.3,1), box-shadow 0.28s ease, border-color 0.28s ease; }
+.matrix-tilt:hover { box-shadow: 0 12px 36px rgba(0,0,0,0.08); transform: translateY(-2px); }
+.signal-stream-track { scrollbar-width: thin; scrollbar-color: #D1D1D1 transparent; }
+.signal-stream-track::-webkit-scrollbar { width: 4px; }
+.signal-stream-track::-webkit-scrollbar-thumb { background: #D1D1D1; border-radius: 999px; }
+.holo-assistant { position: absolute; inset: 0; display: grid; place-items: center; background: radial-gradient(ellipse 78% 58% at 50% 42%, rgba(0,199,138,0.08), transparent 72%); opacity: 0; transform: translateY(6px) scale(0.98); transition: opacity 0.28s ease, transform 0.28s cubic-bezier(0.16,1,0.3,1); pointer-events: none; }
+.group:hover .holo-assistant { opacity: 1; transform: translateY(0) scale(1); }
+.node-terminal { background: #F8F8F7; border: 1px solid #E8E8E8; border-radius: 12px; }
+.matrix-signal-bar { height: 4px; border-radius: 999px; background: linear-gradient(90deg, #0A0A0A, #00C78A); transition: width 0.6s ease; }
+.volatility-bar { height: 4px; border-radius: 999px; background: #E8E8E8; overflow: hidden; }
+.volatility-bar > i { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #0A0A0A, #FFB800, #FF3B30); transition: width 0.6s ease; }
+.sentiment-pulse { width: 7px; height: 7px; border-radius: 50%; background: #0A0A0A; animation: pulse-dot 1.5s ease-in-out infinite; position: relative; }
+.sentiment-pulse::after { content: ""; position: absolute; inset: -4px; border-radius: 50%; border: 1px solid #0A0A0A; opacity: 0.35; animation: matrixPingRing 1.9s cubic-bezier(0,0,0.2,1) infinite; }
+
 @media (prefers-reduced-motion: reduce) {
-  .launch-cta, .launch-cta-arrow, .coin-card, .icon-nav-btn, .radar-chip { transition: none; }
-  .launch-cta:hover, .launch-cta:hover .launch-cta-arrow, .coin-card:hover, .icon-nav-btn:hover { transform: none; }
-  .launch-loader-ring, .launch-loader-bar { animation: none; }
+  .matrix-pulse, .matrix-scan-beam, .matrix-glyph, .sentiment-pulse, .sentiment-pulse::after { animation: none; }
+  .matrix-tilt, .jungle-glass, .jungle-glass::before { transition: none; }
+  .matrix-tilt:hover { transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .launch-cta, .launch-cta-arrow, .coin-card, .icon-nav-btn, .radar-chip, .launch-card { transition: none; }
+  .launch-cta:hover, .launch-cta:hover .launch-cta-arrow, .coin-card:hover, .icon-nav-btn:hover, .launch-card:hover { transform: none; }
   .radar-app .ticker-item img { animation: none !important; }
   .hallow-float, .hallow-glow { animation: none; }
 }

@@ -9,25 +9,42 @@ const SOURCES = [
   { name: "Decrypt", url: "https://decrypt.co/", rss: "https://decrypt.co/feed" },
 ];
 
+type NewsItem = {
+  title: string;
+  link: string;
+  pubDate: string;
+  source: string;
+  thumb: string | null;
+  description: string;
+};
+
+type RssItem = {
+  title?: unknown;
+  link?: unknown;
+  pubDate?: unknown;
+  enclosure?: { link?: unknown };
+  description?: unknown;
+};
+
 export async function GET() {
   // For Vercel edge, we proxy to a simple news aggregation via cryptonews fallback
   // Use CoinGecko "news" is not existent, so we curate from public RSS via allorigins proxy
   try {
-    const items: any[] = [];
+    const items: NewsItem[] = [];
     // Try RSS via rss2json free tier
     const tryFetch = async (rss: string, source: string) => {
       try {
         const r = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(rss)}`, { next: { revalidate: 60 } });
         if (!r.ok) return;
-        const j = await r.json();
+        const j = await r.json() as { items?: RssItem[] };
         for (const it of (j.items || []).slice(0, 6)) {
           items.push({
-            title: it.title,
-            link: it.link,
-            pubDate: it.pubDate,
+            title: String(it.title ?? ""),
+            link: String(it.link ?? ""),
+            pubDate: String(it.pubDate ?? ""),
             source,
-            thumb: it.enclosure?.link || null,
-            description: (it.description || "").replace(/<[^>]*>/g, "").slice(0, 180),
+            thumb: it.enclosure?.link ? String(it.enclosure.link) : null,
+            description: String(it.description ?? "").replace(/<[^>]*>/g, "").slice(0, 180),
           });
         }
       } catch {}
@@ -48,7 +65,7 @@ export async function GET() {
     // sort by pubDate desc
     items.sort((a,b)=> new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime());
     return NextResponse.json({ items: items.slice(0, 18), updatedAt: new Date().toISOString() }, { headers: { "Cache-Control": "s-maxage=60, stale-while-revalidate=120" } });
-  } catch (e:any) {
-    return NextResponse.json({ items: [], error: e.message }, { status: 200 });
+  } catch (e: unknown) {
+    return NextResponse.json({ items: [], error: e instanceof Error ? e.message : "news failed" }, { status: 200 });
   }
 }

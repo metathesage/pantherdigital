@@ -47,3 +47,6 @@ next-env.d.ts
 .env*
 Hi3D_Untitled_allparts_20260831_235734.glb
 public/panther-procedural.glb
+
+# local art sources (not deployed, not committed)
+_art-sources/

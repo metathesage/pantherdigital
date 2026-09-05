@@ -11,11 +11,12 @@ type Risk = "Low" | "Medium" | "High" | "Critical";
 type Coin = { id:string; name:string; symbol:string; chain:Chain; price:string; priceNum:number; change1h:number; change24h:number; marketCap:string; marketCapNum:number; volume:string; volumeNum:number; emergentScore:number; risk:Risk; trend:Trend; reason:string; spark:number[]; timeAgo:string; liquidity:string; holders:string; sentiment:number; riskScore:number; mentions:number; dexPool:string; image:string; rank:number; category:string; description:string; top10HoldersPct:number; source?:"coingecko"|"pair"; pairAddress?:string; tokenAddress?:string; dexName?:string; liquidityNum?:number; txns24h?:number; fdvNum?:number; pairUrl?:string; geckoTerminalUrl?:string; socials?:{twitter?:string; telegram?:string; website?:string}; poolCreatedAt?:string; };
 type GeckoCoin = { id:string; symbol:string; name:string; image:string; current_price:number; market_cap:number; total_volume:number; price_change_percentage_1h_in_currency?:number; price_change_percentage_24h?:number; market_cap_rank:number; sparkline_in_7d?:{price:number[]}; };
 const CHAINS: (Chain | "All")[] = ["All","Solana","Ethereum","Base","Robinhood","Sui"];
-type Feed = "trending" | "new" | "boosts" | "bluechips";
+type Feed = "trending" | "new" | "boosts" | "coinbase" | "bluechips";
 const FEEDS: { key: Feed; label: string }[] = [
   { key: "trending", label: "Trending" },
   { key: "new", label: "New" },
   { key: "boosts", label: "Boosts" },
+  { key: "coinbase", label: "Coinbase" },
   { key: "bluechips", label: "Blue chips" },
 ];
 const TRENDS = ["All","Breaking","Heating","Stealth","Volatile","Cooling"] as const;
@@ -115,6 +116,30 @@ function sparkFromChange(price:number, c24:number){
   if(!price) return Array.from({length:14},()=>0);
   const start=price/(1+(c24||0)/100);
   return Array.from({length:14},(_,i)=> start + (price-start)*(i/13));
+}
+function mapCoinbaseToCoin(p: any, rank: number): Coin {
+  const price=Number(p.price)||0;
+  const c24=Number(p.change24h)||0;
+  const vol=Number(p.volume24)||0;
+  const base=String(p.base_currency||"").toUpperCase()||`CB${rank}`;
+  const quote=String(p.quote_currency||"USD").toUpperCase()||"USD";
+  const mcap=vol*2 || 0;
+  const raw=52 + c24*1.4 + Math.min(18,(vol/(mcap||1))*280);
+  const score=Math.max(12,Math.min(98,Math.round(raw)));
+  const ch: Chain = base==="SOL" ? "Solana" : base==="SUI" ? "Sui" : base==="ETH"||base==="ARB"||base==="OP" ? "Ethereum" : base==="AERO"||base==="DEGEN" ? "Base" : "Ethereum";
+  const sym=base.toUpperCase()||`CB${rank}`;
+  return {
+    id:`cb-${p.product_id}`.toLowerCase(), name:base, symbol:sym, chain:ch,
+    price: price<1?`$${price.toFixed(price<0.01?6:4)}`:`$${price.toLocaleString(undefined,{maximumFractionDigits:2})}`, priceNum:price,
+    change1h:0, change24h:c24, marketCap:formatMoney(mcap), marketCapNum:mcap,
+    volume:formatMoney(vol), volumeNum:vol, emergentScore:score, risk:riskFor(score,vol,mcap),
+    trend:trendFor(c24), reason:c24>8?`Coinbase mover — +${c24.toFixed(1)}% 24h.`:`Coinbase spot flow — ${sym}/${quote}, vol ${formatMoney(vol)}.`,
+    spark:Array.from({length:14},(_,i)=> price*(1+Math.sin(i)*0.015)), timeAgo:"live", liquidity:formatMoney(vol*0.2),
+    holders:(1000+rank*17).toLocaleString(), sentiment:Math.max(18,Math.min(94,Math.round(58+c24*1.2))),
+    riskScore:Math.max(12,Math.min(92,Math.round(42+(100-score)*0.55))), mentions:Math.floor(6+Math.abs(c24)*2.2),
+    dexPool:`${sym}/${quote}`, image:`https://cdn.jsdelivr.net/gh/atomiclabs/cryptocurrency-icons@1a63530be6e374711a8554f31b17e4cb92c25fa5/128/icon/${sym.toLowerCase()}.png`, rank, category:"Infrastructure",
+    description:`${base} trades on Coinbase spot (${sym}/${quote}) with ${formatMoney(vol)} 24h volume.`, top10HoldersPct:34, source:"pair" as const,
+  };
 }
 function mapPairToCoin(p: PairRow, rank:number): Coin {
   const price=Number(p.priceUsd)||0;
@@ -329,7 +354,7 @@ export default function EmergentMinimal(){
   };
   const connectCoinbase=async()=>{
     setWalletError("Looking for Coinbase Wallet…");
-    let eth = await findCoinbaseProvider();
+    const eth = await findCoinbaseProvider();
     if(!eth){
       // No extension found → try to open Coinbase Wallet deep link / download instead of dead end
       const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || "");
@@ -385,6 +410,15 @@ export default function EmergentMinimal(){
     try{
       setErr(null);
       if(!coinsLenRef.current) setLoading(true);
+      if(feed==="coinbase"){
+        const r = await fetch(`/api/coinbase?action=products&limit=100&product_type=SPOT`,{cache:"no-store"});
+        if(!r.ok) throw new Error(`Coinbase ${r.status}`);
+        const j = await r.json();
+        const mapped: Coin[] = (j.products||[]).filter((p:any)=>p.price>0).slice(0,120).map((p:any,i:number)=>mapCoinbaseToCoin(p, i+1));
+        setCoins(mapped); setLastUpdated(new Date());
+        setLogs(mapped.slice(0,6).map(c=>({t:new Date().toLocaleTimeString([],{hour12:false}), msg:`[cb] ${c.symbol} ${c.change24h>=0?"+":"-"} ${c.change24h.toFixed(2)}%  ${c.price}`})));
+        return;
+      }
       if(feed!=="bluechips"){
         const chain = pairChainParam(chainFilter);
         const r = await fetch(`/api/pairs?feed=${feed}&chain=${chain}`,{cache:"no-store"});
@@ -402,7 +436,7 @@ export default function EmergentMinimal(){
       const mapped: Coin[] = all.map(g=>{
         const ch=chainForCoin(g); const c1=g.price_change_percentage_1h_in_currency??0; const c24=g.price_change_percentage_24h??0; const vol=g.total_volume||0; const mcap=g.market_cap||0; const volMcap=vol/(mcap||1); const raw=52 + c24*1.4 + c1*0.6 + Math.min(18,volMcap*280) - Math.max(0,(g.market_cap_rank-50)*0.08); const score=Math.max(12,Math.min(98,Math.round(raw))); const trend=trendFor(c24); const risk=riskFor(score,vol,mcap); const spark=g.sparkline_in_7d?.price?.slice(-28) || Array.from({length:14},(_,i)=> g.current_price*(1+(Math.sin(i)*0.02)));
         const category=categoryForCoin(g,ch); const description=descriptionForCoin(g,category); const top10HoldersPct=Math.max(8, Math.min(78, Math.round(18 + (100-score)*0.42 + (volMcap<0.06?18:0) + (g.market_cap_rank%5)*3)));
-        return { id:g.id, name:g.name, symbol:g.symbol.toUpperCase(), chain:ch, price: g.current_price<1?`$${g.current_price.toFixed(g.current_price<0.01?6:4)}`:`$${g.current_price.toLocaleString(undefined,{maximumFractionDigits:2})}`, priceNum:g.current_price, change1h:c1, change24h:c24, marketCap:formatMoney(mcap), marketCapNum:mcap, volume:formatMoney(vol), volumeNum:vol, emergentScore:score, risk, trend, reason: c24>12?`Breakout — +${c24.toFixed(1)}% in 24h, volume ${formatMoney(vol)}.` : c24<-8?`Cooling after surge — AI flags mean reversion.` : volMcap>0.18?`High turnover — dex flow ${formatMoney(vol)} on ${formatMoney(mcap)} mcap.` : `Steady accumulation — low volatility, watch for trigger.`, spark, timeAgo:timeAgoFor(g.market_cap_rank), liquidity:formatMoney(vol*0.22), holders:(800+g.market_cap_rank*31+Math.floor(Math.random()*400)).toLocaleString(), sentiment:Math.max(18,Math.min(94,Math.round(58+c24*1.2+(volMcap*100)))), riskScore:Math.max(12,Math.min(92,Math.round(42+(100-score)*0.55+(volMcap<0.04?18:0)))), mentions:Math.floor(6+Math.abs(c24)*2.2+volMcap*420), dexPool:`${g.symbol.toUpperCase()}/USD`, image:g.image, rank:g.market_cap_rank, category, description, top10HoldersPct, source:"coingecko" as const };
+        return { id:g.id, name:g.name, symbol:g.symbol.toUpperCase(), chain:ch, price: g.current_price<1?`$${g.current_price.toFixed(g.current_price<0.01?6:4)}`:`$${g.current_price.toLocaleString(undefined,{maximumFractionDigits:2})}`, priceNum:g.current_price, change1h:c1, change24h:c24, marketCap:formatMoney(mcap), marketCapNum:mcap, volume:formatMoney(vol), volumeNum:vol, emergentScore:score, risk, trend, reason: c24>12?`Breakout — +${c24.toFixed(1)}% in 24h, volume ${formatMoney(vol)}.` : c24<-8?`Cooling after surge — AI flags mean reversion.` : volMcap>0.18?`High turnover — dex flow ${formatMoney(vol)} on ${formatMoney(mcap)} mcap.` : `Steady accumulation — low volatility, watch for trigger.`, spark, timeAgo:timeAgoFor(g.market_cap_rank), liquidity:formatMoney(vol*0.22), holders:(800+g.market_cap_rank*31+(g.market_cap_rank%7)*57).toLocaleString(), sentiment:Math.max(18,Math.min(94,Math.round(58+c24*1.2+(volMcap*100)))), riskScore:Math.max(12,Math.min(92,Math.round(42+(100-score)*0.55+(volMcap<0.04?18:0)))), mentions:Math.floor(6+Math.abs(c24)*2.2+volMcap*420), dexPool:`${g.symbol.toUpperCase()}/USD`, image:g.image, rank:g.market_cap_rank, category, description, top10HoldersPct, source:"coingecko" as const };
       });
       setCoins(mapped); setLastUpdated(new Date());
       setLogs(mapped.slice(0,6).map(c=>({t:new Date().toLocaleTimeString([],{hour12:false}), msg:`[init] ${c.symbol} ${c.change24h>=0?"↗":"↘"} ${c.change24h.toFixed(2)}%  ${c.price}`})));
@@ -459,10 +493,10 @@ export default function EmergentMinimal(){
       }catch{}
       // 2) Try CG nfts markets first (if available), fallback to list + detail, fallback to curated known collections via markets
       if(!data.length) try{
-        const r=await fetch(`https://api.coingecko.com/api/v3/nfts/list?per_page=40`,{cache:"no-store"});
+        const r=await fetch(`/api/nfts?action=list&per_page=40`,{cache:"no-store"});
         if(r.ok){ const list=await r.json(); const ids=list.slice(0,16).map((x:any)=>x.id);
           const details=await Promise.all(ids.map(async (id:string)=>{
-            try{ const rr=await fetch(`https://api.coingecko.com/api/v3/nfts/${id}?localization=false`,{cache:"no-store"}); if(!rr.ok) return null; return rr.json(); }catch{return null;}
+            try{ const rr=await fetch(`/api/nfts?action=detail&id=${id}`,{cache:"no-store"}); if(!rr.ok) return null; return rr.json(); }catch{return null;}
           }));
           data=details.filter(Boolean).map((d:any)=>({
             id:d.id, name:d.name, symbol:d.symbol, image:d.image?.small || d.image?.thumb || "", floor: d.floor_price?.usd ?? d.floor_price?.native_currency ?? 0, volume: d.volume_24h?.usd ?? d.market_cap?.usd ?? 0, marketCap: d.market_cap?.usd ?? 0, opensea: d.links?.opensea || null, blur: d.links?.blur || null, totalSupply: d.total_supply || 0, floorChange: d.floor_price_in_usd_24h_percentage_change ?? 0
@@ -473,7 +507,7 @@ export default function EmergentMinimal(){
       if(!data.length){
         const blueIds=["bored-ape-yacht-club","cryptopunks","azuki","clonex","doodles-official","moonbirds","pudgy-penguins","milady","de-gods","mutant-ape-yacht-club","art-blocks","otherdeed"];
         const rows=await Promise.all(blueIds.slice(0,12).map(async (id)=>{
-          try{ const rr=await fetch(`https://api.coingecko.com/api/v3/nfts/${id}?localization=false`,{cache:"no-store"}); if(!rr.ok) return null; const d=await rr.json(); return { id:d.id, name:d.name, symbol:d.symbol, image:d.image?.small || "", floor: d.floor_price?.usd ?? 0, volume: d.volume_24h?.usd ?? 0, marketCap: d.market_cap?.usd ?? 0, opensea: d.links?.opensea || null, blur: d.links?.blur || null, totalSupply: d.total_supply || 0, floorChange: d.floor_price_in_usd_24h_percentage_change ?? 0 }; }catch{return null;}
+          try{ const rr=await fetch(`/api/nfts?action=detail&id=${id}`,{cache:"no-store"}); if(!rr.ok) return null; const d=await rr.json(); return { id:d.id, name:d.name, symbol:d.symbol, image:d.image?.small || "", floor: d.floor_price?.usd ?? 0, volume: d.volume_24h?.usd ?? 0, marketCap: d.market_cap?.usd ?? 0, opensea: d.links?.opensea || null, blur: d.links?.blur || null, totalSupply: d.total_supply || 0, floorChange: d.floor_price_in_usd_24h_percentage_change ?? 0 }; }catch{return null;}
         }));
         data=rows.filter(Boolean) as any[];
       }
@@ -505,8 +539,8 @@ export default function EmergentMinimal(){
           return;
         }
         const [d, chart]=await Promise.all([
-          fetch(`https://api.coingecko.com/api/v3/coins/${coin.id}?localization=false&tickers=true&market_data=true&community_data=false&developer_data=false&sparkline=false`,{cache:"no-store"}).then(r=> r.ok?r.json():null),
-          fetch(`https://api.coingecko.com/api/v3/coins/${coin.id}/market_chart?vs_currency=usd&days=${chartRange==='24h'?'1':chartRange==='7d'?'7':'30'}`,{cache:"no-store"}).then(r=> r.ok?r.json():null).catch(()=>null)
+          fetch(`/api/coins/${coin.id}`,{cache:"no-store"}).then(r=> r.ok?r.json():null),
+          fetch(`/api/coins/market-chart?id=${coin.id}&days=${chartRange==='24h'?'1':chartRange==='7d'?'7':'30'}`,{cache:"no-store"}).then(r=> r.ok?r.json():null).catch(()=>null)
         ]);
         if(cancelled) return; setDetail(d); if(chart?.prices) setChartData(chart.prices.map((p:any)=>p[1])); else setChartData(coin.spark);
       }catch{ if(!cancelled) setDetail(null); }finally{ if(!cancelled) setDetailLoading(false); }
@@ -537,6 +571,7 @@ export default function EmergentMinimal(){
           </div>
           <div className="flex items-center gap-2">
             <Link href="/" title="App · Radar" className="icon-nav-btn" aria-label="Home"><IconLayers className="size-4"/></Link>
+            <Link href="/matrix" title="Matrix · Board" className="icon-nav-btn" aria-label="Matrix"><IconOrbit className="size-4"/></Link>
             <Link href="/portfolio" title="Portfolio · Wallets" className="icon-nav-btn" aria-label="Portfolio"><IconWallet className="size-4"/></Link>
             <Link href="/about" title="Wiki · About" className="icon-nav-btn" aria-label="About"><IconGlobe className="size-4"/></Link>
             {isConnected?(
@@ -579,7 +614,7 @@ export default function EmergentMinimal(){
               <span className="radar-label mr-1 flex items-center gap-1.5"><IconSatellite className="size-3.5"/> Feed</span>
               {FEEDS.map(f=>{
                 const active=feed===f.key;
-                const Icon = f.key==="trending"?IconFlame : f.key==="new"?IconClock : f.key==="boosts"?IconStar : IconTrophy;
+                const Icon = f.key==="trending"?IconFlame : f.key==="new"?IconClock : f.key==="boosts"?IconStar : f.key==="coinbase"?IconSatellite : IconTrophy;
                 const isPulsing = filterPulse===`feed-${f.key}`;
                 return (<button key={f.key} onClick={()=>{ setFeed(f.key); setFilterPulse(`feed-${f.key}`); setTimeout(()=>setFilterPulse(null),700); setSortKey(f.key==="bluechips"?"emergentScore":"volumeNum"); }} className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-[14px] font-semibold transition-all duration-200 ${active?"bg-[#0A0A0A] text-white shadow-lg scale-[1.02]":"border border-[#E8E8E8] bg-white text-[#0A0A0A] hover:border-[#0A0A0A] hover:scale-[1.02]"} ${isPulsing?"animate-[ping_0.7s_ease-out_1]":""}`}><Icon className="size-3.5"/>{f.label}{f.key==="trending" && active && <span className="ml-0.5 size-1.5 rounded-full bg-white animate-pulse"/>}</button>);
               })}

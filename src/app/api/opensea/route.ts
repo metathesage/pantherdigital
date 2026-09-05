@@ -4,7 +4,7 @@ export const revalidate = 0;
 
 // OpenSea aggregator proxy — tries OpenSea with optional OPENSEA_API_KEY, falls back gracefully
 // Free tier without key is heavily rate-limited (429), so we cache and fallback to CoinGecko/Dex
-const OPENSEA_KEY = process.env.OPENSEA_API_KEY || process.env.NEXT_PUBLIC_OPENSEA_API_KEY || "";
+const OPENSEA_KEY = process.env.OPENSEA_API_KEY || "";
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
@@ -22,23 +22,27 @@ export async function GET(req: Request) {
       const url = `https://api.opensea.io/api/v2/collections?chain=${chain}&limit=${limit}`;
       const r = await fetch(url, { headers, cache: "no-store" });
       if (r.ok) {
-        const j = await r.json();
-        const collections = (j.collections || j || []).slice(0, Number(limit));
-        const mapped = collections.map((c: any) => ({
-          id: c.collection || c.slug || c.name,
-          name: c.name || c.collection,
-          symbol: (c.collection || "").slice(0, 6).toUpperCase(),
-          image: c.image_url || c.banner_image_url || "",
-          floor: c.floor_price ?? null,
-          volume: c.volume ?? 0,
-          opensea: c.opensea_url || `https://opensea.io/collection/${c.collection}`,
-        }));
+        const j = await r.json() as { collections?: unknown };
+        const collections: unknown[] = Array.isArray(j.collections) ? j.collections : Array.isArray(j) ? j : [];
+        const mapped = collections.slice(0, Number(limit)).map((raw) => {
+          const c = (raw ?? {}) as Record<string, unknown>;
+          const collection = String(c.collection ?? "");
+          return {
+            id: c.collection || c.slug || c.name || "",
+            name: c.name || c.collection || "",
+            symbol: collection.slice(0, 6).toUpperCase(),
+            image: String(c.image_url || c.banner_image_url || ""),
+            floor: (c.floor_price ?? null) as number | null,
+            volume: (c.volume ?? 0) as number,
+            opensea: c.opensea_url || `https://opensea.io/collection/${collection}`,
+          };
+        });
         if (mapped.length) return NextResponse.json({ source: "opensea", collections: mapped }, { headers: { "Cache-Control": "public, s-maxage=60, stale-while-revalidate=120" } });
       }
     }
     // No key or failed — report that opensea needs key, client will fallback to CoinGecko/Dex
     return NextResponse.json({ source: "fallback", note: OPENSEA_KEY ? "opensea empty" : "OPENSEA_API_KEY not set — using CoinGecko + DexScreener fallback (free, no key)", collections: [] }, { headers: { "Cache-Control": "public, s-maxage=60" } });
-  } catch (e: any) {
-    return NextResponse.json({ source: "error", error: e.message, collections: [] }, { status: 200 });
+  } catch (e: unknown) {
+    return NextResponse.json({ source: "error", error: e instanceof Error ? e.message : "opensea failed", collections: [] }, { status: 200 });
   }
 }

@@ -36,7 +36,7 @@ export async function GET(req: Request) {
     if (!r.ok) return NextResponse.json({ error: `DexScreener ${r.status}` }, { status: r.status });
     const data = await r.json();
     return NextResponse.json(data, { headers: { "Cache-Control": "public, s-maxage=20, stale-while-revalidate=40" } });
-  } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+  } catch (e: unknown) {
+    return NextResponse.json({ error: e instanceof Error ? e.message : "dex proxy failed" }, { status: 500 });
   }
 }

@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
-// Secure proxy for Helius — keeps key off client (set HELIUS_API_KEY in .env.local / Vercel env)
+// Secure proxy for Helius — keeps key off client (set HELIUS_API_KEY in .env.local / Netlify env)
 // Usage: /api/helius?method=getAssets&address=xxx  or POST body forwarded
 
-const HELIUS_KEY = process.env.HELIUS_API_KEY || process.env.NEXT_PUBLIC_HELIUS_API_KEY || "";
+const HELIUS_KEY = process.env.HELIUS_API_KEY || "";
 const HELIUS_BASE = HELIUS_KEY ? `https://mainnet.helius-rpc.com/?api-key=${HELIUS_KEY}` : "";
 
 export async function POST(req: Request) {
@@ -14,8 +14,8 @@ export async function POST(req: Request) {
     const r = await fetch(HELIUS_BASE, { method: "POST", headers: { "Content-Type": "application/json" }, body, cache: "no-store" });
     const j = await r.text();
     return new NextResponse(j, { status: r.status, headers: { "Content-Type": "application/json", "Cache-Control": "no-store" } });
-  } catch (e:any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+  } catch (e: unknown) {
+    return NextResponse.json({ error: e instanceof Error ? e.message : "helius proxy failed" }, { status: 500 });
   }
 }
 export async function GET(req: Request) {
