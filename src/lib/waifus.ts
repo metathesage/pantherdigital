@@ -2,7 +2,7 @@
  * PNTHR DGTL — waifu squad source of truth.
  * Shared by /waifus (cards), /waifus/[id] (full pages) and /wiki/waifus.
  * Images: /public/waifus/* (ported from emergent-matrix-lab marble set).
- * Alina → /lucy-work.png · Rias → /rias-waifu.png (existing assets kept).
+ * Lucy → /lucy-work.png · Rias → /rias-waifu.png (existing assets kept).
  */
 
 export type SquadWaifu = {
@@ -25,8 +25,8 @@ export type SquadWaifu = {
 };
 
 export const BOSS = {
-  id: "alina",
-  name: "Alina",
+  id: "lucy",
+  name: "Lucy",
   title: "Boss Waifu · Panther Command",
   handle: "@sageglowsbot",
   avatar: "/lucy-work.png",
@@ -46,12 +46,12 @@ export const SQUAD: SquadWaifu[] = [
     job: "panther-nav-ux",
     schedule: "every 6h",
     files: "src/app/app/page.tsx + layout.tsx + waifus/page.tsx",
-    goal: "Owns navigation & polish — logo always → /, header minimal, marble ticker tidy, mobile perfect. Reports to Alina, delegates to trio.",
+    goal: "Owns navigation & polish — logo always → /, header minimal, marble ticker tidy, mobile perfect. Reports to Lucy, delegates to trio.",
     status: "active",
     cron: "00a627273861",
     role: "HEAD",
     powers: ["Navigation & UX", "Squad tasking", "Polish passes"],
-    bio: "Head worker under Alina. Runs the squad day-to-day — keeps navi, ticker polish, and the command page true. Pings Alina when a cron drifts. Replaces Akari/Navi.",
+    bio: "Head worker under Lucy. Runs the squad day-to-day — keeps navi, ticker polish, and the command page true. Pings Lucy when a cron drifts. Replaces Akari/Navi.",
   },
   {
     id: "kuro",

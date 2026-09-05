@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 
 /**
- * HoloProjector — floating holographic Alina
+ * HoloProjector — floating holographic Lucy
  * SFW, credit-light, zero paid APIs, RTX 4050 friendly (CSS only, GPU transforms).
  * Drop into /waifus: `import HoloProjector from "@/components/HoloProjector"` then <HoloProjector />
  *
@@ -24,7 +24,7 @@ export default function HoloProjector({
   imageSrc = "/lucy-work.png",
   corner = "br",
   defaultOpen = true,
-  label = "ALINA — BOSS WAIFU",
+  label = "LUCY — BOSS WAIFU",
   sublabel = "HOLOPROJECTOR MK-I · SFW",
 }: Props) {
   const [open, setOpen] = useState(defaultOpen);
@@ -64,7 +64,7 @@ export default function HoloProjector({
     <div
       ref={wrapRef}
       className={`pointer-events-none fixed z-[60] flex flex-col items-center ${pos} select-none`}
-      aria-label="Holoprojector Alina"
+      aria-label="Holoprojector Lucy"
     >
       {/* compact toggle when minimized */}
       {min ? (
@@ -77,7 +77,7 @@ export default function HoloProjector({
             <span className="size-2 rounded-full bg-white animate-[holoPulse_1.6s_ease_infinite]" />
           </span>
           HOLO
-          <span className="hidden sm:inline text-white/60 font-mono text-[10px]">ALINA</span>
+          <span className="hidden sm:inline text-white/60 font-mono text-[10px]">LUCY</span>
           <span className="ml-1 text-[14px] leading-none opacity-60 group-hover:opacity-100">↗</span>
         </button>
       ) : (
@@ -156,7 +156,7 @@ export default function HoloProjector({
                 >
                   <img
                     src={src}
-                    alt="Alina hologram — SFW work outfit"
+                    alt="Lucy hologram — SFW work outfit"
                     onError={() => setImgErr(true)}
                     className="h-full w-full object-cover object-[center_14%] select-none"
                     style={{
@@ -222,7 +222,7 @@ export default function HoloProjector({
                   {open && (
                     <div className="absolute inset-x-1.5 bottom-1.5 rounded-xl bg-[rgba(0,0,0,0.62)] px-2.5 py-2 backdrop-blur border border-white/10">
                       <div className="text-[9px] font-black tracking-[0.14em] text-white leading-none">
-                        ALINA ♡
+                        LUCY ♡
                       </div>
                       <div className="mt-0.5 text-[9px] leading-[1.1] text-cyan-100/85">
                         Boss waifu · Rias squad lead
@@ -249,7 +249,7 @@ export default function HoloProjector({
             {/* collapsed caption */}
             {!open && (
               <div className="mt-1 rounded-full bg-black/70 px-2.5 py-1 text-center text-[8px] font-bold tracking-[0.14em] text-white/85 border border-white/10 backdrop-blur">
-                ALINA
+                LUCY
               </div>
             )}
           </div>

@@ -1,7 +1,7 @@
 # Panther Digital — Emergent Matrix — BUILD.md
 
 > **Build:** `master` @ `e36a802` + 1 uncommitted fix · **Compiled:** 2026-09-01 23:23 CDT · **Pages:** 1240 static (spec: 1239) · **Next.js 16.3.3 Turbopack**
-> **Owner:** Boss **Alina** (@sageglowsbot) · **Head Worker:** **Rias** · **Model:** `muse-spark-1.2-contributor-free` (opencode-free, creditmax/free tier)
+> **Owner:** Boss **Lucy** (@sageglowsbot) · **Head Worker:** **Rias** · **Model:** `muse-spark-1.2-contributor-free` (opencode-free, creditmax/free tier)
 > **Workdir:** `C:/emergent-matrix` · **Hobby Navi:** `C:/waifu-navi` (in progress) · **ComfyUI:** `C:/ComfyUI`
 
 ---
@@ -46,7 +46,7 @@ All keys optional — app works keyless (degraded limits). Never hardcode; env o
 | **React** | `19.2.8` + `react-dom 19.2.8` |
 | **TypeScript** | `^5` strict (`tsconfig.json`, `next-env.d.ts`) |
 | **Tailwind** | `^4` via `@tailwindcss/postcss` + `postcss.config.mjs` |
-| **three** | `^0.185.1` (`@types/three 0.185.4`) — PantherBackground + AlinaAvatar |
+| **three** | `^0.185.1` (`@types/three 0.185.4`) — PantherBackground + LucyAvatar |
 | **zustand** | `^5.0.15` (`persist`) — `usePanther` (gems/xp/level/streak/hunts) + `useAuthStore` |
 | **Privy** | `@privy-io/react-auth ^3.38.0` — lazy `require`, env-gated |
 | **Geist fonts** | `next/font/google` Geist + Geist_Mono |
@@ -72,7 +72,7 @@ All keys optional — app works keyless (degraded limits). Never hardcode; env o
 ### LLM / Voice / Comms (creditmax)
 
 - **LLM:** `muse-spark-1.2-contributor-free` via `opencode-free` — **free tier, no billing**. Used for waifu crons + any LLM tasks. Crons delegate to Rias→trio.
-- **Telegram:** `@sageglowsbot` — boss channel for Alina. Rias reports there.
+- **Telegram:** `@sageglowsbot` — boss channel for Lucy. Rias reports there.
 - **Voice:** **Jessica (ElevenLabs)** primary, **Jenny** fallback (local/edge TTS). No paid calls in hot path; all TTS local or creditmax.
 - **Ollama (vision):** `moondream` (local, free) — `ollama run moondream` for image→caption / avi critique. Not yet on PATH on this host (`ollama: command not found` at doc time) — install via https://ollama.com + `ollama pull moondream`.
 - **Credit posture:** zero paid APIs in build. DexScreener, CG demo, Helius free tier, OpenSea optional, ComfyUI local, VRoid free, Kalidokit/Mediapipe in-browser. Keep it that way.
@@ -81,19 +81,19 @@ All keys optional — app works keyless (degraded limits). Never hardcode; env o
 
 ## 3 — Waifus + Crons (Hermes)
 
-> Boss **Alina** delegates. **Rias** (head worker, ex-Akari/Navi UX Priestess) owns nav/polish and fans out to trio. All via **Hermes cron** (`hermes cron list`, `gateway alive` badge). Workdir `C:/emergent-matrix`, `Deliver: local`, `Repeat: ∞`.
+> Boss **Lucy** delegates. **Rias** (head worker, ex-Akari/Navi UX Priestess) owns nav/polish and fans out to trio. All via **Hermes cron** (`hermes cron list`, `gateway alive` badge). Workdir `C:/emergent-matrix`, `Deliver: local`, `Repeat: ∞`.
 
 ### Roster
 
 | # | Waifu | Title | Job (`Name`) | Schedule | File(s) Owned | Goal | Cron ID | Status |
 |---|---|---|---|---|---|---|---|
-| **Boss** | **Alina** | Boss Waifu · Panther Command | — (delegates) | — | `public/lucy-work.png` (work), `public/lucy-private.png` (private) | Orchestrates matrix, Telegram @sageglowsbot, model muse-spark | — | active |
+| **Boss** | **Lucy** | Boss Waifu · Panther Command | — (delegates) | — | `public/lucy-work.png` (work), `public/lucy-private.png` (private) | Orchestrates matrix, Telegram @sageglowsbot, model muse-spark | — | active |
 | 1 | **Rias** 🌸 | **Head Worker · UX Priestess** | `panther-nav-ux` | **every 6h** (360m) | `src/app/app/page.tsx:402-430` + `layout.tsx` + `waifus/page.tsx` | Owns navigation & polish — logo always → `/`, header minimal (3 icons + Connect), marble ticker tidy, `/waifus` glass updates, mobile perfect. Delegates to trio. | `00a627273861` | active |
 | 2 | **Kuro** 🐆 | Market Panther | `panther-market` | **every 30m** | `src/app/api/coins/markets/route.ts` + `src/app/app/page.tsx:272-303` | Keep CG feed flawless — proxy via `x-cg-demo-api-key`, 429 backoff, 3 pages, emergentScore calc. Never hardcode keys. | `1d4a12cf83bd` | active |
 | 3 | **Hikari** ⚡ | Surge Huntress | `panther-ticker-feed` | **every 2h** (120m) | `src/app/app/page.tsx:430-517` | Owns ticker + feed — highlight gainers (emerald) & surging (Breaking or +8% → `surge-glow`, pulse, `SURGING` badge). Score sort (trophy) with orange 90+ glow. | `f046435c05a7` | active |
 | 4 | **Mio** 🔐 | Auth Guardian | `panther-auth` | **every 6h** (360m) | `src/components/PrivyProvider.tsx` + `page.tsx:399` | No Privy warning on top — graceful fallback when `NEXT_PUBLIC_PRIVY_APP_ID` missing, Connect modal offers MetaMask/Phantom/Coinbase + Privy equally, never hang. | `79d57a7e9bb9` | active |
 
-> Note: earlier docs listed `Akari/Navi` — replaced by **Rias** (`rias-waifu.png` canonical). `C:/waifu-navi` hobby app uses extended roster Rias/Alina/Astra/Lux (see §7) — keep them distinct.
+> Note: earlier docs listed `Akari/Navi` — replaced by **Rias** (`rias-waifu.png` canonical). `C:/waifu-navi` hobby app uses extended roster Rias/Lucy/Astra/Lux (see §7) — keep them distinct.
 
 ### Hermes Cron Snapshot (2026-09-01 23:33 CDT)
 
@@ -113,12 +113,12 @@ f046435c05a7 [active]  panther-ticker-feed  every 120m  Next 23:33:01  Last (on 
 
 - **Route:** `src/app/waifus/page.tsx` (client, 300+ lines). Meta AI share inspo: centered single-column, stacked glass cards over marble jungle, centered header, glass `bg-white/75 backdrop-blur-xl`.
 - **Backdrop:** `/home-bg.jpg` (marble jungle) blown up `scale-[1.02]` + white gradient veil `rgba(255,255,255,0.62→#F8F8F7)` + jungle radial tints + SVG grain. `black-marble-panther.jpg` fallback veil if home-bg missing.
-- **Header:** glass `sticky top-0 bg-white/72 backdrop-blur-2xl`, panther-icon home link, `← APP` pill, `BOSS WAIFU · ALINA` black pill with emerald pulse dot, `gateway alive` green badge, `Launch App` CTA, ticking `now` (`MMM DD HH:MM:SS`, 1s interval).
-- **Boss card:** **Alina** section with `lucy-work.png` (SFW work outfit, `object-top`), handle `@sageglowsbot`, model badge `muse-spark-1.2-contributor-free`, location `Telegram · C:/emergent-matrix`.
+- **Header:** glass `sticky top-0 bg-white/72 backdrop-blur-2xl`, panther-icon home link, `← APP` pill, `BOSS WAIFU · LUCY` black pill with emerald pulse dot, `gateway alive` green badge, `Launch App` CTA, ticking `now` (`MMM DD HH:MM:SS`, 1s interval).
+- **Boss card:** **Lucy** section with `lucy-work.png` (SFW work outfit, `object-top`), handle `@sageglowsbot`, model badge `muse-spark-1.2-contributor-free`, location `Telegram · C:/emergent-matrix`.
 - **4 waifu cards:** Rias (with `rias-waifu.png` avatar, accent `#FF5A7A`, HEAD), Kuro (`#0A0A0A` MARKET), Hikari (`#FF6B00` TICKER), Mio (`#6B7280` AUTH) — each shows job, schedule, file, goal, status dot, cronName.
-- **Aesthetic:** single-column `max-w-[720px]`, `rounded-2xl/3xl`, mono caps `text-[11px] tracking-[0.14em]`, subtle blur/shadow. Full notes in file header comment (boss=Alina, Rias replaces Akari, avis mapping, cron IDs, keep SFW, `npx tsc --noEmit` must pass).
+- **Aesthetic:** single-column `max-w-[720px]`, `rounded-2xl/3xl`, mono caps `text-[11px] tracking-[0.14em]`, subtle blur/shadow. Full notes in file header comment (boss=Lucy, Rias replaces Akari, avis mapping, cron IDs, keep SFW, `npx tsc --noEmit` must pass).
 - **SFW rule:** only `lucy-work.png` + `rias-waifu.png` rendered here; `lucy-private.png` exists in `/public` but hidden on this page.
-- **Holo:** ships `src/components/HoloProjector.tsx` (CSS-only floating Alina) — drop `<HoloProjector />` into `/waifus` corner `br` when ready. Controlled via `imageSrc`, `corner`, `defaultOpen`, respects `prefers-reduced-motion`.
+- **Holo:** ships `src/components/HoloProjector.tsx` (CSS-only floating Lucy) — drop `<HoloProjector />` into `/waifus` corner `br` when ready. Controlled via `imageSrc`, `corner`, `defaultOpen`, respects `prefers-reduced-motion`.
 
 ---
 
@@ -132,14 +132,14 @@ f046435c05a7 [active]  panther-ticker-feed  every 120m  Next 23:33:01  Last (on 
 | **Version** | Recent (has `comfy_api`, `alembic_db`, `manager_requirements.txt`, `0.3.x` tree) |
 | **Checkpoint** | **`animagine-xl-3.1.safetensors` ~6.5 GB** in `models/checkpoints/` (`cagliostrolab/animagine-xl-3.1`, Fair AI Public License 1.0-SD, 1024², metadata `modelspec.author Cagliostro Research Lab`). Verified present via `ls -lh` (6.5G) + header CAT (JSON metadata). |
 | **Fallback checkpoints** | `Juggernaut-XL_v9` / `DreamShaperXL_Turbo_V2` (already cached per `avatar.config.json` pipeline note; not currently on disk at this host — re-download if needed, or use animagine directly). |
-| **Output** | `C:/ComfyUI/output/` — currently: `alina-animagine.png` 1.5M, `lucy-moon.png` 1.2M, `lucy-rooftop.png` 1.5M, `lucy-work.png` 1.5M, `rias-waifu.png` 1.3M (generated 2026-09-01 22:35–23:18). Future: `output/alina/alina_tpose_*.png` (front/side/back sheets). |
-| **Custom nodes** | Only `websocket_image_save.py` + `example_node.py.example` currently. **Needed for Alina sheet:** `ComfyUI_IPAdapter_plus` (cubiq) + `comfyui_controlnet_aux` (Fannovel16 / DWPose) — `git clone` into `custom_nodes/`, then via Manager install `ip-adapter_sdxl_vit-h.safetensors` → `models/ipadapter/` + `controlnet-sdxl-openpose` → `models/controlnet/` + `CLIP-ViT-H-14-laion2B` → `models/clip_vision/`. |
+| **Output** | `C:/ComfyUI/output/` — currently: `lucy-animagine.png` 1.5M, `lucy-moon.png` 1.2M, `lucy-rooftop.png` 1.5M, `lucy-work.png` 1.5M, `rias-waifu.png` 1.3M (generated 2026-09-01 22:35–23:18). Future: `output/lucy/lucy_tpose_*.png` (front/side/back sheets). |
+| **Custom nodes** | Only `websocket_image_save.py` + `example_node.py.example` currently. **Needed for Lucy sheet:** `ComfyUI_IPAdapter_plus` (cubiq) + `comfyui_controlnet_aux` (Fannovel16 / DWPose) — `git clone` into `custom_nodes/`, then via Manager install `ip-adapter_sdxl_vit-h.safetensors` → `models/ipadapter/` + `controlnet-sdxl-openpose` → `models/controlnet/` + `CLIP-ViT-H-14-laion2B` → `models/clip_vision/`. |
 | **Models dirs** | All scaffolded: `checkpoints`, `clip`, `clip_vision`, `controlnet`, `ipadapter`, `vae`, `loras`, `upscale_models`, etc. (empty except checkpoints/output — ready to populate). |
-| **Workflow JSON** | `docs/comfy-alina-workflow.json` — 12-node graph: `CheckpointLoaderSimple(animagine-xl-3.1)` → `LoadImage ×2 (rias-waifu.png + lucy-work.png)` → `IPAdapterModelLoader + CLIPVisionLoader` → `IPAdapterApply ×2 (0.70 rias, 0.62 lucy, standard)` → `ControlNetLoader(openpose) + OpenPosePreprocessor(DWPose T-pose)` → `CLIPTextEncode` positive _t-pose character sheet…_ / negative _3d blurry lowres nsfw…_ → `KSampler 28 steps CFG 6.5 euler_a` → VAE Decode → Save to `output/alina/`. Import via ComfyUI → Load. |
+| **Workflow JSON** | `docs/comfy-lucy-workflow.json` — 12-node graph: `CheckpointLoaderSimple(animagine-xl-3.1)` → `LoadImage ×2 (rias-waifu.png + lucy-work.png)` → `IPAdapterModelLoader + CLIPVisionLoader` → `IPAdapterApply ×2 (0.70 rias, 0.62 lucy, standard)` → `ControlNetLoader(openpose) + OpenPosePreprocessor(DWPose T-pose)` → `CLIPTextEncode` positive _t-pose character sheet…_ / negative _3d blurry lowres nsfw…_ → `KSampler 28 steps CFG 6.5 euler_a` → VAE Decode → Save to `output/lucy/`. Import via ComfyUI → Load. |
 | **Prompt (positive)** | `anime girl, single character, t-pose, character sheet, front view, side view, back view, long dark hair, red eyes, rias gremory inspired, office secretary outfit, white blouse, black skirt, soft lighting, high detail, clean background, white background` — SFW boss energy. |
 | **Prompt (negative)** | `3d, realistic, blurry, lowres, extra limbs, duplicate, nsfw, watermark, text` |
 | **Sampler** | 28 steps, CFG 6.5, `euler_a` / `dpmpp_2m`. Batch 3 (same seed, pose variations) for front/side/back + face close-up pass (`face close-up, neutral expression, mouth closed, eyes open`). |
-| **Tiling** | Drop outputs into `C:/emergent-matrix/public/avatar/texture/` (or `C:/ComfyUI/output/alina/` then copy) — VRoid reads them as texture templates. |
+| **Tiling** | Drop outputs into `C:/emergent-matrix/public/avatar/texture/` (or `C:/ComfyUI/output/lucy/` then copy) — VRoid reads them as texture templates. |
 
 ### Ollama — Vision (Moondream)
 
@@ -164,7 +164,7 @@ Full guide: **`docs/avatar.md`** (292 lines, scaffolded, VRM vs Live2D table, st
         │
         ▼
 ComfyUI (C:/ComfyUI) — Animagine XL 3.1 + IPAdapter (both avis, 0.62-0.70) + ControlNet OpenPose T-pose
-        │              → output/alina/alina_tpose_*.png (front/side/back + face)
+        │              → output/lucy/lucy_tpose_*.png (front/side/back + face)
         ▼
 VRoid Studio (free, https://vroid.com/en/studio) — import textures → sculpt → Export VRM 1.0 (T-pose, 1.0 not 0.x)
         │
@@ -180,7 +180,7 @@ Alt: PSD → Live2D Cubism Editor Free → public/avatar/live2d/model3.json → 
 ```
 
 - **Placeholder now:** `public/avatar.vrm` (1,187 bytes, tiny glb placeholder — viewer detects `placeholder` meta and falls back). `public/avatar/avatar.config.json` flags `vrm.placeholder=true`, `live2d.placeholder=true`.
-- **Scaffolded:** `src/components/avatar/AlinaAvatar.tsx` (VRM → `GLTFLoader` + `VRMLoaderPlugin` dynamic, lights `Ambient+Directional+Fill`, ground disk, breath sway, blink `expressionManager.setValue("blink")`, auto-rotate; falls back to 2D crossfade among `rias-waifu.png`/`lucy-work.png`/`lucy-private.png` every 4200ms), `src/components/avatar/AvatarStage.tsx`, `src/app/avatar/page.tsx` preview (`/avatar`) with checklist + SFW avi grid + quick start `npm install @pixiv/three-vrm`.
+- **Scaffolded:** `src/components/avatar/LucyAvatar.tsx` (VRM → `GLTFLoader` + `VRMLoaderPlugin` dynamic, lights `Ambient+Directional+Fill`, ground disk, breath sway, blink `expressionManager.setValue("blink")`, auto-rotate; falls back to 2D crossfade among `rias-waifu.png`/`lucy-work.png`/`lucy-private.png` every 4200ms), `src/components/avatar/AvatarStage.tsx`, `src/app/avatar/page.tsx` preview (`/avatar`) with checklist + SFW avi grid + quick start `npm install @pixiv/three-vrm`.
 - **Live2D stub:** `public/avatar/live2d/model3.json` Cubism 3 stub + README. Not enabled (`enabled:false`).
 - **To go 3D:** VRoid Export VRM 1.0 → overwrite `C:/emergent-matrix/public/avatar.vrm` → `npm install @pixiv/three-vrm` (if not) → `npm run dev` → `/avatar` auto-promotes.
 
@@ -192,9 +192,9 @@ Alt: PSD → Live2D Cubism Editor Free → public/avatar/live2d/model3.json → 
 
 | File | Size | Role | Used |
 |---|---|---|---|
-| `public/lucy-work.png` | 1.53 MB | **Alina — Boss Waifu, work outfit** (Lucy work variant, `object-top`) | `/waifus` boss card, `HoloProjector` default `imageSrc`, avatar IPAdapter #2 (weight 0.62), `/avatar` grid |
+| `public/lucy-work.png` | 1.53 MB | **Lucy — Boss Waifu, work outfit** (Lucy work variant, `object-top`) | `/waifus` boss card, `HoloProjector` default `imageSrc`, avatar IPAdapter #2 (weight 0.62), `/avatar` grid |
 | `public/rias-waifu.png` | 1.35 MB | **Rias — Head Worker** (canonical, face/hair ref) | `/waifus` Rias card avatar, `HoloProjector` fallback, avatar IPAdapter #1 (weight 0.70), `/avatar` grid |
-| `public/lucy-private.png` | 1.23 MB | Alina private / extra ref (astra skin in waifu-navi) | NOT rendered on `/waifus` (exists for ComfyUI texture alt), `/avatar` grid third cell, `waifu-navi` Astra |
+| `public/lucy-private.png` | 1.23 MB | Lucy private / extra ref (astra skin in waifu-navi) | NOT rendered on `/waifus` (exists for ComfyUI texture alt), `/avatar` grid third cell, `waifu-navi` Astra |
 
 ### Other Key Assets
 
@@ -205,19 +205,19 @@ Alt: PSD → Live2D Cubism Editor Free → public/avatar/live2d/model3.json → 
 | `public/panther.glb` 65MB, `panther-meshy-*.jpg` (1024/2048/8192), `panther-procedural.glb` 4KB | 3D panther for `PantherBackground.tsx` — progressive 3D bg with meshy fallback + progress |
 | `public/avatar.vrm` 1.1KB | Placeholder VRM — replace with VRoid export |
 | `public/avatar/avatar.config.json` 1.4KB | Runtime flags (vrm/live2d/display/tracking/pipeline) |
-| `public/holo.html` 21KB | Standalone holoprojector preview (floating Alina demo, same CSS as component) |
+| `public/holo.html` 21KB | Standalone holoprojector preview (floating Lucy demo, same CSS as component) |
 | `public/assets/mapped/*.png` + `public/icons/marble/robinhood/*.png` | Chain + bucket marble icons (CLIP-mapped) |
 | `*.png` packs (marble_icons_pack.zip, robinhood_marble_pack.zip, panther_*.jpg, etc.) | Generated asset packs in workdir root — .gitignored, not shipped |
 
 ### Holo Projector — `src/components/HoloProjector.tsx` + `public/holo.html`
 
-- **HoloProjector.tsx** (17KB, CSS-only, RTX 4050 @60fps): floating holographic Alina — `float 3.2s ease-in-out`, glow `radial-gradient(70% 55% at 50% 38%, rgba(120,220,255,0.55)...)` blur 18px, `scanlines` repeating-linear `7px`, `chromatic fringe` cyan `-0.9px` / magenta `+0.9px` `mix-blend-mode:screen`, `beam` polygon clip `28%→72%→100%`, base `disk 112×34` with afterglow, topbar `ALINA — BOSS WAIFU`, caption, minimize/expand (`Fixed corner br/bl/tr/tl`, `defaultOpen`, `flicker` 120ms every 3.2–5.7s, `prefers-reduced-motion` disables), fallback `rias-waifu.png` on `imgErr`.
+- **HoloProjector.tsx** (17KB, CSS-only, RTX 4050 @60fps): floating holographic Lucy — `float 3.2s ease-in-out`, glow `radial-gradient(70% 55% at 50% 38%, rgba(120,220,255,0.55)...)` blur 18px, `scanlines` repeating-linear `7px`, `chromatic fringe` cyan `-0.9px` / magenta `+0.9px` `mix-blend-mode:screen`, `beam` polygon clip `28%→72%→100%`, base `disk 112×34` with afterglow, topbar `LUCY — BOSS WAIFU`, caption, minimize/expand (`Fixed corner br/bl/tr/tl`, `defaultOpen`, `flicker` 120ms every 3.2–5.7s, `prefers-reduced-motion` disables), fallback `rias-waifu.png` on `imgErr`.
 - **holo.html** — standalone preview at `/holo.html` (no Next.js needed). Same holo-root, controls `Toggle size / Minimize / Flicker test`, fake waifus background, header badge `PUBLIC/HOLO.HTML`.
 - **In progress:** corner placement on `/waifus` (import + `<HoloProjector corner="br" />`). Optional R3F upgrade noted at bottom of component (`will-change:transform`, no canvas now).
 
 ### VRM — `public/avatar.vrm` + `src/components/avatar/*`
 
-- Placeholder now, 2D fallback crossfades 3 avis (4200ms). Real VRM path: `C:/emergent-matrix/public/avatar.vrm` (VRM 1.0, overwrite placeholder) → `AlinaAvatar` auto-detects `userData.vrm` + `metaName` not placeholder + `scene` exists → breath sway (`chest.position.y sin 0.9`, `spine.rotation.z sin 0.35`), blink, `vrm.update(dt)`, slow auto-rotate `sin 0.12 *0.08`, resize observer, transparent scene bg, soft lights. Build warning `Can't resolve @pixiv/three-vrm` is expected (optional peer, lazy-import).
+- Placeholder now, 2D fallback crossfades 3 avis (4200ms). Real VRM path: `C:/emergent-matrix/public/avatar.vrm` (VRM 1.0, overwrite placeholder) → `LucyAvatar` auto-detects `userData.vrm` + `metaName` not placeholder + `scene` exists → breath sway (`chest.position.y sin 0.9`, `spine.rotation.z sin 0.35`), blink, `vrm.update(dt)`, slow auto-rotate `sin 0.12 *0.08`, resize observer, transparent scene bg, soft lights. Build warning `Can't resolve @pixiv/three-vrm` is expected (optional peer, lazy-import).
 
 ---
 
@@ -297,7 +297,7 @@ e36a802 Market pulse + show more + AI spotlight + X scans: top3 volume, meme ind
 **Files changed since last build**
 
 - `src/app/api/coins/markets/route.ts` — 429 retry loop (37 +11 lines changed, not yet committed)
-- Untracked new since master: `src/app/waifus/page.tsx`, `src/app/avatar/page.tsx`, `src/components/avatar/*`, `src/components/HoloProjector.tsx`, `public/avatar.vrm`, `public/avatar/*`, `public/holo.html`, `public/lucy-work.png`, `public/lucy-private.png`, `public/rias-waifu.png`, `docs/avatar.md`, `docs/comfy-alina-workflow.json`, plus asset packs (`Alita waifu.png`, `rias-waifu.png` work variants, `Jungle-Marble-Waifu-Command.html`) — keep or .gitignore before next push.
+- Untracked new since master: `src/app/waifus/page.tsx`, `src/app/avatar/page.tsx`, `src/components/avatar/*`, `src/components/HoloProjector.tsx`, `public/avatar.vrm`, `public/avatar/*`, `public/holo.html`, `public/lucy-work.png`, `public/lucy-private.png`, `public/rias-waifu.png`, `docs/avatar.md`, `docs/comfy-lucy-workflow.json`, plus asset packs (`Alita waifu.png`, `rias-waifu.png` work variants, `Jungle-Marble-Waifu-Command.html`) — keep or .gitignore before next push.
 
 **Build verification**
 
@@ -336,14 +336,14 @@ C:/emergent-matrix/  (repo root, master)
 │   ├── BUILD.md               ← this file
 │   ├── REBUILD_PROMPT.md      ← concise rebuild prompt
 │   ├── avatar.md              ← 292-line VRM pipeline guide
-│   └── comfy-alina-workflow.json ← 12-node ComfyUI graph
+│   └── comfy-lucy-workflow.json ← 12-node ComfyUI graph
 ├── src/
 │   ├── app/
 │   │   ├── layout.tsx         ← Geist, metadata Panther, PrivyProvider wrapper
 │   │   ├── page.tsx           ← launch (black marble, loader 1100ms, LAUNCH APP)
 │   │   ├── globals.css        ← tailwind + launch-veil, ticker keyframes
 │   │   ├── app/page.tsx       ← 920-line matrix (coins, ticker, filters, trader, nfts, detail)
-│   │   ├── avatar/page.tsx    ← AlinaAvatar preview + checklist + avi grid
+│   │   ├── avatar/page.tsx    ← LucyAvatar preview + checklist + avi grid
 │   │   ├── waifus/page.tsx    ← boss+4 waifus, marble jungle glass, ticks
 │   │   ├── api/coins/markets/route.ts ← CG proxy + 429 backoff
 │   │   ├── api/dex/route.ts / api/opensea/route.ts / api/helius/route.ts
@@ -355,7 +355,7 @@ C:/emergent-matrix/  (repo root, master)
 │   │   └── icon.png / favicon.ico
 │   ├── components/
 │   │   ├── HoloProjector.tsx  ← CSS float+scan+fringe+beam
-│   │   ├── avatar/AlinaAvatar.tsx + AvatarStage.tsx
+│   │   ├── avatar/LucyAvatar.tsx + AvatarStage.tsx
 │   │   ├── PrivyProvider.tsx  ← env-gated
 │   │   ├── PantherBackground.tsx ← progressive 3D + meshy fallback
 │   │   └── (TCG) CardCarousel, SearchBar, MarketPanel, etc.
@@ -367,9 +367,9 @@ C:/emergent-matrix/  (repo root, master)
 ├── C:/ComfyUI/                ← sibling, not in repo
 │   ├── models/checkpoints/animagine-xl-3.1.safetensors (6.5G)
 │   ├── custom_nodes/ (needs IPAdapter + controlnet_aux)
-│   └── output/{_output_images_will_be_put_here, alina-animagine.png, lucy-*.png, rias-waifu.png}
+│   └── output/{_output_images_will_be_put_here, lucy-animagine.png, lucy-*.png, rias-waifu.png}
 └── C:/waifu-navi/             ← hobby navi app (separate Next.js project, in progress)
-    ├── src/app/page.tsx       ← 2×2 roster (Rias/Alina/Astra/Lux) + HoloProjector + ChatPanel
+    ├── src/app/page.tsx       ← 2×2 roster (Rias/Lucy/Astra/Lux) + HoloProjector + ChatPanel
     ├── src/components/HoloProjector.tsx / WaifuCard.tsx / ChatPanel.tsx
     ├── src/app/api/crons/route.ts (mock live crons, 8s poll) / api/chat/route.ts (local rule-based)
     └── public/{lucy-work.png, lucy-private.png, rias-waifu.png, marble.jpg, panther.glb}
@@ -399,7 +399,7 @@ hermes cron add --name panther-market --schedule "every 30m" --workdir C:/emerge
 # C:/ComfyUI/custom_nodes> git clone https://github.com/cubiq/ComfyUI_IPAdapter_plus
 # C:/ComfyUI/custom_nodes> git clone https://github.com/Fannovel16/comfyui_controlnet_aux
 # Manager → install ip-adapter_sdxl_vit-h + controlnet-sdxl-openpose
-# ComfyUI → Load → docs/comfy-alina-workflow.json → Queue
+# ComfyUI → Load → docs/comfy-lucy-workflow.json → Queue
 
 # Ollama vision (when needed)
 ollama pull moondream
@@ -425,6 +425,6 @@ Deploy: push `master` → Vercel git-deploy (Netlify also via `netlify.toml`). S
 
 ---
 
-*Alina delegates. Rias executes. Panther guards. Jungle grows. You launch — free, lightweight, yours.*
+*Lucy delegates. Rias executes. Panther guards. Jungle grows. You launch — free, lightweight, yours.*
 
-© PANTHER DIGITAL — Emergent Matrix · Boss Alina via muse-spark (creditmax) · 2026-09-01
+© PANTHER DIGITAL — Emergent Matrix · Boss Lucy via muse-spark (creditmax) · 2026-09-01

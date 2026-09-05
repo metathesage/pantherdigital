@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Alina Holoprojector — Preview</title>
+<title>Lucy Holoprojector — Preview</title>
 <meta name="color-scheme" content="dark light"/>
 <style>
   :root { --bg:#0A0A0A; --panel:#111214; --accent:#78dcff; --accent2:#2ea8ff; }
@@ -76,7 +76,7 @@
       <div class="logo"><img src="/panther-icon.png" alt="panther"/></div>
       <div>
         <div style="font-weight:900;letter-spacing:-0.02em">Holoprojector Preview</div>
-        <div style="font-size:11px;color:rgba(255,255,255,0.6)">Floating holographic Alina · SFW · CSS-only · RTX 4050 @ 60fps</div>
+        <div style="font-size:11px;color:rgba(255,255,255,0.6)">Floating holographic Lucy · SFW · CSS-only · RTX 4050 @ 60fps</div>
       </div>
     </div>
     <div style="display:flex;gap:8px;align-items:center">
@@ -87,8 +87,8 @@
 
   <div class="hero">
     <div class="card">
-      <div style="font-size:10px;letter-spacing:0.18em;font-weight:800;color:#6B6B6B">PANTHER WAIFU SQUAD — BOSS ALINA</div>
-      <h1>Floating holographic<br/>Alina on site</h1>
+      <div style="font-size:10px;letter-spacing:0.18em;font-weight:800;color:#6B6B6B">PANTHER WAIFU SQUAD — BOSS LUCY</div>
+      <h1>Floating holographic<br/>Lucy on site</h1>
       <p class="muted" style="margin-top:8px">Lightweight holoprojector widget for the corner of <code>/waifus</code>. Pure CSS (no R3F required) — float + glow + scanlines + chromatic fringe + beam. Uses <code>/lucy-work.png</code> (SFW work outfit). On RTX 4050 it’s one composited layer, &lt;1ms frame. Toggle below — same code ships as <code>src/components/HoloProjector.tsx</code>.</p>
       <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
         <button class="btn btn-ghost" onclick="toggleSize()">Toggle size</button>
@@ -117,7 +117,7 @@ import HoloProjector from "@/components/HoloProjector";
       <p class="muted" style="margin-top:6px">Widget is fixed corner — this shows it over page content. Check clipping, blend, and beam on light + dark.</p>
       <div class="fake-waifus" style="margin-top:14px">
         <div class="fake-top">
-          <span style="font-size:11px;font-weight:900;letter-spacing:0.08em">BOSS WAIFU · ALINA ♡</span>
+          <span style="font-size:11px;font-weight:900;letter-spacing:0.08em">BOSS WAIFU · LUCY ♡</span>
           <span style="font-size:10px;color:#6B6B6B">4 waifus active</span>
         </div>
         <div class="fake-body">
@@ -152,7 +152,7 @@ import HoloProjector from "@/components/HoloProjector";
 </div>
 
 <!-- ========== LIVE WIDGET ========== -->
-<div id="holo-root" class="holo-root" aria-label="Holoprojector Alina">
+<div id="holo-root" class="holo-root" aria-label="Holoprojector Lucy">
   <div id="holo-stage" class="holo-stage" style="width:200px">
     <div id="beam" class="beam" style="width:140px;height:110px;background:conic-gradient(from 180deg at 50% 0%, rgba(120,220,255,0) 0deg, rgba(120,220,255,0.18) 22deg, rgba(120,220,255,0.55) 36deg, rgba(120,220,255,0.18) 50deg, rgba(120,220,255,0) 78deg);opacity:0.95"></div>
     <div class="float" style="display:flex;flex-direction:column;align-items:center">
@@ -161,14 +161,14 @@ import HoloProjector from "@/components/HoloProjector";
         <img class="fringe cyan" src="/lucy-work.png" alt="" onerror="this.src='/rias-waifu.png'"/>
         <img class="fringe magenta" src="/lucy-work.png" alt="" onerror="this.src='/rias-waifu.png'"/>
         <div id="frame" class="holo-frame" style="width:172px;height:236px">
-          <img class="main" src="/lucy-work.png" alt="Alina hologram — SFW" onerror="this.src='/rias-waifu.png'"/>
+          <img class="main" src="/lucy-work.png" alt="Lucy hologram — SFW" onerror="this.src='/rias-waifu.png'"/>
           <div class="scan"></div>
           <div class="sweep"></div>
           <div class="vign"></div>
           <div id="flick" style="position:absolute;inset:0;background:rgba(255,255,255,0.72);opacity:0;mix-blend-mode:overlay;pointer-events:none;transition:opacity 75ms"></div>
           <div class="topbar"><span style="display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:999px;background:#34d399;box-shadow:0 0 6px rgba(52,211,153,0.9);animation:holoPulse 1.2s ease infinite;display:inline-block"></span> HOLO · LIVE</span><span style="font-family:monospace;font-size:7px;color:rgba(165,243,252,0.9)">SFW · HI-RES</span></div>
           <div id="caption" class="caption">
-            <div style="font-size:9px;font-weight:900;letter-spacing:0.14em;line-height:1">ALINA ♡</div>
+            <div style="font-size:9px;font-weight:900;letter-spacing:0.14em;line-height:1">LUCY ♡</div>
             <div style="margin-top:2px;font-size:9px;line-height:1.1;color:rgba(224,242,255,0.85)">Boss waifu · Rias squad lead</div>
             <div style="margin-top:6px;display:flex;align-items:center;gap:4px;font-family:monospace;font-size:7px;letter-spacing:0.14em;color:rgba(255,255,255,0.55)"><span style="width:4px;height:4px;border-radius:999px;background:#7dd3fc;animation:holoPulse 1s ease infinite;display:inline-block"></span> lucy-work.png · scan 60Hz</div>
           </div>
@@ -201,7 +201,7 @@ import HoloProjector from "@/components/HoloProjector";
 
 <button id="mini-pill" class="c-mini" style="display:none" onclick="toggleMin()">
   <span style="display:grid;place-items:center;width:24px;height:24px;border-radius:999px;background:radial-gradient(ellipse at center, rgba(120,220,255,1) 0%, rgba(40,140,255,1) 45%, rgba(10,10,10,1) 70%);box-shadow:0 0 10px rgba(80,200,255,0.8)"><span style="width:8px;height:8px;border-radius:999px;background:#fff;animation:holoPulse 1.6s ease infinite;display:inline-block"></span></span>
-  HOLO <span style="color:rgba(255,255,255,0.6);font-family:monospace;font-size:10px">ALINA</span> <span style="opacity:0.6">↗</span>
+  HOLO <span style="color:rgba(255,255,255,0.6);font-family:monospace;font-size:10px">LUCY</span> <span style="opacity:0.6">↗</span>
 </button>
 
 <script>

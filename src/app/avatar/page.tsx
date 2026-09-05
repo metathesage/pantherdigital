@@ -1,9 +1,9 @@
-import AlinaAvatar from "@/components/avatar/AlinaAvatar";
+import LucyAvatar from "@/components/avatar/LucyAvatar";
 import Link from "next/link";
 
 export const metadata = {
-  title: "Alina Avatar — Emergent Matrix",
-  description: "Alina boss waifu — VRM / Live2D local pipeline preview. Place avatar.vrm to go 3D.",
+  title: "Lucy Avatar — Emergent Matrix",
+  description: "Lucy boss waifu — VRM / Live2D local pipeline preview. Place avatar.vrm to go 3D.",
 };
 
 export default function AvatarPreviewPage() {
@@ -17,7 +17,7 @@ export default function AvatarPreviewPage() {
               <img src="/panther-icon.png" alt="home" className="h-8 w-8 object-contain" />
             </Link>
             <Link href="/app" className="rounded-full border border-[#E8E8E8] bg-white px-3 py-1.5 text-[11px] font-bold tracking-widest hover:border-[#0A0A0A]">← APP</Link>
-            <span className="hidden sm:inline-flex items-center gap-2 rounded-full bg-[#0A0A0A] px-3 py-1 text-[11px] font-bold tracking-widest text-white">ALINA ♡ AVATAR PREVIEW</span>
+            <span className="hidden sm:inline-flex items-center gap-2 rounded-full bg-[#0A0A0A] px-3 py-1 text-[11px] font-bold tracking-widest text-white">LUCY ♡ AVATAR PREVIEW</span>
           </div>
           <div className="flex items-center gap-2">
             <Link href="/waifus" className="hidden sm:inline rounded-full border border-[#E8E8E8] bg-white px-3 py-1.5 text-[11px] font-bold">WAIFUS</Link>
@@ -29,7 +29,7 @@ export default function AvatarPreviewPage() {
       <div className="mx-auto max-w-[1600px] px-4 py-6 sm:px-6 sm:py-8">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <h1 className="text-[26px] font-black tracking-[-0.03em] sm:text-[32px]">ALINA — FULL AVATAR</h1>
+            <h1 className="text-[26px] font-black tracking-[-0.03em] sm:text-[32px]">LUCY — FULL AVATAR</h1>
             <p className="mt-1 max-w-2xl text-[13px] leading-5 text-[#6B6B6B]">
               Option 3 scaffold: <span className="font-bold text-[#0A0A0A]">VRM primary + Live2D alt</span> · Free local pipeline (ComfyUI + Animagine + VRoid). Placeholder shows 2D now — drop <span className="font-mono font-bold">public/avatar.vrm</span> to promote to real 3D. No paid APIs.
             </p>
@@ -42,7 +42,7 @@ export default function AvatarPreviewPage() {
 
         <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-[1.35fr_0.85fr]">
           {/* stage */}
-          <AlinaAvatar mode="auto" height={560} />
+          <LucyAvatar mode="auto" height={560} />
 
           {/* controls + docs */}
           <div className="flex flex-col gap-4">
@@ -66,7 +66,7 @@ export default function AvatarPreviewPage() {
                 <li>✅ <span className="font-mono">public/avatar.vrm</span> placeholder (404-safe, viewer detects & falls back)</li>
                 <li>✅ <span className="font-mono">public/avatar/avatar.config.json</span> runtime flags</li>
                 <li>✅ <span className="font-mono">public/avatar/live2d/model3.json</span> Cubism stub</li>
-                <li>✅ <span className="font-mono">src/components/avatar/AlinaAvatar.tsx</span> (VRM + 2D fallback)</li>
+                <li>✅ <span className="font-mono">src/components/avatar/LucyAvatar.tsx</span> (VRM + 2D fallback)</li>
                 <li>✅ <span className="font-mono">docs/avatar.md</span> full free pipeline guide</li>
                 <li className="text-[#9A9A9A]">⬜ Real VRM — run VRoid export when ready (docs §4)</li>
               </ul>
@@ -109,7 +109,7 @@ npm run dev
           <span className="font-bold text-[#0A0A0A]">Docs:</span> full pipeline, ComfyUI graph, VRoid steps, Live2D alt, troubleshooting → <span className="font-mono">docs/avatar.md</span> · Keep SFW, credit-light.
         </div>
 
-        <div className="mt-4 text-center text-[10px] tracking-[0.2em] text-[#9A9A9A]">© PANTHERDIGITAL — ALINA AVATAR · FREE LOCAL PIPELINE</div>
+        <div className="mt-4 text-center text-[10px] tracking-[0.2em] text-[#9A9A9A]">© PANTHERDIGITAL — LUCY AVATAR · FREE LOCAL PIPELINE</div>
       </div>
     </div>
   );

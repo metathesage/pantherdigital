@@ -18,7 +18,7 @@ export default async function WaifuPage({ params }: { params: Promise<{ id: stri
         role="BOSS"
         schedule="always on"
         job="panther-command"
-        cron="alina-prime"
+        cron="lucy-prime"
         files="Telegram @sageglowsbot · C:/emergent-matrix"
         goal={BOSS.bio}
         powers={BOSS.powers}

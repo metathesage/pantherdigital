@@ -8,11 +8,11 @@ import { playSfx } from "@/lib/sfx";
    PANTHER WAIFU NAVI — /waifus
    Meta AI share inspo: marble jungle + glassmorphism
    Notes for future editors (leave in code as requested):
-   - Boss is Alina (avatar: /lucy-work.png — safe-for-work "work Lucy").
+   - Boss is Lucy (avatar: /lucy-work.png — safe-for-work "work Lucy").
      She delegates to Rias (head worker, /rias-waifu.png) who replaced Akari/Navi.
    - 4 worker waifus displayed: Rias (head, UX/navi), Kuro (market), Hikari (ticker), Mio (auth).
-     Alina is shown separately as boss — not counted in the 4, but always visible.
-   - Avatars: Alina -> lucy-work.png, Rias -> rias-waifu.png, others -> emoji/initials
+     Lucy is shown separately as boss — not counted in the 4, but always visible.
+   - Avatars: Lucy -> lucy-work.png, Rias -> rias-waifu.png, others -> emoji/initials
      (no extra image assets needed for Kuro/Hikari/Mio; keeps bundle small).
    - Cron jobs are hermes crons (local, gateway alive). IDs truncated for UI; full IDs
      live in server config. Schedules: market 30m, ticker 2h, nav/auth 6h.
@@ -44,16 +44,16 @@ type Waifu = {
 };
 
 const BOSS = {
-  name: "Alina",
+  name: "Lucy",
   title: "Boss Waifu · Panther Command",
   handle: "@sageglowsbot",
   avatar: "/lucy-work.png",
-  avatarAlt: "Alina — Boss Waifu (Lucy work variant)",
+  avatarAlt: "Lucy — Boss Waifu (Lucy work variant)",
   model: "muse-spark-1.2-contributor-free",
   location: "Telegram · C:/emergent-matrix",
 };
 
-// Rias replaces Akari/Navi (UX Priestess) — head worker under Alina
+// Rias replaces Akari/Navi (UX Priestess) — head worker under Lucy
 const WAIFUS: Waifu[] = [
   {
     id: "rias",
@@ -65,7 +65,7 @@ const WAIFUS: Waifu[] = [
     job: "panther-nav-ux",
     schedule: "every 6h",
     file: "src/app/app/page.tsx:402-430 + layout.tsx + waifus/page.tsx",
-    goal: "Owns navigation & polish — logo always → /, header minimal (3 icons + Connect), marble ticker tidy, /waifus glass updates, mobile perfect. Reports to Alina, delegates to trio.",
+    goal: "Owns navigation & polish — logo always → /, header minimal (3 icons + Connect), marble ticker tidy, /waifus glass updates, mobile perfect. Reports to Lucy, delegates to trio.",
     status: "active",
     cronName: "00a627273861",
     role: "HEAD",
@@ -167,7 +167,7 @@ export default function WaifuCommand() {
             </Link>
             <Link href="/app" className="hidden sm:inline-flex rounded-full border border-[#0A0A0A]/10 bg-white/80 px-3 py-1.5 text-[11px] font-bold tracking-widest backdrop-blur hover:border-[#0A0A0A] sm:text-[11px]">← APP</Link>
             <span className="hidden sm:inline-flex items-center gap-1.5 rounded-full bg-[#0A0A0A] px-3 py-1.5 text-[11px] font-bold tracking-[0.14em] text-white shadow-sm">
-              <span className="size-1.5 rounded-full bg-emerald-400 animate-[pulse_2s_ease-in-out_infinite]" /> BOSS WAIFU · ALINA
+              <span className="size-1.5 rounded-full bg-emerald-400 animate-[pulse_2s_ease-in-out_infinite]" /> BOSS WAIFU · LUCY
             </span>
             <span className="hidden lg:inline text-[11px] tabular-nums text-[#6B6B6B]">{now} · 5 waifus · muse-spark</span>
           </div>
@@ -207,7 +207,7 @@ export default function WaifuCommand() {
               WAIFU <span className="font-light text-[#6B6B6B]">NAVI</span> <span className="align-super text-[14px] font-bold tracking-[0.18em] text-[#9A9A9A]">/WAIFUS</span>
             </h1>
             <p className="mx-auto mt-3 max-w-[620px] text-[13px] leading-5 text-[#6B6B6B]">
-              Boss <span className="font-bold text-[#0A0A0A]">Alina</span> delegates to head worker <span className="font-bold text-[#0A0A0A]">Rias</span>. Together they command <span className="font-semibold text-[#0A0A0A]">Kuro</span> · <span className="font-semibold text-[#0A0A0A]">Hikari</span> · <span className="font-semibold text-[#0A0A0A]">Mio</span> — each with a cron, a file, and a goal. Feels like a Meta AI share, but it&apos;s our site data.
+              Boss <span className="font-bold text-[#0A0A0A]">Lucy</span> delegates to head worker <span className="font-bold text-[#0A0A0A]">Rias</span>. Together they command <span className="font-semibold text-[#0A0A0A]">Kuro</span> · <span className="font-semibold text-[#0A0A0A]">Hikari</span> · <span className="font-semibold text-[#0A0A0A]">Mio</span> — each with a cron, a file, and a goal. Feels like a Meta AI share, but it&apos;s our site data.
             </p>
             {/* marble rule */}
             <div className="mx-auto mt-5 h-px w-full max-w-[520px] bg-gradient-to-r from-transparent via-[#0A0A0A]/15 to-transparent" />
@@ -230,7 +230,7 @@ export default function WaifuCommand() {
             </div>
 
             <div className="grid gap-6 p-5 sm:grid-cols-[1.15fr_auto_1.15fr] sm:items-center sm:p-6">
-              {/* Alina */}
+              {/* Lucy */}
               <div className="flex gap-4">
                 <div className="relative shrink-0">
                   <div className="absolute -inset-1 rounded-[22px] bg-gradient-to-br from-[#0A0A0A]/10 via-white/60 to-emerald-500/10 blur-[6px]" aria-hidden />
@@ -278,7 +278,7 @@ export default function WaifuCommand() {
                   <div className="mt-1.5 text-[18px] font-black leading-none tracking-[-0.02em]">Rias <span className="text-[11px] font-semibold tracking-widest text-[#9A9A9A]">replaces Akari</span></div>
                   <div className="text-[11px] font-mono text-[#6B6B6B]">panther-nav-ux · every 6h</div>
                   <div className="mt-2 rounded-xl bg-[#0A0A0A] px-3 py-2 text-[12px] leading-5 text-white">
-                    Runs the squad day-to-day. Keeps navi, ticker polish, and this command page true. Pings Alina when a cron drifts.
+                    Runs the squad day-to-day. Keeps navi, ticker polish, and this command page true. Pings Lucy when a cron drifts.
                   </div>
                   <div className="mt-2 text-[11px] font-mono text-[#6B6B6B]">cron 00a627 · free model ♡</div>
                 </div>
@@ -389,7 +389,7 @@ export default function WaifuCommand() {
             <div className="mt-3 grid grid-cols-1 gap-3 text-[12px] leading-5 sm:grid-cols-3">
               <div className="rounded-2xl bg-[#0A0A0A] p-4 text-white shadow-sm">
                 <div className="text-[11px] font-bold tracking-widest text-white/60">01 · BOSS</div>
-                <div className="mt-1 font-bold">Alina</div>
+                <div className="mt-1 font-bold">Lucy</div>
                 <div className="mt-1 text-white/80">You talk to her on Telegram <span className="font-mono font-bold text-white">@sageglowsbot</span>. She delegates to Rias, reviews, merges. Uses any free model best for the job.</div>
               </div>
               <div className="rounded-2xl border border-[#E8E8E8]/60 bg-white/80 p-4 backdrop-blur">
@@ -400,14 +400,14 @@ export default function WaifuCommand() {
               <div className="rounded-2xl border border-white/60 bg-[#F8F8F7]/80 p-4 backdrop-blur">
                 <div className="text-[11px] font-bold tracking-widest text-[#9A9A9A]">03 · CHECK</div>
                 <div className="mt-1 font-bold">See them live</div>
-                <div className="mt-1 text-[#6B6B6B]"><span className="font-mono font-semibold text-[#0A0A0A]">hermes cron list</span> · <span className="font-mono">hermes cron run &lt;id&gt;</span> · this page <span className="font-mono">/waifus</span> · or ask Alina.</div>
+                <div className="mt-1 text-[#6B6B6B]"><span className="font-mono font-semibold text-[#0A0A0A]">hermes cron list</span> · <span className="font-mono">hermes cron run &lt;id&gt;</span> · this page <span className="font-mono">/waifus</span> · or ask Lucy.</div>
               </div>
             </div>
 
             <div className="mt-5 flex flex-wrap gap-2">
               <Link href="/app" className="rounded-full bg-[#0A0A0A] px-5 py-2.5 text-[12px] font-bold text-white shadow hover:bg-black">Open App</Link>
               <Link href="/" className="rounded-full border border-[#0A0A0A] bg-white px-5 py-2.5 text-[12px] font-bold hover:bg-[#F8F8F7]">Home (logo) ♡</Link>
-              <span className="inline-flex items-center rounded-full border border-white/60 bg-white/70 px-4 py-2 text-[11px] font-semibold text-[#6B6B6B] backdrop-blur">5 waifus · boss Alina → head Rias · pantherdigital</span>
+              <span className="inline-flex items-center rounded-full border border-white/60 bg-white/70 px-4 py-2 text-[11px] font-semibold text-[#6B6B6B] backdrop-blur">5 waifus · boss Lucy → head Rias · pantherdigital</span>
               <span className="inline-flex items-center rounded-full border border-white/60 bg-white/70 px-3 py-2 text-[11px] font-mono text-[#9A9A9A] backdrop-blur">C:/emergent-matrix</span>
             </div>
           </div>
@@ -428,7 +428,7 @@ export default function WaifuCommand() {
           </p>
         </div>
 
-        <div className="mt-6 text-center text-[10px] tracking-[0.20em] text-[#9A9A9A]">© PANTHERDIGITAL — WAIFU SQUAD · BOSS ALINA → HEAD RIAS</div>
+        <div className="mt-6 text-center text-[10px] tracking-[0.20em] text-[#9A9A9A]">© PANTHERDIGITAL — WAIFU SQUAD · BOSS LUCY → HEAD RIAS</div>
       </main>
 
       <style>{`@import url('https://fonts.googleapis.com/css2?family=Geist:wght@400;600;700;900&display=swap');`}</style>

@@ -1,6 +1,6 @@
-# Alina — Full Avatar (Live2D / VRM) — Free Local Pipeline
+# Lucy — Full Avatar (Live2D / VRM) — Free Local Pipeline
 
-> **Owner:** Boss Alina · Rias head worker  
+> **Owner:** Boss Lucy · Rias head worker  
 > **Status:** scaffolded · placeholder VRM + Live2D stubs + viewer  
 > **Stack:** Next.js 16 · `three` · `@pixiv/three-vrm` · ComfyUI + Animagine XL (local) · VRoid Studio (free, local) · Live2D Cubism Editor Free (optional)  
 > **Rule:** No paid APIs. Everything runs on your machine or free open-source models.
@@ -14,11 +14,11 @@ C:/emergent-matrix/
 ├── docs/avatar.md                          ← this file
 ├── public/
 │   ├── lucy-work.png                       ← base avi #1 (existing)
-│   ├── rias-waifu.png                      ← base avi #2 (existing) — canonical Alina ref
+│   ├── rias-waifu.png                      ← base avi #2 (existing) — canonical Lucy ref
 │   ├── lucy-private.png                    ← extra ref (existing)
 │   ├── avatar.vrm                          ← ⚠️ placeholder — replace with real export (see §4)
 │   └── avatar/
-│       ├── avatar.config.json              ← runtime config consumed by <AlinaAvatar />
+│       ├── avatar.config.json              ← runtime config consumed by <LucyAvatar />
 │       ├── texture/
 │       │   └── README.md                   ← where to drop ComfyUI renders
 │       └── live2d/
@@ -26,7 +26,7 @@ C:/emergent-matrix/
 │           └── README.md
 └── src/
     ├── components/avatar/
-    │   ├── AlinaAvatar.tsx                 ← VRM + Live2D + 2D fallback viewer
+    │   ├── LucyAvatar.tsx                 ← VRM + Live2D + 2D fallback viewer
     │   └── AvatarStage.tsx                 ← scene wrapper / orbit / lighting
     └── app/avatar/page.tsx                 ← preview at /avatar
 ```
@@ -37,16 +37,16 @@ C:/emergent-matrix/
 
 ## 1. VRM vs Live2D — pick one, we scaffold both
 
-| | **VRM (recommended for Alina)** | **Live2D Cubism** |
+| | **VRM (recommended for Lucy)** | **Live2D Cubism** |
 |---|---|---|
 | **Look** | Full 3D, free camera, VTuber-standard | 2D puppet, premium anime flatten |
 | **Free local authoring** | **VRoid Studio — completely free**, exports VRM 1.0 natively. Optional Blender + VRM Addon (also free). | Live2D Cubism Editor **Free** — you can rig & preview; free license bans *commercial* use of the *editor* output above small scale. SDK runtime is free. |
 | **Runtime** | `three` + `@pixiv/three-vrm` (MIT). ~180KB. | `pixi.js` + `pixi-live2d-display` + `cubism4` runtime. Heavier, canvas-2D. |
 | **Tracking** | Mediapipe / Kalidokit (free, local, no cloud) | Same — Kalidokit drives Live2D params |
-| **Effort to Alina-accurate** | Medium — VRoid sliders get 85% there, then texture swap from ComfyUI | High — must cut PSD layers + rig each param by hand |
+| **Effort to Lucy-accurate** | Medium — VRoid sliders get 85% there, then texture swap from ComfyUI | High — must cut PSD layers + rig each param by hand |
 | **Win** | **One VRM ≈ avatar + VTuber + VRChat + Web** | Best if you want flat 2D waifu strictly |
 
-> **Decision:** Ship **VRM as primary** (`public/avatar.vrm`), keep Live2D stub as fallback/alt skin. Both are wired in `AlinaAvatar.tsx`.
+> **Decision:** Ship **VRM as primary** (`public/avatar.vrm`), keep Live2D stub as fallback/alt skin. Both are wired in `LucyAvatar.tsx`.
 
 ---
 
@@ -62,7 +62,7 @@ No Stability API, no D-ID, no ReadyPlayerMe upload, no paid anything. Every arro
 │ ComfyUI (you already    │  Animagine XL 3.1 (or Pony XL) — all local
 │ have it at              │  + IPAdapter (image prompts from your avis)
 │ C:/Users/young/ComfyUI) │  + ControlNet OpenPose — lock pose sheet
-└──────────┬──────────────┘  Outputs → C:/Users/young/ComfyUI/output/alina/
+└──────────┬──────────────┘  Outputs → C:/Users/young/ComfyUI/output/lucy/
            │                  T-pose front/side/back, face sheet, hair, outfit
            ▼
    VRoid Studio (free) ────────► import textures → sculpt → export VRM 1.0
@@ -91,9 +91,9 @@ Alt branch: PSD → Live2D Cubism Editor Free → public/avatar/live2d/model3.js
 
 No API keys. No billing.
 
-### 2.2 Phase 1 — Generate Alina-accurate reference sheet in ComfyUI (local)
+### 2.2 Phase 1 — Generate Lucy-accurate reference sheet in ComfyUI (local)
 
-You already have the perfect conditioning images: `rias-waifu.png` (1024², Rias palette — use for face/hair) and `lucy-work.png` (832×1216, work outfit — use for outfit logic). The local workflow keeps both in the IPAdapter so Alina looks like *your* Alina, not a generic waifu.
+You already have the perfect conditioning images: `rias-waifu.png` (1024², Rias palette — use for face/hair) and `lucy-work.png` (832×1216, work outfit — use for outfit logic). The local workflow keeps both in the IPAdapter so Lucy looks like *your* Lucy, not a generic waifu.
 
 **Install once:**
 
@@ -106,7 +106,7 @@ git clone https://github.com/Fannovel16/comfyui_controlnet_aux
 #   - controlnet-sdxl-openpose → models/controlnet/
 ```
 
-**Minimal ComfyUI graph (build or import `docs/comfy-alina-workflow.json` — stub provided below):**
+**Minimal ComfyUI graph (build or import `docs/comfy-lucy-workflow.json` — stub provided below):**
 
 1. **Load Checkpoint** → `animagine-xl-3.1.safetensors` (or `Juggernaut-XL_v9` if you skip download)
 2. **Load Image ×2** → `rias-waifu.png` + `lucy-work.png` → each through **IPAdapter** (weight 0.6–0.75, `standard` preset). This is what makes the output *your* character.
@@ -121,9 +121,9 @@ git clone https://github.com/Fannovel16/comfyui_controlnet_aux
    ```
    3d, realistic, blurry, lowres, extra limbs, duplicate, nsfw, watermark
    ```
-   Keep **SFW** — Alina is boss energy, not thirst trap.
+   Keep **SFW** — Lucy is boss energy, not thirst trap.
 5. **KSampler** → 28 steps, CFG 6.5, `euler_a` or `dpmpp_2m`.
-6. **VAE Decode → Save** → `output/alina/alina_tpose_*.png` (need 3: front/side/back; batch 3 with same seed + pose controlnet variations).
+6. **VAE Decode → Save** → `output/lucy/lucy_tpose_*.png` (need 3: front/side/back; batch 3 with same seed + pose controlnet variations).
 7. **Second pass** → same but `face close-up, neutral expression, mouth closed, eyes open` for texture mapping.
 
 > **Tip:** If Animagine download is heavy, just run Juggernaut-XL_v9 with the same IPAdapter — quality drops ~15% but loop still works with zero new downloads.
@@ -136,7 +136,7 @@ git clone https://github.com/Fannovel16/comfyui_controlnet_aux
 2. **Face →** copy Rias tones from your sheet: skin, eye color (red #C83A3A), eyebrow shape, hair presets (long dark, side-swept). Use `Photo → Load` to import your ComfyUI face crop as reference.
 3. **Hair →** procedural or imported — keep it simple first pass.
 4. **Clothing →** recreate blouse/skirt. VRoid has preset editor; or **Texture → Import** your ComfyUI outfit crop and paint over mesh. No sculpting skill needed.
-5. **Texture Edit →** Import `alina_tpose_front.png` as custom texture (VRoid lets you paint directly). This is where the ComfyUI sheet pays off.
+5. **Texture Edit →** Import `lucy_tpose_front.png` as custom texture (VRoid lets you paint directly). This is where the ComfyUI sheet pays off.
 6. **Export → VRM 1.0** (file → Export → VRM). Set:
    - VRM Version: **1.0** (not 0.x — three-vrm 3.x expects 1.0)
    - T Pose: ✅
@@ -144,7 +144,7 @@ git clone https://github.com/Fannovel16/comfyui_controlnet_aux
    - License: confirm "AvatarPermission: allow" if you want to freely use.
 7. Save as `avatar.vrm` and **overwrite** `C:/emergent-matrix/public/avatar.vrm`.
 
-That's it — you now have a full rigged Alina. No payment, no upload.
+That's it — you now have a full rigged Lucy. No payment, no upload.
 
 ### 2.4 Phase 3 — Optional Blender polish (still free)
 
@@ -168,16 +168,16 @@ npm install pixi.js@7 pixi-live2d-display cubism4
 
 What the scaffold does:
 
-- `src/components/avatar/AlinaAvatar.tsx` tries `public/avatar.vrm` first via `GLTFLoader` + `VRMLoaderPlugin`. On success → orbital 3D with soft lights, auto-rotate, breath idle.
+- `src/components/avatar/LucyAvatar.tsx` tries `public/avatar.vrm` first via `GLTFLoader` + `VRMLoaderPlugin`. On success → orbital 3D with soft lights, auto-rotate, breath idle.
 - On 404 / parse fail (i.e. right now, the placeholder) → falls back to **2D sprite** cross-fading between `lucy-work.png` and `rias-waifu.png` — so the app never shows a broken state.
 - Eye/lip tracking (optional later): wire `kalidokit` + `mediapipe/face_mesh` — both run in-browser, zero cloud. Toggle with `avatar.config.json → tracking.enabled`.
 
 **Add to any page:**
 
 ```tsx
-import AlinaAvatar from "@/components/avatar/AlinaAvatar";
+import LucyAvatar from "@/components/avatar/LucyAvatar";
 export default function Page() {
-  return <AlinaAvatar mode="auto" height={560} />;
+  return <LucyAvatar mode="auto" height={560} />;
 }
 ```
 
@@ -191,7 +191,7 @@ If you want a flat 2D puppet instead/in addition:
 2. Open **Live2D Cubism Editor** → Import PSD → rig: `Eye L/R Open`, `Mouth Open/Y`, `Angle X/Y/Z`, `Breath`. Cubism ships auto-mesh.
 3. **Export → Runtime** → builds `model3.json` + `moc3` + `textures/*.png`.
 4. Drop into `public/avatar/live2d/` and point `avatar.config.json → live2d.model` at it.
-5. Viewer: `<AlinaAvatar mode="live2d" />` uses `pixi-live2d-display`.
+5. Viewer: `<LucyAvatar mode="live2d" />` uses `pixi-live2d-display`.
 
 > Note: Cubism Editor Free lets you publish non-commercial freely; check EULA if you monetize. For a personal boss waifu inside your own app, you're fine.
 
@@ -202,7 +202,7 @@ If you want a flat 2D puppet instead/in addition:
 ```json
 {
   "version": 1,
-  "character": "Alina",
+  "character": "Lucy",
   "role": "Boss · Rias head worker",
   "sources": ["public/lucy-work.png", "public/rias-waifu.png"],
   "vrm": { "path": "/avatar.vrm", "version": "1.0", "fallback": "2d" },
@@ -228,7 +228,7 @@ The repo ships with `public/avatar.vrm` that is **not** a real model — it's a 
 
 ```bash
 # After VRoid export:
-cp ~/Downloads/Alina.vrm "C:/emergent-matrix/public/avatar.vrm"
+cp ~/Downloads/Lucy.vrm "C:/emergent-matrix/public/avatar.vrm"
 # hard refresh
 npm run dev
 # visit http://localhost:3000/avatar — 3D should appear
@@ -289,4 +289,4 @@ npm run dev
 
 ---
 
-*Last updated 2026-09-01 · free local pipeline · no paid APIs · Alina boss waifu · SFW*
+*Last updated 2026-09-01 · free local pipeline · no paid APIs · Lucy boss waifu · SFW*

@@ -7,12 +7,12 @@ After rigging in Cubism Editor Free, drop here:
 ```
 public/avatar/live2d/
 ├── model3.json        ← already stubbed (this file)
-├── Alina.moc3         ← compiled model
-├── Alina.2048/
+├── Lucy.moc3         ← compiled model
+├── Lucy.2048/
 │   ├── texture_00.png
 │   └── texture_01.png
-├── Alina.physics3.json
-└── Alina.cdi3.json
+├── Lucy.physics3.json
+└── Lucy.cdi3.json
 ```
 
 Set `public/avatar/avatar.config.json → live2d.enabled = true` to enable.

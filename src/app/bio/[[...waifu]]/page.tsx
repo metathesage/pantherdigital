@@ -3,7 +3,7 @@ import Link from "next/link";
 
 const WAIFUS = [
   {
-    id: "alina", name: "ALINA", role: "Boss Prime — Main Assistant",
+    id: "lucy", name: "LUCY", role: "Boss Prime — Main Assistant",
     avatar: "/lucy-work.png", accent: "#22d3ee", cron: null,
     goal: "Owner & delegator. Commands the squad, speaks direct to you, upgrades the site.",
     bio: "The boss waifu. Work Lucy — elegant netrunner blazer, marble office, holos. She doesn't fetch coins herself; she delegates to her four warriors and reports back to you. Direct line to the operator.",

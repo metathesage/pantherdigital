@@ -23,7 +23,7 @@ export default function WaifuWiki() {
         <p className="text-[11px] font-bold tracking-[0.28em] text-[#6B6B6B]">PANTHER DIGITAL · WIKI</p>
         <h1 className="mt-2 text-[30px] font-black tracking-[-0.04em] sm:text-[38px]">Waifu Squad</h1>
         <p className="mt-3 max-w-[620px] text-[13px] leading-6 text-[#4A4A4A]">
-          Boss <Link href="/waifus/alina" className="font-bold text-[#0A0A0A] underline">Alina</Link> commands from Telegram;
+          Boss <Link href="/waifus/lucy" className="font-bold text-[#0A0A0A] underline">Lucy</Link> commands from Telegram;
           head worker <Link href="/waifus/rias" className="font-bold text-[#0A0A0A] underline">Rias</Link> runs day-to-day.
           Each waifu below owns one subsystem — tap through for the full dossier.
         </p>

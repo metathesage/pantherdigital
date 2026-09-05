@@ -58,7 +58,32 @@ export default function WikiPage() {
   );
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-12 sm:px-6">
+    <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
+      <div className="lg:grid lg:grid-cols-[200px_minmax(0,1fr)] lg:gap-10">
+        {/* Sidebar docs nav */}
+        <aside className="hidden lg:block">
+          <nav className="sticky top-24 space-y-1 text-sm" aria-label="Wiki sections">
+            <p className="px-3 pb-2 font-mono text-[11px] font-medium tracking-widest text-zinc-400 uppercase">
+              Guide
+            </p>
+            {[
+              { href: "#generations", label: "Generations" },
+              { href: "#glossary", label: "Game Glossary" },
+              { href: "#timeline", label: "Lore Timeline" },
+              { href: "/wiki/collecting", label: "Collecting →" },
+              { href: "/wiki/waifus", label: "Waifus →" },
+            ].map((l) => (
+              <a
+                key={l.href}
+                href={l.href}
+                className="block rounded-md px-3 py-1.5 text-zinc-500 transition-colors hover:bg-white/[0.06] hover:text-zinc-200"
+              >
+                {l.label}
+              </a>
+            ))}
+          </nav>
+        </aside>
+        <div className="min-w-0">
       <Reveal>
         <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl">
           holo<span className="text-gradient">Wiki</span>
@@ -184,6 +209,8 @@ export default function WikiPage() {
           <span aria-hidden className="text-3xl transition-transform duration-200 group-hover:translate-x-1.5">→</span>
         </Link>
       </Reveal>
+        </div>
+      </div>
     </div>
   );
 }

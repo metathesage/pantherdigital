@@ -6,7 +6,7 @@
       "specVersion": "1.0",
       "meta": {
         "metaVersion": "1",
-        "metaName": "Alina (placeholder)",
+        "metaName": "Lucy (placeholder)",
         "authors": ["Emergent Matrix"],
         "copyrightInformation": "SFW placeholder — overwrite public/avatar.vrm with real VRoid export (see docs/avatar.md §4)",
         "contactInformation": "C:/emergent-matrix/docs/avatar.md"
@@ -15,11 +15,11 @@
   },
   "scene": 0,
   "scenes": [{ "name": "placeholder", "nodes": [0] }],
-  "nodes": [{ "name": "Alina_placeholder", "mesh": 0 }],
+  "nodes": [{ "name": "Lucy_placeholder", "mesh": 0 }],
   "meshes": [{ "primitives": [{ "attributes": { "POSITION": 0 }, "indices": 0 }] }],
   "accessors": [],
   "bufferViews": [],
   "buffers": [],
   "_placeholder": true,
-  "_instructions": "This is NOT a real VRM. VRMLoader will fail to parse it and AlinaAvatar will gracefully fall back to 2D sprites (lucy-work.png / rias-waifu.png). Replace this file with a real VRM 1.0 exported from VRoid Studio. See docs/avatar.md §2.3 and §4. File must be binary GLB with .vrm extension, <25MB, T-pose, embed textures."
+  "_instructions": "This is NOT a real VRM. VRMLoader will fail to parse it and LucyAvatar will gracefully fall back to 2D sprites (lucy-work.png / rias-waifu.png). Replace this file with a real VRM 1.0 exported from VRoid Studio. See docs/avatar.md §2.3 and §4. File must be binary GLB with .vrm extension, <25MB, T-pose, embed textures."
 }

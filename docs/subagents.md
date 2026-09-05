@@ -1,10 +1,10 @@
 # Subagent Roster — Panther Digital
 
-Boss waifu **ALINA** delegates to 4 persistent waifu agents via Hermes cron.
+Boss waifu **LUCY** delegates to 4 persistent waifu agents via Hermes cron.
 
 | Waifu | Role | Cron | Schedule | Goal | Avatar |
 |---|---|---|---|---|---|
-| **ALINA** | Boss Prime (main assistant) | — | direct | Owner, delegator | `lucy-work.png` |
+| **LUCY** | Boss Prime (main assistant) | — | direct | Owner, delegator | `lucy-work.png` |
 | **RIAS** | Head Worker (nav/UX/logo) | `panther-nav-ux` | 6h | navi, logo, Privy, waifus page | `rias-waifu.png` |
 | **KURO** | Market Panther | `panther-market` | 30m | CoinGecko 300-coin feed, emergentScore | `lucy-private.png` |
 | **HIKARI** | Surge Huntress (ticker/feed) | `panther-ticker-feed` | 2h | gainers + surging, Score sort | (shared) |

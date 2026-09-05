@@ -34,17 +34,15 @@ export default function NavBar() {
   const [open, setOpen] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [prevPath, setPrevPath] = useState(pathname);
   const user = useAuthStore((s) => s.user);
   const hydrated = useAuthStore((s) => s.hydrated);
   const signOut = useAuthStore((s) => s.signOut);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  if (prevPath !== pathname) {
-    setPrevPath(pathname);
+  useEffect(() => {
     setOpen(false);
     setMenuOpen(false);
-  }
+  }, [pathname]);
 
   useEffect(() => {
     function onPointerDown(e: PointerEvent) {
