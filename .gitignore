@@ -74,3 +74,6 @@ public/lucy-*.png
 public/lucy-*.jpeg
 public/waifus/
 radar_*.png
+
+# local model cache / heavy artifacts
+.cache/
