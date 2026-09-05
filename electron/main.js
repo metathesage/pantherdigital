@@ -45,6 +45,7 @@ function createWindow() {
     height: 900,
     minWidth: 1024,
     minHeight: 700,
+    title: "PNHR DGTL v1.0.0",
     backgroundColor: "#000000",
     autoHideMenuBar: true,
     webPreferences: {
